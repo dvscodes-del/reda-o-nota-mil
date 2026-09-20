@@ -13,7 +13,6 @@ type Profile = {
   id: string;
   name: string | null;
   avatar_url: string | null;
-  email: string | null;
 };
 
 // Extending standard profile type for the view
@@ -62,12 +61,13 @@ export function StudentProfile({
       return;
     }
     
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
-      .select('id, name, avatar_url, email')
+      .select('id, name, avatar_url')
       .ilike('name', `%${searchQuery}%`)
       .limit(5);
       
+    if (error) console.error("Search error:", error);
     if (data) setSearchResults(data);
   };
 
@@ -171,7 +171,6 @@ export function StudentProfile({
                 )}
                 <div>
                   <p className="font-bold text-sm">{p.name || "Estudante"}</p>
-                  <p className="text-xs text-muted-foreground truncate">{p.email}</p>
                 </div>
               </div>
             ))}

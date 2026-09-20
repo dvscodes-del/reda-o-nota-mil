@@ -1,6 +1,6 @@
 import { StudentProfile } from "./StudentProfile";
 import { Messages } from "./Messages";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import type { LucideIcon } from "lucide-react";
 import { useUserPreferences } from "@/context/UserPreferencesContext";
 import { useAuth } from "@/context/AuthContext";
@@ -279,6 +279,15 @@ export function EssayApp() {
   const runCorrection = useServerFn(correctEssay);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { preferences } = useUserPreferences();
+
+  useEffect(() => {
+    if (user === null) {
+      navigate({ to: '/login' });
+    } else if (user && preferences && !preferences.hasCompletedOnboarding) {
+      navigate({ to: '/onboarding' });
+    }
+  }, [user, preferences, navigate]);
 
   const stats = useMemo(() => {
     const words = text.trim() ? text.trim().split(/\s+/).length : 0;
