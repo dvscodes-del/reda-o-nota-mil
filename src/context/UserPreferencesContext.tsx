@@ -99,7 +99,7 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
       
     } catch (error: any) {
       console.error('Error saving profile:', error);
-      toast.error('Erro ao salvar as configurações de perfil.');
+      toast.error(`Erro ao salvar perfil: ${error.message || 'Erro desconhecido'}`);
     }
   };
 
