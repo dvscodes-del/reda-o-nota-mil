@@ -1,6 +1,9 @@
 import { useMemo, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
+import { useUserPreferences } from "@/context/UserPreferencesContext";
+import { useAuth } from "@/context/AuthContext";
 import { useServerFn } from "@tanstack/react-start";
+import { useNavigate } from "@tanstack/react-router";
 import {
   AlertCircle,
   ArrowRight,
@@ -16,10 +19,12 @@ import {
   ImagePlus,
   LayoutDashboard,
   Lightbulb,
+  LogOut,
   Menu,
   PenLine,
   Play,
   Quote,
+  Settings,
   Sparkles,
   Target,
   TrendingUp,
@@ -35,6 +40,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { correctEssay } from "@/lib/essay.functions";
 import constituicaoImage from "@/assets/repertorio-constituicao.jpg";
 import geografiaImage from "@/assets/repertorio-geografia.jpg";
@@ -51,12 +64,348 @@ const navItems = [
   { id: "laboratorio" as const, label: "Laboratório", icon: PenLine },
 ];
 
-const competencies = [
-  ["C1", "Domínio da norma culta", "Gramática, ortografia, pontuação e registro formal."],
-  ["C2", "Compreensão e repertório", "Leitura do tema e repertório produtivo, pertinente e legitimado."],
-  ["C3", "Projeto de texto", "Seleção e organização de argumentos para defender uma tese."],
-  ["C4", "Coesão", "Conectivos e mecanismos linguísticos que articulam as ideias."],
-  ["C5", "Proposta de intervenção", "Ação completa, detalhada e alinhada aos direitos humanos."],
+const competencyTraining: Array<{
+  code: string;
+  title: string;
+  description: string;
+  sections: Array<{
+    id: string;
+    label: string;
+    theory: string;
+    exercise: (topic: string) => string;
+    placeholder: string;
+  }>;
+}> = [
+  {
+    code: "C1",
+    title: "Domínio da norma culta",
+    description: "Gramática, ortografia, pontuação e registro formal em toda a redação.",
+    sections: [
+      {
+        id: "intro", label: "Introdução",
+        theory: "Na introdução, a C1 é avaliada desde a primeira linha. Evite coloquialismos, use vírgula corretamente após adjuntos adverbiais e empregue a norma culta do início ao fim.",
+        exercise: (t) => `Escreva a primeira frase da sua introdução sobre o tema "${t}" usando a norma culta. Depois, identifique: você usou vírgula depois do adjunto adverbial? Há algum coloquialismo que deva ser trocado?`,
+        placeholder: "Escreva sua frase de abertura e depois analise a norma culta usada...",
+      },
+      {
+        id: "des1", label: "Desenvolvimento 1",
+        theory: "No primeiro argumento, cuidado com regência verbal (ex: 'assistir AO filme') e concordância nominal. Cada ideia deve estar conectada por uma conjunção adequada.",
+        exercise: (t) => `Escreva o tópico frasal (primeira frase) do seu 1º parágrafo sobre "${t}". Depois corrija: você usou regência verbal correta? Há concordância nominal e verbal adequadas?`,
+        placeholder: "Escreva o tópico frasal e revise a norma culta...",
+      },
+      {
+        id: "des2", label: "Desenvolvimento 2",
+        theory: "No segundo argumento, atenção especial ao uso de pronomes relativos (que, o qual, cujo) e às regras de crase. Isso garante elegância e sofisticação à escrita.",
+        exercise: (t) => `Escreva uma frase sobre "${t}" que use corretamente um pronome relativo (que / o qual / cujo) E uma crase. Depois identifique e justifique os dois usos.`,
+        placeholder: "Escreva a frase com pronome relativo e crase, e justifique cada escolha...",
+      },
+      {
+        id: "conc", label: "Conclusão",
+        theory: "Na conclusão, o domínio da norma culta fecha o texto com autoridade. Atenção à regência do verbo 'propor' (propõe-se que + subjuntivo) e ao ponto final após cada ideia completa.",
+        exercise: (t) => `Escreva a proposta de intervenção da conclusão sobre "${t}" usando o verbo 'propor' na estrutura correta: 'Propõe-se que + subjuntivo'. Liste 2 outros erros gramaticais comuns para evitar na conclusão.`,
+        placeholder: "Escreva a conclusão com a proposta na norma culta e liste os erros a evitar...",
+      },
+    ],
+  },
+  {
+    code: "C2",
+    title: "Compreensão e repertório",
+    description: "Leitura do tema e uso de repertório produtivo, pertinente e legitimado.",
+    sections: [
+      {
+        id: "intro", label: "Introdução",
+        theory: "A introdução é o lugar ideal para inserir o repertório! Cite uma lei, obra literária, dado ou fato histórico para contextualizar o problema. A referência deve ser apresentada, relacionada ao tema e interpretada — não apenas citada.",
+        exercise: (t) => `Construa uma introdução de 3–4 linhas sobre "${t}" usando UM destes repertórios: (1) Constituição Federal, (2) um dado do IBGE ou ONU, ou (3) uma obra literária/filosófica. Siga a lógica: Apresentar → Relacionar ao tema → Interpretar.`,
+        placeholder: "Escreva sua introdução com repertório seguindo Apresentar → Relacionar → Interpretar...",
+      },
+      {
+        id: "des1", label: "Desenvolvimento 1",
+        theory: "No 1º desenvolvimento, reforce sua tese com um repertório diferente do da introdução: teoria social (Bourdieu, Foucault), dado estatístico ou episódio histórico. Apresente → Relacione → Interprete.",
+        exercise: (t) => `Para o tema "${t}", escreva o 1º parágrafo de desenvolvimento usando um teórico ou dado estatístico como repertório. Use a estrutura: 'Segundo [fonte], _____. Isso evidencia que _____. Assim, _____.'`,
+        placeholder: "Escreva o Desenvolvimento 1 com repertório acadêmico/estatístico...",
+      },
+      {
+        id: "des2", label: "Desenvolvimento 2",
+        theory: "O 2º desenvolvimento aprofunda uma causa ou consequência. Cite repertório que evidencie EFEITOS concretos: notícia de jornal, relatório de ONG, série de dados históricos.",
+        exercise: (t) => `Para o tema "${t}", escreva o 2º parágrafo usando um repertório que mostre CONSEQUÊNCIAS do problema (notícia, relatório, dados históricos). O parágrafo deve começar com 'Ademais' ou 'Outrossim'.`,
+        placeholder: "Escreva o Desenvolvimento 2 com repertório de consequências...",
+      },
+      {
+        id: "conc", label: "Conclusão",
+        theory: "A conclusão NÃO é lugar de inserir novo repertório — ela deve retomar o argumento principal e propor a solução. Evite citações novas aqui para não dispersar o foco.",
+        exercise: (t) => `Escreva uma conclusão de 3 linhas sobre "${t}" SEM nenhuma citação nova. Apenas: retome a tese + sintetize os argumentos + apresente a proposta de intervenção.`,
+        placeholder: "Escreva a conclusão sem repertório novo — só retomada da tese e proposta...",
+      },
+    ],
+  },
+  {
+    code: "C3",
+    title: "Projeto de texto",
+    description: "Seleção e organização de argumentos para defender uma tese.",
+    sections: [
+      {
+        id: "intro", label: "Introdução",
+        theory: "Uma boa introdução de C3 termina com a TESE: a afirmação central que você vai defender. A tese deve ser clara, posicionada e antever os 2 argumentos que você desenvolverá.",
+        exercise: (t) => `Escreva uma introdução de 4 linhas sobre "${t}" que: (1) contextualize o problema, (2) apresente o recorte temático e (3) finalize com uma TESE que já anuncie 2 argumentos que você vai desenvolver.`,
+        placeholder: "Escreva sua introdução com tese clara que anuncia 2 argumentos...",
+      },
+      {
+        id: "des1", label: "Desenvolvimento 1",
+        theory: "O 1º parágrafo defende o PRIMEIRO argumento da tese. Estrutura eficaz: (1) tópico frasal, (2) desenvolvimento, (3) exemplo/dado, (4) interpretação que reforça a tese.",
+        exercise: (t) => `Escreva o 1º parágrafo de desenvolvimento sobre "${t}" usando a estrutura: tópico frasal → argumento → exemplo concreto → conclusão parcial que reforça a tese.`,
+        placeholder: "Escreva o Desenvolvimento 1 com estrutura: tópico frasal → argumento → exemplo → conclusão parcial...",
+      },
+      {
+        id: "des2", label: "Desenvolvimento 2",
+        theory: "O 2º parágrafo traz um argumento DIFERENTE e complementar. Não repita o raciocínio anterior. Conecte com 'Ademais', 'Por outro lado' ou 'A esse cenário soma-se'.",
+        exercise: (t) => `Escreva o 2º parágrafo sobre "${t}" com um ângulo DIFERENTE do 1º argumento. Comece com 'Ademais' ou 'A esse cenário soma-se' e explore uma causa ou consequência distinta.`,
+        placeholder: "Escreva o Desenvolvimento 2 com argumento diferente do primeiro...",
+      },
+      {
+        id: "conc", label: "Conclusão",
+        theory: "A conclusão deve RETOMAR a tese (sem repetir exatamente) e antecipar a proposta. É o 'para tanto' do texto: fecha os argumentos e aponta a saída.",
+        exercise: (t) => `Escreva uma conclusão sobre "${t}" que: (1) retome a tese com outras palavras, (2) sintetize os 2 argumentos em 1 frase e (3) introduza a proposta com 'Portanto' ou 'Diante do exposto'.`,
+        placeholder: "Escreva a conclusão retomando a tese e introduzindo a proposta...",
+      },
+    ],
+  },
+  {
+    code: "C4",
+    title: "Coesão",
+    description: "Conectivos e mecanismos linguísticos que articulam as ideias do texto.",
+    sections: [
+      {
+        id: "intro", label: "Introdução",
+        theory: "Na introdução, a coesão garante que o contexto, o recorte e a tese fluam sem interrupções. Evite listar ideias com 'e...e...e'. Prefira: 'Nesse sentido', 'Sob essa ótica', 'Diante disso'.",
+        exercise: (t) => `Reescreva esta introdução sobre "${t}" trocando os conectivos fracos por opções sofisticadas: 'O Brasil tem muitos problemas e ${t.toLowerCase()} é um deles e por isso o governo deve agir e resolver isso.'`,
+        placeholder: "Reescreva a introdução com conectivos sofisticados...",
+      },
+      {
+        id: "des1", label: "Desenvolvimento 1",
+        theory: "O início do 1º parágrafo NUNCA deve começar com 'E'. Use: 'Em primeiro lugar', 'Primeiramente', 'Nesse contexto', 'Sob essa perspectiva'.",
+        exercise: (t) => `Escreva as primeiras 2 frases do 1º parágrafo sobre "${t}" usando um conector de abertura sofisticado (não use 'Em primeiro lugar'). Depois justifique por que o conector escolhido é adequado.`,
+        placeholder: "Escreva as primeiras frases com conector sofisticado e justifique a escolha...",
+      },
+      {
+        id: "des2", label: "Desenvolvimento 2",
+        theory: "Para o 2º argumento, use conectivos de ADIÇÃO sofisticados: 'Outrossim', 'Ademais', 'A esse contexto soma-se', 'Corrobora esse cenário'. Eles mostram que você amplia, não repete.",
+        exercise: (t) => `Escreva o tópico frasal (primeira frase) do 2º parágrafo sobre "${t}" usando 'Ademais' ou 'Outrossim'. Depois reescreva a mesma ideia usando 'A esse cenário soma-se'. Compare os dois.`,
+        placeholder: "Escreva com 'Ademais' e depois com 'A esse cenário soma-se' e compare...",
+      },
+      {
+        id: "conc", label: "Conclusão",
+        theory: "A conclusão tem conectivos próprios de fechamento: 'Portanto', 'Logo', 'Conclui-se que', 'Diante do exposto'. Escolha um e NÃO repita o conector já usado no texto.",
+        exercise: (t) => `Escreva a primeira linha de uma conclusão sobre "${t}" usando um conectivo conclusivo diferente de 'Portanto'. Depois escreva mais 2 opções de primeira linha com conectivos diferentes para treinar a variedade.`,
+        placeholder: "Escreva 3 opções de primeira frase da conclusão com conectivos diferentes...",
+      },
+    ],
+  },
+  {
+    code: "C5",
+    title: "Proposta de intervenção",
+    description: "Ação detalhada, completa e alinhada aos direitos humanos.",
+    sections: [
+      {
+        id: "intro", label: "Introdução",
+        theory: "A introdução NÃO é o lugar da proposta. Aqui, você apenas CONTEXTUALIZA o problema que será resolvido na conclusão. Não adiante soluções antes de argumentar.",
+        exercise: (t) => `Escreva uma introdução sobre "${t}" SEM incluir nenhuma proposta de solução — apenas contextualize o problema e apresente sua tese. Depois sublinhue mentalmente onde estaria a tentação de adiantar a proposta.`,
+        placeholder: "Escreva a introdução apenas contextualizando o problema, sem proposta...",
+      },
+      {
+        id: "des1", label: "Desenvolvimento 1",
+        theory: "No desenvolvimento, explore as CAUSAS do problema para embasar a proposta futura. Ex: 'A falta de investimento público... gera como consequência...'. Isso prepara o leitor para a solução.",
+        exercise: (t) => `Escreva um parágrafo sobre "${t}" explorando as CAUSAS estruturais do problema. Termine o parágrafo com uma frase que crie urgência para a solução (sem ainda propô-la).`,
+        placeholder: "Explore as causas do problema e crie urgência sem ainda propor a solução...",
+      },
+      {
+        id: "des2", label: "Desenvolvimento 2",
+        theory: "O 2º desenvolvimento explora as CONSEQUÊNCIAS do problema — o que agrava a situação. Isso cria urgência para a solução que virá. Use 'Esse cenário perpetua... o que aprofunda...'.",
+        exercise: (t) => `Escreva um parágrafo sobre "${t}" explorando as CONSEQUÊNCIAS do problema a longo prazo. Comece com 'Ademais' e mostre como o problema se perpetua e se agrava sem intervenção.`,
+        placeholder: "Explore as consequências do problema começando com 'Ademais'...",
+      },
+      {
+        id: "conc", label: "Conclusão",
+        theory: "A proposta COMPLETA tem 5 elementos obrigatórios: (1) AGENTE — quem age? (2) AÇÃO — o que faz? (3) MEIO — como faz? (4) FINALIDADE — por quê? (5) DETALHAMENTO — com qual recurso/lei? Faltando um, a nota cai.",
+        exercise: (t) => `Monte a proposta de intervenção COMPLETA para o tema "${t}". Use o modelo: 'Cabe ao [AGENTE], por meio de [MEIO], [AÇÃO], a fim de [FINALIDADE], com [DETALHAMENTO].' Preencha todos os 5 elementos obrigatórios.`,
+        placeholder: "Cabe ao [AGENTE], por meio de [MEIO], [AÇÃO], a fim de [FINALIDADE], com [DETALHAMENTO]...",
+      },
+    ],
+  },
+];
+
+
+
+// Dados baseados no historico do ENEM (2015-2023) e previsoes de especialistas para 2025
+// Fontes: INEP, CNN Brasil, Bernoulli, Gran Cursos, Estacio
+const dailyThemes = [
+  {
+    day: 1, done: true, label: "Seg",
+    hot: true, hotReason: "ENEM 2020 abordou doencas mentais. Especialistas apontam saude mental juvenil como tema quente para 2025 (CNN Brasil, Gran Cursos).",
+    courseHot: ["Medicina", "Psicologia", "Enfermagem", "Biomedicina", "Farmacia"],
+    topic: "O impacto da ansiedade e depressao na populacao jovem brasileira",
+    hint: "Explore pressao escolar, redes sociais, pandemia, estigma e politicas de saude mental.",
+    repertories: [
+      { category: "Leis", title: "Constituição Federal", author: "Artigo 196", image: constituicaoImage, body: "A saúde é direito de todos e dever do Estado, garantido mediante políticas sociais e econômicas." },
+      { category: "Livros", title: "A Sociedade do Cansaço", author: "Byung-Chul Han", image: geografiaImage, body: "Aborda como a cobrança excessiva e a positividade tóxica levam a transtornos mentais, como a depressão." },
+      { category: "Filmes", title: "Divertida Mente", author: "Pete Docter", image: cinemaImage, body: "Ilustra a importância de lidar com todas as emoções, incluindo a tristeza, desmistificando o estigma sobre saúde mental." }
+    ]
+  },
+  {
+    day: 2, done: true, label: "Ter",
+    hot: true, hotReason: "ENEM 2018 tratou de controle de dados na internet. IA e regulacao tecnologica estao no topo das previsoes de especialistas para 2025 (Bernoulli, Sistema Anglo).",
+    courseHot: ["Ciencia da Computacao", "Direito", "Administracao", "Engenharia de Producao", "Economia"],
+    topic: "Desafios para a regulacao da inteligencia artificial no Brasil",
+    hint: "Aborde etica, automacao do trabalho, privacidade, deepfakes e responsabilidade do Estado.",
+    repertories: [
+      { category: "Leis", title: "Marco Civil da Internet", author: "Lei nº 12.965/2014", image: constituicaoImage, body: "Estabelece princípios, garantias, direitos e deveres para o uso da Internet no Brasil, essencial para debater regulação tecnológica." },
+      { category: "Livros", title: "1984", author: "George Orwell", image: geografiaImage, body: "Ficção distópica que alerta para os perigos do controle excessivo da informação e vigilância estatal/corporativa." },
+      { category: "Filmes", title: "O Dilema das Redes", author: "Jeff Orlowski", image: cinemaImage, body: "Documentário que expõe como algoritmos moldam comportamentos, útil para discutir os riscos da IA sem regulação." }
+    ]
+  },
+  {
+    day: 3, done: false, label: "Qua",
+    hot: true, hotReason: "ENEM 2021 tratou de invisibilidade e cidadania. Inclusao de pessoas com deficiencia e grupos marginalizados e eixo recorrente do INEP. Alta chance para 2025.",
+    courseHot: ["Pedagogia", "Servico Social", "Psicologia", "Letras", "Direito"],
+    topic: "Barreiras para a inclusao de pessoas com deficiencia no mercado de trabalho brasileiro",
+    hint: "Use a Lei Brasileira de Inclusao (Lei 13.146/2015), dados do IBGE e proponha politicas concretas.",
+    repertories: [
+      { category: "Leis", title: "Lei Brasileira de Inclusão", author: "Lei nº 13.146/2015", image: constituicaoImage, body: "Assegura e promove, em condições de igualdade, os direitos da pessoa com deficiência, inclusive no mercado de trabalho." },
+      { category: "Livros", title: "O Aleijadinho", author: "História", image: geografiaImage, body: "Antônio Francisco Lisboa superou barreiras físicas no Brasil colonial, provando o potencial produtivo da pessoa com deficiência." },
+      { category: "Filmes", title: "Intocáveis", author: "Olivier Nakache", image: cinemaImage, body: "Demonstra como a adaptação e a quebra de preconceitos são essenciais para a integração social e profissional de pessoas com deficiência." }
+    ]
+  },
+  {
+    day: 4, done: false, label: "Qui",
+    hot: true, hotReason: "COP30 sera no Brasil em 2025. Meio ambiente e sustentabilidade estao no topo das previsoes de Bernoulli, UNEX e Estacio para o proximo ENEM.",
+    courseHot: ["Ciencias Biologicas", "Medicina Veterinaria", "Relacoes Internacionais", "Engenharia Ambiental", "Direito"],
+    topic: "Desafios para o Brasil na transicao para uma economia de baixo carbono",
+    hint: "Relacione COP30, desmatamento, combustiveis fosseis, transicao energetica e compromissos internacionais.",
+    repertories: [
+      { category: "Leis", title: "Acordo de Paris", author: "ONU (2015)", image: constituicaoImage, body: "Tratado internacional sobre mudanças climáticas, cujo objetivo é limitar o aquecimento global, exigindo transição energética dos países." },
+      { category: "Livros", title: "Ideias para Adiar o Fim do Mundo", author: "Ailton Krenak", image: geografiaImage, body: "Critica o modelo predatório de desenvolvimento econômico e propõe novas formas de relação com a natureza." },
+      { category: "Filmes", title: "Wall-E", author: "Pixar", image: cinemaImage, body: "Ilustra um futuro distópico arruinado pelo consumismo extremo e pela falta de preservação ambiental." }
+    ]
+  },
+  {
+    day: 5, done: false, label: "Sex",
+    hot: true, hotReason: "ENEM 2022 abordou povos tradicionais. O INEP tem padrao de tratar grupos invisiveis e minorias. Populacao em situacao de rua foi citada por Globo e Gran Cursos como tendencia 2025.",
+    courseHot: ["Servico Social", "Direito", "Psicologia", "Arquitetura e Urbanismo"],
+    topic: "Desafios para garantir o direito a moradia digna a populacao em situacao de rua no Brasil",
+    hint: "Use dados do IPEA, Constituicao Federal Art. 6, e proponha acoes integradas entre Estado e sociedade civil.",
+    repertories: [
+      { category: "Leis", title: "Constituição Federal", author: "Artigo 6º", image: constituicaoImage, body: "Garante a moradia como um direito social fundamental, evidenciando a inconstitucionalidade da falta de habitação digna." },
+      { category: "Livros", title: "Quarto de Despejo", author: "Carolina Maria de Jesus", image: geografiaImage, body: "Retrata a crua realidade da favela e a luta diária pela sobrevivência em condições de extrema vulnerabilidade habitacional." },
+      { category: "Filmes", title: "Parasita", author: "Bong Joon Ho", image: cinemaImage, body: "Apresenta a profunda desigualdade habitacional e social, servindo de paralelo para a segregação espacial no Brasil." }
+    ]
+  },
+  {
+    day: 6, done: false, label: "Sab",
+    hot: true, hotReason: "ENEM 2018 tratou de manipulacao de dados. Desinformacao e privacidade digital sao apontados por CNN Brasil e Bernoulli como os temas mais previsiveis para 2025.",
+    courseHot: ["Jornalismo", "Relacoes Internacionais", "Direito", "Ciencia da Computacao"],
+    topic: "A disseminacao de fake news e seus impactos na democracia brasileira",
+    hint: "Aborde algoritmos, camara de eco, erosao da confianca nas instituicoes e educacao midiatica.",
+    repertories: [
+      { category: "Leis", title: "Código Eleitoral Brasileiro", author: "Lei nº 4.737/1965", image: constituicaoImage, body: "Prevê punições para a disseminação de fatos inverídicos na propaganda eleitoral, útil para abordar impactos políticos das fake news." },
+      { category: "Livros", title: "A Máquina do Ódio", author: "Patrícia Campos Mello", image: geografiaImage, body: "Investiga o uso de redes sociais para campanhas de desinformação e ataques a jornalistas e instituições democráticas." },
+      { category: "Filmes", title: "Privacidade Hackeada", author: "Karim Amer", image: cinemaImage, body: "Mostra como o uso indevido de dados e a disseminação de informações falsas podem manipular eleições e fragilizar democracias." }
+    ]
+  },
+  {
+    day: 7, done: false, label: "Dom",
+    hot: false, hotReason: "",
+    courseHot: ["Administracao", "Economia", "Direito", "Engenharia de Producao"],
+    topic: "Desafios para o combate ao trabalho infantil no Brasil",
+    hint: "Use dados da OIT e do IBGE sobre trabalho infantil. Relacione a evasao escolar e o ciclo de pobreza.",
+    repertories: [
+      { category: "Leis", title: "Estatuto da Criança e do Adolescente (ECA)", author: "Artigo 60", image: constituicaoImage, body: "Proíbe qualquer trabalho a menores de 14 anos, exceto na condição de aprendiz, visando proteger a infância." },
+      { category: "Livros", title: "Capitães da Areia", author: "Jorge Amado", image: geografiaImage, body: "Retrata a vida de crianças abandonadas que precisam lutar pela sobrevivência nas ruas, refletindo a marginalização e roubo da infância." },
+      { category: "Filmes", title: "Central do Brasil", author: "Walter Salles", image: cinemaImage, body: "O personagem Josué expõe a vulnerabilidade da criança em situação de rua, à mercê da violência e da necessidade de trabalhar cedo." }
+    ]
+  },
+  {
+    day: 8, done: false, label: "Seg",
+    hot: true, hotReason: "ENEM 2023 abordou invisibilidade do trabalho da mulher. O INEP tem padrao de retornar ao eixo de genero. Etarismo e violencia contra idosos surgem nas previsoes de Gran Cursos e Estacio.",
+    courseHot: ["Servico Social", "Medicina", "Enfermagem", "Direito", "Psicologia"],
+    topic: "O envelhecimento populacional e os desafios para o cuidado do idoso no Brasil",
+    hint: "Use dados do IBGE sobre envelhecimento, o Estatuto do Idoso (Lei 10.741/2003) e proponha politicas de saude e assistencia.",
+    repertories: [
+      { category: "Leis", title: "Estatuto do Idoso", author: "Lei nº 10.741/2003", image: constituicaoImage, body: "Assegura os direitos dos idosos, priorizando saúde, convívio familiar, e coibindo o abandono e o etarismo." },
+      { category: "Livros", title: "A Velhice", author: "Simone de Beauvoir", image: geografiaImage, body: "Trata da marginalização dos idosos na sociedade capitalista, onde perdem valor social ao deixarem de ser força produtiva." },
+      { category: "Filmes", title: "Up: Altas Aventuras", author: "Pixar", image: cinemaImage, body: "A solidão do protagonista Sr. Fredricksen levanta o debate sobre o abandono afetivo e o isolamento na terceira idade." }
+    ]
+  },
+  {
+    day: 9, done: false, label: "Ter",
+    hot: true, hotReason: "O INEP abordou desigualdade regional no ENEM 2020 digital. Analfabetismo funcional e desigualdade educacional sao citados por Bernoulli e Quero Bolsa como temas de alta probabilidade para 2025.",
+    courseHot: ["Pedagogia", "Letras", "Historia", "Psicologia", "Servico Social"],
+    topic: "Desafios para o combate ao analfabetismo funcional no Brasil",
+    hint: "Diferencie analfabetismo absoluto de funcional. Use dados do IBGE e explore o papel da escola, familia e politicas publicas.",
+    repertories: [
+      { category: "Leis", title: "Plano Nacional de Educação (PNE)", author: "Meta 9", image: constituicaoImage, body: "Determina a erradicação do analfabetismo absoluto e a redução expressiva do analfabetismo funcional no país." },
+      { category: "Livros", title: "Pedagogia do Oprimido", author: "Paulo Freire", image: geografiaImage, body: "Defende uma educação crítica, onde a leitura de mundo precede a leitura da palavra, opondo-se à educação 'bancária'." },
+      { category: "Filmes", title: "O Leitor", author: "Stephen Daldry", image: cinemaImage, body: "Mostra a vergonha e as severas limitações sociais enfrentadas por uma personagem que esconde ser analfabeta." }
+    ]
+  },
+  {
+    day: 10, done: false, label: "Qua",
+    hot: false, hotReason: "",
+    courseHot: ["Medicina", "Nutricao", "Enfermagem", "Engenharia Civil", "Ciencias Biologicas"],
+    topic: "A crise hidrica e o acesso a agua potavel no Brasil",
+    hint: "Relacione saneamento basico, Agenda 2030 da ONU, desigualdade regional e mudancas climaticas.",
+    repertories: [
+      { category: "Leis", title: "Novo Marco do Saneamento Básico", author: "Lei 14.026/2020", image: constituicaoImage, body: "Estabelece metas de universalização, visando garantir que 99% da população tenha acesso a água potável até 2033." },
+      { category: "Livros", title: "Vidas Secas", author: "Graciliano Ramos", image: geografiaImage, body: "A jornada de retirantes fugindo da seca expõe a vulnerabilidade humana frente à escassez de água e negligência estatal." },
+      { category: "Filmes", title: "O Menino que Descobriu o Vento", author: "Chiwetel Ejiofor", image: cinemaImage, body: "Exemplifica como a falta de água gera miséria e como a inovação é essencial para a sobrevivência." }
+    ]
+  },
+  {
+    day: 11, done: false, label: "Qui",
+    hot: true, hotReason: "ENEM 2019 tratou de acesso a cinema (cultura). Democratizacao da cultura e acesso ao lazer voltam periodicamente. Vicio em telas e jogos de azar online sao tendencia forte para 2025 (My Study Bay, Gran Cursos).",
+    courseHot: ["Psicologia", "Medicina", "Pedagogia", "Jornalismo", "Letras"],
+    topic: "Os riscos do vicio em jogos de azar online (bets) para a saude mental e financeira dos brasileiros",
+    hint: "Aborde a explosao das bets no Brasil, populacoes vulneraveis, regulacao e o papel do Estado na protecao social.",
+    repertories: [
+      { category: "Leis", title: "Código de Defesa do Consumidor", author: "Lei nº 8.078/1990", image: constituicaoImage, body: "Pode ser citado para defender a necessidade de proteger populações vulneráveis de publicidade abusiva das plataformas de apostas." },
+      { category: "Livros", title: "O Jogador", author: "Fiódor Dostoiévski", image: geografiaImage, body: "Retrata de forma psicológica e realista a obsessão, a compulsão e a ruína financeira gerada pelo vício em jogos." },
+      { category: "Filmes", title: "Joias Brutas", author: "Irmãos Safdie", image: cinemaImage, body: "Demonstra o efeito cascata do vício em apostas esportivas, destruindo relações familiares, financeiras e a própria vida do protagonista." }
+    ]
+  },
+  {
+    day: 12, done: false, label: "Sex",
+    hot: false, hotReason: "",
+    courseHot: ["Direito", "Servico Social", "Historia", "Psicologia"],
+    topic: "O encarceramento em massa e o ciclo de violencia no Brasil",
+    hint: "Aborde superlotacao carceraria, racismo estrutural, falta de ressocializacao e alternativas penais.",
+    repertories: [
+      { category: "Leis", title: "Lei de Execução Penal", author: "Lei nº 7.210/1984", image: constituicaoImage, body: "Garante que a pena tenha caráter ressocializador, direito que é frequentemente violado devido à superlotação carcerária." },
+      { category: "Livros", title: "Vigiar e Punir", author: "Michel Foucault", image: geografiaImage, body: "Analisa como as prisões frequentemente falham em corrigir, funcionando mais como instrumentos de controle de classes indesejadas." },
+      { category: "Filmes", title: "Carandiru", author: "Héctor Babenco", image: cinemaImage, body: "Expõe as condições desumanas, a violação de direitos humanos e a falência do sistema prisional brasileiro." }
+    ]
+  },
+  {
+    day: 13, done: false, label: "Sab",
+    hot: true, hotReason: "ENEM 2017 abordou formacao educacional de surdos. O padrao do INEP e tratar grupos especificos com necessidades de acessibilidade. Inclusao digital e letramento midiatico sao previsao forte para 2025 (Determinante, Estacio).",
+    courseHot: ["Pedagogia", "Ciencia da Computacao", "Letras", "Psicologia", "Servico Social"],
+    topic: "Desafios para a inclusao digital de idosos e populacoes vulneraveis no Brasil",
+    hint: "Explore a exclusao digital como nova forma de desigualdade social, acesso a servicos publicos e o papel do Estado e familias.",
+    repertories: [
+      { category: "Leis", title: "Marco Civil da Internet", author: "Lei nº 12.965/2014", image: constituicaoImage, body: "Estabelece que o acesso à internet é essencial para o exercício da cidadania, tornando a exclusão digital uma violação de direitos." },
+      { category: "Livros", title: "Modernidade Líquida", author: "Zygmunt Bauman", image: geografiaImage, body: "A rápida fluidez tecnológica margina aqueles (como os idosos) que não conseguem acompanhar as constantes mudanças no mundo digital." },
+      { category: "Filmes", title: "Eu, Daniel Blake", author: "Ken Loach", image: cinemaImage, body: "Um homem idoso enfrenta um sistema burocrático totalmente digitalizado para acessar seus direitos, ilustrando o apagamento pela exclusão digital." }
+    ]
+  },
+  {
+    day: 14, done: false, label: "Dom",
+    hot: true, hotReason: "ENEM 2022 abordou povos tradicionais/indigenas. A demarcacao de terras indigenas e preservacao cultural voltaram ao debate nacional em 2024-2025, sendo apontados por Bernoulli e CNN Brasil como tema quente.",
+    courseHot: ["Relacoes Internacionais", "Direito", "Historia", "Ciencias Biologicas", "Servico Social"],
+    topic: "Desafios para a preservacao da cultura e dos direitos dos povos indigenas no Brasil",
+    hint: "Use a Constituicao de 1988 (Art. 231), dados de desmatamento e conflitos por terra, e aborde o papel do Estado e organismos internacionais.",
+    repertories: [
+      { category: "Leis", title: "Constituição Federal", author: "Artigo 231", image: constituicaoImage, body: "Reconhece aos índios sua organização social, costumes, línguas, crenças e o direito originário sobre as terras que ocupam." },
+      { category: "Livros", title: "A Queda do Céu", author: "Davi Kopenawa", image: geografiaImage, body: "Relato xamânico que expõe a exploração garimpeira, as doenças trazidas pelos não-indígenas e a riqueza cosmológica Yanomami." },
+      { category: "Filmes", title: "A Febre", author: "Maya Da-Rin", image: cinemaImage, body: "Mostra o choque cultural e a marginalização de um indígena que vive na cidade, dividido entre o mundo urbano e suas tradições." }
+    ]
+  }
 ];
 
 const essays = [
@@ -111,8 +460,11 @@ export function EssayApp() {
   const [correcting, setCorrecting] = useState(false);
   const [error, setError] = useState("");
   const [timer, setTimer] = useState(false);
+  const [selectedDay, setSelectedDay] = useState(2); // dia atual (0-indexed)
   const fileRef = useRef<HTMLInputElement>(null);
   const runCorrection = useServerFn(correctEssay);
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const stats = useMemo(() => {
     const words = text.trim() ? text.trim().split(/\s+/).length : 0;
@@ -133,7 +485,14 @@ export function EssayApp() {
     setCorrecting(true);
     setError("");
     try {
-      const correction = await runCorrection({ data: { essay: text } });
+      const correction = await runCorrection({ 
+        data: { 
+          essay: text,
+          targetScore: preferences?.targetScore,
+          college: preferences?.college,
+          course: preferences?.course
+        } 
+      });
       setResult(correction);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível corrigir agora. Tente novamente em instantes.");
@@ -154,13 +513,18 @@ export function EssayApp() {
             </button>
             <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMobileOpen(false)} aria-label="Fechar menu"><X /></Button>
           </div>
-          <nav className="space-y-1.5" aria-label="Navegação principal">
-            {navItems.map((item) => <Button key={item.id} variant="ghost" onClick={() => goTo(item.id)} className={`h-11 w-full justify-start rounded-xl px-3 ${section === item.id ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : "text-muted-foreground"}`}><item.icon />{item.label}</Button>)}
+          <nav className="space-y-1.5 flex-1" aria-label="Navegação principal">
+            {navItems.map((item) => <Button key={item.id} variant="ghost" onClick={() => goTo(item.id)} className={`h-11 w-full justify-start rounded-xl px-3 ${section === item.id ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : "text-muted-foreground"}`}><item.icon className="mr-2" />{item.label}</Button>)}
           </nav>
-          <div className="mt-auto rounded-xl bg-sidebar-accent p-4">
-            <div className="mb-2 flex items-center gap-2 text-sm font-semibold"><Flame className="text-highlight" /> 7 dias de sequência</div>
-            <Progress value={70} className="bg-background" />
-            <p className="mt-2 text-xs text-muted-foreground">Mais 3 dias para sua próxima conquista.</p>
+          <div className="mt-auto space-y-4">
+            <div className="rounded-xl bg-sidebar-accent p-4">
+              <div className="mb-2 flex items-center gap-2 text-sm font-semibold"><Flame className="text-highlight" /> 7 dias de sequência</div>
+              <Progress value={70} className="bg-background" />
+              <p className="mt-2 text-xs text-muted-foreground">Mais 3 dias para sua próxima conquista.</p>
+            </div>
+            <Button variant="ghost" onClick={async () => { await signOut(); navigate({ to: '/login' }); }} className="w-full justify-start rounded-xl px-3 text-destructive hover:bg-destructive/10 hover:text-destructive">
+              <LogOut className="mr-2 size-4" /> Sair do Perfil
+            </Button>
           </div>
         </div>
       </aside>
@@ -168,16 +532,43 @@ export function EssayApp() {
       <main className="lg:ml-72">
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border/80 bg-background/90 px-4 backdrop-blur md:px-8">
           <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMobileOpen(true)} aria-label="Abrir menu"><Menu /></Button>
-          <div className="hidden text-sm text-muted-foreground sm:block">Domingo, 20 de setembro</div>
-          <div className="flex items-center gap-3"><div className="text-right"><strong className="block text-sm">Davi</strong><small className="text-muted-foreground">Nível 8 · 1.240 XP</small></div><div className="grid size-10 place-items-center rounded-full bg-accent font-bold text-accent-foreground">DF</div></div>
+          <div className="hidden text-sm text-muted-foreground sm:block">Foco no seu objetivo!</div>
+          <div className="flex items-center gap-3">
+            <div className="hidden text-right sm:block">
+              <strong className="block text-sm">{user?.email?.split('@')[0] || 'Estudante'}</strong>
+              <small className="text-muted-foreground">Nível 8 · 1.240 XP</small>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
+                  <div className="grid h-full w-full place-items-center rounded-full bg-accent font-bold text-accent-foreground ring-2 ring-transparent transition-all hover:ring-primary">
+                    {user?.email?.[0].toUpperCase() || 'ES'}
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 rounded-xl">
+                <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate({ to: '/onboarding' })} className="cursor-pointer gap-2">
+                  <Settings className="size-4" />
+                  Editar Metas
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={async () => { await signOut(); navigate({ to: '/login' }); }} className="cursor-pointer gap-2 text-destructive focus:bg-destructive/10 focus:text-destructive">
+                  <LogOut className="size-4" />
+                  Sair
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </header>
 
         <div className="mx-auto max-w-7xl p-4 md:p-8 lg:p-10">
           {section === "dashboard" && <Dashboard goTo={goTo} />}
           {section === "mural" && <Mural onOpen={setSelectedEssay} />}
-          {section === "competencias" && <Competencies active={activeCompetency} setActive={setActiveCompetency} />}
-          {section === "repertorio" && <Repertory filter={filter} setFilter={setFilter} />}
-          {section === "laboratorio" && <Laboratory tab={labTab} setTab={setLabTab} text={text} setText={setText} stats={stats} timer={timer} setTimer={setTimer} preview={preview} fileRef={fileRef} setPreview={setPreview} correcting={correcting} error={error} handleCorrection={handleCorrection} result={result} setResult={setResult} />}
+          {section === "competencias" && <Competencies active={activeCompetency} setActive={setActiveCompetency} currentTheme={dailyThemes[selectedDay]} />}
+          {section === "repertorio" && <Repertory filter={filter} setFilter={setFilter} currentTheme={dailyThemes[selectedDay]} />}
+          {section === "laboratorio" && <Laboratory tab={labTab} setTab={setLabTab} text={text} setText={setText} stats={stats} timer={timer} setTimer={setTimer} preview={preview} fileRef={fileRef} setPreview={setPreview} correcting={correcting} error={error} handleCorrection={handleCorrection} result={result} setResult={setResult} selectedDay={selectedDay} setSelectedDay={setSelectedDay} />}
         </div>
       </main>
 
@@ -195,18 +586,43 @@ function PageTitle({ eyebrow, title, description }: { eyebrow: string; title: st
 }
 
 function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
+  const { preferences } = useUserPreferences();
+  const { user } = useAuth();
+  const targetScoreNum = preferences?.targetScore ? parseInt(preferences.targetScore, 10) : 900;
+  
   const dashboardStats: Array<[string, string, LucideIcon]> = [
     ["12", "Redações enviadas", FileText],
     ["840", "Média atual", TrendingUp],
     ["+80", "Evolução recente", BrainCircuit],
   ];
-  return <><PageTitle eyebrow="Seu espaço de evolução" title="Boa tarde, Davi!" description="Cada parágrafo é um passo. Continue construindo sua melhor nota." />
+  return <><PageTitle eyebrow="Seu espaço de evolução" title={`Boa tarde, ${user?.email?.split('@')[0] || 'Estudante'}!`} description={preferences ? `Seu foco: ${preferences.course} na ${preferences.college}` : "Cada parágrafo é um passo. Continue construindo sua melhor nota."} />
     <section className="relative overflow-hidden rounded-2xl bg-primary p-6 text-primary-foreground shadow-sm md:p-10">
       <div className="absolute right-8 top-1/2 hidden -translate-y-1/2 opacity-15 md:block"><Quote className="size-52" /></div>
       <div className="relative max-w-3xl"><span className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary-foreground/15 px-3 py-1 text-xs font-bold uppercase"><Sparkles className="size-3" /> Desafio do dia · +120 XP</span><h2 className="text-2xl font-bold leading-tight md:text-4xl">Desafios para o enfrentamento da insegurança alimentar no Brasil contemporâneo</h2><p className="mt-4 text-primary-foreground/75">Pratique repertório produtivo, construção de tese e proposta de intervenção completa.</p><Button onClick={() => goTo("laboratorio")} className="mt-7 rounded-xl bg-background text-foreground hover:bg-background/90">Começar a escrever <ArrowRight /></Button></div>
     </section>
     <section className="mt-6 grid gap-4 sm:grid-cols-3">{dashboardStats.map(([value,label,Icon]) => <div key={label} className="rounded-xl border border-border bg-card p-5 shadow-sm"><div className="mb-5 flex items-center justify-between"><span className="grid size-10 place-items-center rounded-lg bg-accent text-primary"><Icon className="size-5" /></span><span className="text-xs font-semibold text-success">este mês</span></div><strong className="text-3xl">{value}</strong><p className="mt-1 text-sm text-muted-foreground">{label}</p></div>)}</section>
-    <section className="mt-6 grid gap-6 lg:grid-cols-[1.4fr_1fr]"><div className="rounded-xl border border-border bg-card p-6 shadow-sm"><div className="mb-8 flex items-center justify-between"><div><h3 className="font-bold">Sua evolução</h3><p className="text-sm text-muted-foreground">Últimas cinco redações</p></div><span className="rounded-lg bg-accent px-3 py-1 text-xs font-semibold text-primary">+10,5%</span></div><div className="flex h-44 items-end justify-between gap-3 border-b border-border px-2">{[620,700,680,780,840].map((score,i) => <div key={score} className="flex h-full flex-1 flex-col justify-end gap-2 text-center"><span className="text-xs font-bold">{score}</span><div className="rounded-t-md bg-primary/20 transition-colors hover:bg-primary" style={{height: `${score/10}%`}} /><span className="pb-2 text-xs text-muted-foreground">R{i+1}</span></div>)}</div></div><div className="rounded-xl border border-border bg-card p-6 shadow-sm"><h3 className="font-bold">Próximo objetivo</h3><p className="mt-1 text-sm text-muted-foreground">Chegue à média 900</p><div className="my-6 grid place-items-center"><div className="grid size-32 place-items-center rounded-full border-[12px] border-accent"><div className="text-center"><strong className="text-2xl">840</strong><small className="block text-muted-foreground">de 900</small></div></div></div><Progress value={84} /><p className="mt-3 text-center text-xs text-muted-foreground">Você está a 60 pontos da meta.</p></div></section>
+    <section className="mt-8">
+      <h3 className="font-bold text-lg mb-4">Acesso Rápido</h3>
+      <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
+        <Button variant="outline" onClick={() => goTo("laboratorio")} className="h-auto flex-col gap-3 p-4 rounded-xl border-border bg-card hover:bg-accent hover:border-primary">
+          <span className="grid size-12 place-items-center rounded-full bg-primary/10 text-primary"><PenLine className="size-5" /></span>
+          <span className="font-semibold">Escrever Redação</span>
+        </Button>
+        <Button variant="outline" onClick={() => goTo("competencias")} className="h-auto flex-col gap-3 p-4 rounded-xl border-border bg-card hover:bg-accent hover:border-primary">
+          <span className="grid size-12 place-items-center rounded-full bg-primary/10 text-primary"><Target className="size-5" /></span>
+          <span className="font-semibold">Treinar Competências</span>
+        </Button>
+        <Button variant="outline" onClick={() => goTo("repertorio")} className="h-auto flex-col gap-3 p-4 rounded-xl border-border bg-card hover:bg-accent hover:border-primary">
+          <span className="grid size-12 place-items-center rounded-full bg-primary/10 text-primary"><BookOpen className="size-5" /></span>
+          <span className="font-semibold">Ver Repertórios</span>
+        </Button>
+        <Button variant="outline" onClick={() => goTo("mural")} className="h-auto flex-col gap-3 p-4 rounded-xl border-border bg-card hover:bg-accent hover:border-primary">
+          <span className="grid size-12 place-items-center rounded-full bg-primary/10 text-primary"><Award className="size-5" /></span>
+          <span className="font-semibold">Mural Nota 1000</span>
+        </Button>
+      </div>
+    </section>
+    <section className="mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]"><div className="rounded-xl border border-border bg-card p-6 shadow-sm"><div className="mb-8 flex items-center justify-between"><div><h3 className="font-bold">Sua evolução</h3><p className="text-sm text-muted-foreground">Últimas cinco redações</p></div><span className="rounded-lg bg-accent px-3 py-1 text-xs font-semibold text-primary">+10,5%</span></div><div className="flex h-44 items-end justify-between gap-3 border-b border-border px-2">{[620,700,680,780,840].map((score,i) => <div key={score} className="flex h-full flex-1 flex-col justify-end gap-2 text-center"><span className="text-xs font-bold">{score}</span><div className="rounded-t-md bg-primary/20 transition-colors hover:bg-primary" style={{height: `${score/10}%`}} /><span className="pb-2 text-xs text-muted-foreground">R{i+1}</span></div>)}</div></div><div className="rounded-xl border border-border bg-card p-6 shadow-sm"><h3 className="font-bold">Sua Meta (Target)</h3><p className="mt-1 text-sm text-muted-foreground">Chegue à média {targetScoreNum}</p><div className="my-6 grid place-items-center"><div className="grid size-32 place-items-center rounded-full border-[12px] border-accent"><div className="text-center"><strong className="text-2xl">840</strong><small className="block text-muted-foreground">de {targetScoreNum}</small></div></div></div><Progress value={(840 / targetScoreNum) * 100} /><p className="mt-3 text-center text-xs text-muted-foreground">Você está a {Math.max(0, targetScoreNum - 840)} pontos da meta.</p></div></section>
   </>;
 }
 
@@ -214,19 +630,222 @@ function Mural({ onOpen }: { onOpen: (essay: (typeof essays)[number]) => void })
   return <><PageTitle eyebrow="Inspire-se" title="Mural nota mil" description="Leia textos exemplares com olhos de autor: observe escolhas, conexões e estratégias replicáveis." /><div className="grid gap-5 md:grid-cols-3">{essays.map((essay,i) => <article key={essay.title} onClick={() => onOpen(essay)} className="group cursor-pointer rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"><div className="mb-5 flex items-center justify-between"><span className="rounded-full bg-accent px-3 py-1 text-xs font-bold text-primary">NOTA 1000</span><span className="text-5xl font-black text-primary/10">0{i+1}</span></div><h2 className="text-xl font-bold leading-snug group-hover:text-primary">{essay.title}</h2><p className="mt-2 text-xs font-semibold text-muted-foreground">{essay.author}</p><p className="mt-5 line-clamp-4 text-sm leading-6 text-muted-foreground">{essay.intro}</p><div className="mt-6 flex items-center gap-2 text-sm font-bold text-primary">Ler e analisar <ArrowRight className="size-4" /></div></article>)}</div></>;
 }
 
-function Competencies({ active, setActive }: { active: number; setActive: (value: number) => void }) {
-  return <><PageTitle eyebrow="Teoria em prática" title="Domine as competências" description="Entenda como cada parte da sua redação é avaliada e treine uma habilidade por vez." /><div className="space-y-3">{competencies.map(([code,title,body],i) => <div key={code} className="overflow-hidden rounded-xl border border-border bg-card shadow-sm"><button type="button" onClick={() => setActive(active === i ? -1 : i)} className="flex w-full items-center gap-4 p-5 text-left"><span className="grid size-11 shrink-0 place-items-center rounded-xl bg-accent font-bold text-primary">{code}</span><span className="flex-1"><strong className="block">{title}</strong><small className="text-muted-foreground">0 a 200 pontos</small></span><ChevronDown className={`size-5 transition-transform ${active === i ? "rotate-180" : ""}`} /></button>{active === i && <div className="border-t border-border px-5 pb-6 pt-5 md:pl-20"><p className="text-muted-foreground">{body}</p><div className="mt-5 rounded-xl bg-accent p-5"><strong className="flex items-center gap-2 text-accent-foreground"><Play className="size-4" /> Treinamento isolado</strong><p className="mt-2 text-sm text-muted-foreground">{i === 3 ? "Substitua “e também” por um conectivo de conclusão adequado: “______, medidas devem ser tomadas.”" : i === 4 ? "Monte a intervenção: quem fará, o que fará, como, com qual finalidade e qual detalhamento?" : "Identifique a melhor estratégia para fortalecer este aspecto em um parágrafo curto."}</p><div className="mt-4 flex gap-2"><input className="h-10 flex-1 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring" placeholder="Escreva sua resposta..." /><Button className="rounded-lg">Conferir</Button></div></div></div>}</div>)}</div></>;
+function Competencies({ active, setActive, currentTheme }: {
+  active: number;
+  setActive: (value: number) => void;
+  currentTheme: typeof dailyThemes[number];
+}) {
+  const [activeSection, setActiveSection] = useState<Record<number, string>>({});
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+
+  const sectionLabels: Record<string, { short: string; color: string }> = {
+    intro: { short: "Introdução", color: "bg-blue-500/10 text-blue-600 border-blue-500/30" },
+    des1:  { short: "Dev. 1",     color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30" },
+    des2:  { short: "Dev. 2",     color: "bg-amber-500/10 text-amber-600 border-amber-500/30" },
+    conc:  { short: "Conclusão",  color: "bg-purple-500/10 text-purple-600 border-purple-500/30" },
+  };
+
+  return <><PageTitle eyebrow="Teoria em prática" title="Domine as competências" description="Para cada competência, pratique especificamente em cada parte da redação: Introdução, Desenvolvimento 1 e 2, e Conclusão." />
+
+  {/* Tema ativo do Laboratório */}
+  <div className={`mb-6 flex items-center gap-3 rounded-xl p-4 ${currentTheme.hot ? 'border border-orange-400/30 bg-orange-500/8' : 'border border-border bg-accent/40'}`}>
+    <div className={`grid size-10 shrink-0 place-items-center rounded-lg text-white ${currentTheme.hot ? 'bg-orange-500' : 'bg-primary'}`}>
+      {currentTheme.hot ? <span className="text-lg">🔥</span> : <FileText className="size-5" />}
+    </div>
+    <div className="min-w-0 flex-1">
+      <p className={`text-xs font-bold uppercase tracking-wide ${currentTheme.hot ? 'text-orange-600' : 'text-primary'}`}>Tema do laboratório — Dia {currentTheme.day}</p>
+      <p className="truncate font-semibold text-sm">{currentTheme.topic}</p>
+    </div>
+    <span className="shrink-0 rounded-full border border-border bg-background px-2 py-1 text-[10px] font-bold text-muted-foreground">Treino ativo</span>
+  </div>
+  <div className="space-y-4">
+    {competencyTraining.map((comp, i) => {
+      const currentSection = activeSection[i] ?? 'intro';
+      const currentSectionData = comp.sections.find(s => s.id === currentSection)!;
+      const answerKey = `${i}-${currentSection}`;
+      return (
+        <div key={comp.code} className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+          {/* Header */}
+          <button type="button" onClick={() => setActive(active === i ? -1 : i)} className="flex w-full items-center gap-4 p-5 text-left">
+            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-accent font-bold text-primary">{comp.code}</span>
+            <span className="flex-1">
+              <strong className="block">{comp.title}</strong>
+              <small className="text-muted-foreground">0 a 200 pontos</small>
+            </span>
+            <ChevronDown className={`size-5 transition-transform ${active === i ? 'rotate-180' : ''}`} />
+          </button>
+
+          {/* Expanded Content */}
+          {active === i && (
+            <div className="border-t border-border">
+              {/* Section Tabs */}
+              <div className="flex gap-2 overflow-x-auto border-b border-border bg-muted/30 px-5 py-3">
+                {comp.sections.map((section) => (
+                  <button
+                    key={section.id}
+                    type="button"
+                    onClick={() => setActiveSection(prev => ({ ...prev, [i]: section.id }))}
+                    className={`shrink-0 rounded-lg border px-4 py-1.5 text-sm font-semibold transition-all ${
+                      currentSection === section.id
+                        ? sectionLabels[section.id].color + ' shadow-sm'
+                        : 'border-transparent text-muted-foreground hover:bg-accent'
+                    }`}
+                  >
+                    {sectionLabels[section.id].short}
+                  </button>
+                ))}
+              </div>
+
+              {/* Theory + Exercise */}
+              <div className="px-5 py-6 md:px-8">
+                <div className="mb-4 flex items-start gap-3 rounded-xl bg-accent/60 p-4">
+                  <Lightbulb className="mt-0.5 size-5 shrink-0 text-primary" />
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wide text-primary mb-1">{currentSectionData.label} — teoria</p>
+                    <p className="text-sm leading-6 text-foreground">{currentSectionData.theory}</p>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-5">
+                  <strong className="flex items-center gap-2 text-sm text-foreground">
+                    <Play className="size-4 text-primary" />
+                    Exercício — {currentSectionData.label}
+                  </strong>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{currentSectionData.exercise(currentTheme.topic)}</p>
+                  <textarea
+                    value={answers[answerKey] ?? ''}
+                    onChange={(e) => setAnswers(prev => ({ ...prev, [answerKey]: e.target.value }))}
+                    placeholder={currentSectionData.placeholder}
+                    rows={4}
+                    className="mt-4 w-full resize-none rounded-lg border border-input bg-background p-3 text-sm leading-6 outline-none transition-all focus:ring-2 focus:ring-primary"
+                  />
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <span className="text-xs text-muted-foreground">{(answers[answerKey] ?? '').length} caracteres</span>
+                    <Button size="sm" className="rounded-lg gap-1.5">
+                      <Sparkles className="size-3.5" /> Verificar com IA
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    })}
+  </div>
+  </>;
 }
 
-function Repertory({ filter, setFilter }: { filter: string; setFilter: (value: string) => void }) {
+function Repertory({ filter, setFilter, currentTheme }: { filter: string; setFilter: (value: string) => void; currentTheme: typeof dailyThemes[number] }) {
   const filters = ["Todos", "Livros", "Filmes", "Leis"];
-  return <><PageTitle eyebrow="Banco de ideias" title="Repertório sociocultural" description="Referências legitimadas e explicadas para você usar com pertinência — sem decorar frases soltas." /><div className="mb-6 flex flex-wrap gap-2">{filters.map((item) => <Button key={item} variant={filter === item ? "default" : "outline"} onClick={() => setFilter(item)} className="rounded-full">{item}</Button>)}</div><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{repertories.filter((item) => filter === "Todos" || item.category === filter).map((item) => <article key={item.title} className="overflow-hidden rounded-xl border border-border bg-card shadow-sm"><img src={item.image} alt="" loading="lazy" width={768} height={960} className="aspect-[4/3] w-full object-cover" /><div className="p-5"><span className="text-xs font-bold uppercase text-primary">{item.category}</span><h2 className="mt-2 text-xl font-bold">{item.title}</h2><p className="mt-1 text-sm font-semibold text-muted-foreground">{item.author}</p><p className="mt-4 text-sm leading-6 text-muted-foreground">{item.body}</p><div className="mt-5 rounded-lg bg-accent p-3 text-xs text-accent-foreground"><Lightbulb className="mr-1 inline size-4" /> Dica: apresente, relacione e interprete a referência.</div></div></article>)}</div></>;
+  return <><PageTitle eyebrow="Banco de ideias" title="Repertório sociocultural" description="Referências legitimadas e explicadas para você usar com pertinência — sem decorar frases soltas." /><div className="mb-6 flex flex-wrap gap-2">{filters.map((item) => <Button key={item} variant={filter === item ? "default" : "outline"} onClick={() => setFilter(item)} className="rounded-full">{item}</Button>)}</div><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{currentTheme.repertories.filter((item) => filter === "Todos" || item.category === filter).map((item) => <article key={item.title} className="overflow-hidden rounded-xl border border-border bg-card shadow-sm"><img src={item.image} alt="" loading="lazy" width={768} height={960} className="aspect-[4/3] w-full object-cover" /><div className="p-5"><span className="text-xs font-bold uppercase text-primary">{item.category}</span><h2 className="mt-2 text-xl font-bold">{item.title}</h2><p className="mt-1 text-sm font-semibold text-muted-foreground">{item.author}</p><p className="mt-4 text-sm leading-6 text-muted-foreground">{item.body}</p><div className="mt-5 rounded-lg bg-accent p-3 text-xs text-accent-foreground"><Lightbulb className="mr-1 inline size-4" /> Dica: apresente, relacione e interprete a referência.</div></div></article>)}</div></>;
 }
 
-function Laboratory(props: { tab: "digital"|"photo"; setTab: (v:"digital"|"photo")=>void; text:string; setText:(v:string)=>void; stats:{words:number;chars:number;lines:number}; timer:boolean; setTimer:(v:boolean)=>void; preview:string|null; fileRef:React.RefObject<HTMLInputElement|null>; setPreview:(v:string|null)=>void; correcting:boolean; error:string; handleCorrection:()=>void; result:Correction|null; setResult:(v:Correction|null)=>void }) {
+function Laboratory(props: { tab: "digital"|"photo"; setTab: (v:"digital"|"photo")=>void; text:string; setText:(v:string)=>void; stats:{words:number;chars:number;lines:number}; timer:boolean; setTimer:(v:boolean)=>void; preview:string|null; fileRef:React.RefObject<HTMLInputElement|null>; setPreview:(v:string|null)=>void; correcting:boolean; error:string; handleCorrection:()=>void; result:Correction|null; setResult:(v:Correction|null)=>void; selectedDay: number; setSelectedDay: (v: number) => void }) {
+  const { preferences } = useUserPreferences();
+  const currentTheme = dailyThemes[props.selectedDay];
+
+  const handleSelectDay = (idx: number) => {
+    props.setSelectedDay(idx);
+    props.setText('');
+  };
+
   if (props.result) return <Feedback result={props.result} onBack={() => props.setResult(null)} />;
-  return <><PageTitle eyebrow="Hora de escrever" title="Laboratório de redação" description="Organize suas ideias, escreva no seu ritmo e receba uma análise pedagógica detalhada." /><div className="mb-5 inline-flex rounded-xl bg-muted p-1"><Button variant={props.tab === "digital" ? "default" : "ghost"} onClick={() => props.setTab("digital")} className="rounded-lg"><PenLine /> Redação digital</Button><Button variant={props.tab === "photo" ? "default" : "ghost"} onClick={() => props.setTab("photo")} className="rounded-lg"><Camera /> Redação escrita</Button></div>
-    {props.tab === "digital" ? <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4"><div className="flex items-center gap-4 text-xs font-semibold text-muted-foreground"><span>{props.stats.words} palavras</span><span>{props.stats.chars} caracteres</span><span>{props.stats.lines}/30 linhas</span></div><Button variant="outline" size="sm" onClick={() => props.setTimer(!props.timer)} className="rounded-lg"><Clock3 /> {props.timer ? "01:29:42" : "Ativar temporizador"}</Button></div><textarea value={props.text} onChange={(e) => props.setText(e.target.value)} placeholder="Comece pela sua tese. O que você defende sobre o tema?" className="min-h-[480px] w-full resize-none bg-card p-6 text-base leading-8 outline-none md:p-10" style={{ backgroundImage: "linear-gradient(to bottom, transparent 31px, var(--line) 32px)", backgroundSize: "100% 32px" }} /><div className="flex flex-col items-end gap-2 border-t border-border p-4"><Button size="lg" onClick={props.handleCorrection} disabled={props.correcting} className="h-12 rounded-xl px-6"><Sparkles /> {props.correcting ? "Analisando sua redação..." : "Corrigir com Inteligência Artificial"}</Button>{props.error && <p className="text-sm text-destructive">{props.error}</p>}</div></div> : <div className="rounded-xl border-2 border-dashed border-border bg-card p-8 text-center shadow-sm md:p-16"><input ref={props.fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => { const file=e.target.files?.[0]; if(file) props.setPreview(URL.createObjectURL(file)); }} />{props.preview ? <img src={props.preview} alt="Prévia da redação" className="mx-auto max-h-[520px] rounded-xl object-contain shadow-sm" /> : <><span className="mx-auto grid size-16 place-items-center rounded-full bg-accent text-primary"><UploadCloud className="size-7" /></span><h2 className="mt-5 text-xl font-bold">Envie uma foto nítida da sua redação</h2><p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">Posicione a folha inteira, evite sombras e confira se o texto está legível.</p></>}<div className="mt-6 flex flex-wrap justify-center gap-2"><Button className="rounded-xl" onClick={() => props.fileRef.current?.click()}><ImagePlus /> Escolher imagem</Button><Button variant="outline" className="rounded-xl" onClick={() => props.fileRef.current?.click()}><Camera /> Usar câmera</Button></div></div>}
+
+  return <>
+    <PageTitle eyebrow="Hora de escrever" title="Laboratório de redação" description={`A Inteligência Artificial avaliará no nível de exigência para ${preferences?.course || 'o seu curso'}. Escolha o tema do dia abaixo!`} />
+
+    {/* Daily Themes Strip */}
+    <div className="mb-6 rounded-2xl border border-border bg-card p-4 shadow-sm">
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-sm font-bold">📅 Trilha de temas — 14 dias</p>
+        <span className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-primary">{dailyThemes.filter(d => d.done).length}/{dailyThemes.length} concluídos</span>
+      </div>
+      <div className="flex gap-2 overflow-x-auto pb-2">
+        {dailyThemes.map((theme, idx) => {
+          const isCourseHot = !!preferences?.course && theme.courseHot.some(
+            c => preferences.course.toLowerCase().includes(c.toLowerCase()) || c.toLowerCase().includes(preferences.course.toLowerCase())
+          );
+          const isHot = theme.hot || isCourseHot;
+          const isSelected = selectedDay === idx;
+          return (
+            <button
+              key={theme.day}
+              type="button"
+              onClick={() => handleSelectDay(idx)}
+              className={`relative flex shrink-0 flex-col items-center gap-1 rounded-xl border px-3 py-2 text-center transition-all ${
+                isSelected
+                  ? 'border-primary bg-primary text-primary-foreground shadow-md'
+                  : theme.done
+                  ? 'border-success/30 bg-success/10 text-success'
+                  : isHot
+                  ? 'border-orange-400/40 bg-orange-500/5 text-foreground hover:bg-orange-500/10'
+                  : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:bg-accent'
+              }`}
+            >
+              {isHot && !theme.done && (
+                <span className="absolute -right-1.5 -top-1.5 text-base leading-none">🔥</span>
+              )}
+              <span className="text-[10px] font-bold uppercase tracking-wide opacity-70">{theme.label}</span>
+              <span className="text-lg font-black leading-none">{String(theme.day).padStart(2, '0')}</span>
+              {theme.done && !isSelected && <CheckCircle2 className="size-3.5 text-success" />}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Selected Theme Card */}
+      {(() => {
+        const isCourseHot = !!preferences?.course && currentTheme.courseHot.some(
+          c => preferences.course.toLowerCase().includes(c.toLowerCase()) || c.toLowerCase().includes(preferences.course.toLowerCase())
+        );
+        const isHot = currentTheme.hot || isCourseHot;
+        return (
+          <div className={`mt-3 rounded-xl p-4 ${isHot ? 'border border-orange-400/30 bg-orange-500/8' : 'bg-accent/60'}`}>
+            <div className="flex items-start gap-3">
+              <div className={`grid size-10 shrink-0 place-items-center rounded-lg text-primary-foreground ${isHot ? 'bg-orange-500' : 'bg-primary'}`}>
+                {isHot ? <span className="text-xl leading-none">🔥</span> : <FileText className="size-5" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className={`text-xs font-bold uppercase tracking-wide ${isHot ? 'text-orange-600' : 'text-primary'}`}>
+                    Tema do Dia {currentTheme.day}
+                  </p>
+                  {isHot && (
+                    <span className="rounded-full bg-orange-500/15 px-2 py-0.5 text-[10px] font-bold text-orange-600">
+                      {isCourseHot && currentTheme.hot
+                        ? `Alta chance no ENEM e para ${preferences?.course}`
+                        : isCourseHot
+                        ? `Alta chance para ${preferences?.course}`
+                        : 'Alta chance no ENEM'}
+                    </span>
+                  )}
+                </div>
+                <p className="mt-0.5 font-semibold leading-snug">{currentTheme.topic}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{currentTheme.hint}</p>
+              </div>
+              <Button size="sm" variant="outline" className={`shrink-0 rounded-lg ${isHot ? 'border-orange-400/40 hover:bg-orange-500/10' : ''}`} onClick={() => props.setText('')}>
+                Comecar
+              </Button>
+            </div>
+            {isHot && currentTheme.hotReason && (
+              <div className="mt-3 flex items-start gap-2 rounded-lg bg-orange-500/10 px-3 py-2">
+                <span className="text-sm">📊</span>
+                <p className="text-xs leading-5 text-orange-700">{currentTheme.hotReason}</p>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+    </div>
+
+    <div className="mb-5 inline-flex rounded-xl bg-muted p-1">
+      <Button variant={props.tab === "digital" ? "default" : "ghost"} onClick={() => props.setTab("digital")} className="rounded-lg"><PenLine /> Redação digital</Button>
+      <Button variant={props.tab === "photo" ? "default" : "ghost"} onClick={() => props.setTab("photo")} className="rounded-lg"><Camera /> Redação escrita</Button>
+    </div>
+    {props.tab === "digital" ? <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4"><div className="flex items-center gap-4 text-xs font-semibold text-muted-foreground"><span>{props.stats.words} palavras</span><span>{props.stats.chars} caracteres</span><span>{props.stats.lines}/30 linhas</span></div><Button variant="outline" size="sm" onClick={() => props.setTimer(!props.timer)} className="rounded-lg"><Clock3 /> {props.timer ? "01:29:42" : "Ativar temporizador"}</Button></div><textarea value={props.text} onChange={(e) => props.setText(e.target.value)} placeholder={`Tema: "${currentTheme.topic}"
+
+Comece pela sua tese. O que você defende sobre este tema?`} className="min-h-[480px] w-full resize-none bg-card p-6 text-base leading-8 outline-none md:p-10" style={{ backgroundImage: "linear-gradient(to bottom, transparent 31px, var(--line) 32px)", backgroundSize: "100% 32px" }} /><div className="flex flex-col items-end gap-2 border-t border-border p-4"><Button size="lg" onClick={props.handleCorrection} disabled={props.correcting} className="h-12 rounded-xl px-6"><Sparkles /> {props.correcting ? "Analisando com rigor adaptado..." : "Corrigir com Inteligência Artificial"}</Button>{props.error && <p className="text-sm text-destructive">{props.error}</p>}</div></div> : <div className="rounded-xl border-2 border-dashed border-border bg-card p-8 text-center shadow-sm md:p-16"><input ref={props.fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => { const file=e.target.files?.[0]; if(file) props.setPreview(URL.createObjectURL(file)); }} />{props.preview ? <img src={props.preview} alt="Prévia da redação" className="mx-auto max-h-[520px] rounded-xl object-contain shadow-sm" /> : <><span className="mx-auto grid size-16 place-items-center rounded-full bg-accent text-primary"><UploadCloud className="size-7" /></span><h2 className="mt-5 text-xl font-bold">Envie uma foto nítida da sua redação</h2><p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">Posicione a folha inteira, evite sombras e confira se o texto está legível.</p></>}<div className="mt-6 flex flex-wrap justify-center gap-2"><Button className="rounded-xl" onClick={() => props.fileRef.current?.click()}><ImagePlus /> Escolher imagem</Button><Button variant="outline" className="rounded-xl" onClick={() => props.fileRef.current?.click()}><Camera /> Usar câmera</Button></div></div>}
   </>;
 }
 
