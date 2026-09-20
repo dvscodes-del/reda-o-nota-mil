@@ -71,6 +71,14 @@ export function StudentProfile({
     if (data) setSearchResults(data);
   };
 
+  // Busca inteligente em tempo real com debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      handleSearch();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   // Carrega o perfil selecionado da busca
   const loadProfile = async (profile: Profile) => {
     setViewingProfile({
