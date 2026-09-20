@@ -118,17 +118,8 @@ export function StudentProfile({
     }
   };
 
-  // Redações recentes mockadas (ideal seria carregar do banco de dados)
-  const recentEssays = [
-    {
-      title: "Desafios do envelhecimento populacional",
-      author: `${viewingProfile?.name} · 920 pontos`,
-      intro: "No filme 'Up - Altas Aventuras', a solidão da terceira idade é retratada de forma sensível...",
-      text: ["No filme 'Up - Altas Aventuras'..."],
-      date: "Há 2 dias",
-      score: 920
-    }
-  ];
+  // Redações recentes (nenhuma ainda)
+  const recentEssays: any[] = [];
 
   if (!viewingProfile) return null;
 
@@ -220,37 +211,40 @@ export function StudentProfile({
 
       <div className="mb-10">
         <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><Medal className="size-5 text-primary" /> Conquistas</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-4 rounded-xl border border-border bg-card shadow-sm flex flex-col items-center text-center">
-            <div className="p-3 bg-yellow-100 text-yellow-600 rounded-full mb-3"><Award className="size-8" /></div>
-            <h4 className="font-bold text-sm">Redação Ouro</h4>
-            <p className="text-xs text-muted-foreground mt-1">Atingiu 900+ pontos em 3 redações seguidas.</p>
+        <div className="bg-muted/50 rounded-xl p-8 border border-dashed border-border text-center flex flex-col items-center justify-center">
+          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+            <Award className="w-8 h-8 text-muted-foreground" />
           </div>
-          <div className="p-4 rounded-xl border border-border bg-card shadow-sm flex flex-col items-center text-center">
-            <div className="p-3 bg-purple-100 text-purple-600 rounded-full mb-3"><BrainCircuit className="size-8" /></div>
-            <h4 className="font-bold text-sm">Argumentador Nato</h4>
-            <p className="text-xs text-muted-foreground mt-1">Tirou nota máxima na Competência 3.</p>
-          </div>
+          <h3 className="text-foreground font-semibold text-lg">Em breve!</h3>
+          <p className="text-muted-foreground text-sm max-w-sm mt-1">
+            Nenhuma conquista desbloqueada ainda. Continue praticando para ganhar emblemas!
+          </p>
         </div>
       </div>
 
       <div>
         <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><FileText className="size-5 text-primary" /> Portfólio de Redações</h3>
-        <div className="grid gap-5 md:grid-cols-2">
-          {recentEssays.map((essay) => (
-            <article key={essay.title} className="group relative rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md">
-              <div className="mb-4 flex items-center justify-between">
-                <span className="rounded-full bg-accent px-3 py-1 text-xs font-bold text-primary">{essay.date}</span>
-                <span className="text-xl font-black text-primary">{essay.score} pts</span>
-              </div>
-              <h4 className="text-lg font-bold leading-snug group-hover:text-primary mb-2">{essay.title}</h4>
-              <p className="line-clamp-3 text-sm leading-6 text-muted-foreground mb-6">{essay.intro}</p>
-              <Button onClick={() => onOpen(essay)} variant="secondary" className="w-full rounded-xl">
-                Ler redação completa <ArrowRight className="ml-2 size-4" />
-              </Button>
-            </article>
-          ))}
-        </div>
+        {recentEssays.length > 0 ? (
+          <div className="grid gap-5 md:grid-cols-2">
+            {recentEssays.map((essay) => (
+              <article key={essay.title} className="group relative rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md">
+                <div className="mb-4 flex items-center justify-between">
+                  <span className="rounded-full bg-accent px-3 py-1 text-xs font-bold text-primary">{essay.date}</span>
+                  <span className="text-xl font-black text-primary">{essay.score} pts</span>
+                </div>
+                <h4 className="text-lg font-bold leading-snug group-hover:text-primary mb-2">{essay.title}</h4>
+                <p className="line-clamp-3 text-sm leading-6 text-muted-foreground mb-6">{essay.intro}</p>
+                <Button onClick={() => onOpen(essay)} variant="secondary" className="w-full rounded-xl">
+                  Ler redação completa <ArrowRight className="ml-2 size-4" />
+                </Button>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-muted/50 rounded-xl p-8 border border-dashed border-border text-center flex flex-col items-center justify-center">
+            <p className="text-muted-foreground text-sm">Nenhuma redação publicada ainda.</p>
+          </div>
+        )}
       </div>
     </>
   );

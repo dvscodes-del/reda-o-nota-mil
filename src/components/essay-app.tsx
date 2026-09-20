@@ -341,9 +341,9 @@ export function EssayApp() {
           </nav>
           <div className="mt-auto space-y-4">
             <div className="rounded-xl bg-sidebar-accent p-4">
-              <div className="mb-2 flex items-center gap-2 text-sm font-semibold"><Flame className="text-highlight" /> 7 dias de sequência</div>
-              <Progress value={70} className="bg-background" />
-              <p className="mt-2 text-xs text-muted-foreground">Mais 3 dias para sua próxima conquista.</p>
+              <div className="mb-2 flex items-center gap-2 text-sm font-semibold"><Flame className="text-highlight opacity-50" /> 0 dias de sequência</div>
+              <Progress value={0} className="bg-background" />
+              <p className="mt-2 text-xs text-muted-foreground">Escreva hoje para começar sua sequência.</p>
             </div>
             <Button variant="ghost" onClick={async () => { await signOut(); navigate({ to: '/login' }); }} className="w-full justify-start rounded-xl px-3 text-destructive hover:bg-destructive/10 hover:text-destructive">
               <LogOut className="mr-2 size-4" /> Sair do Perfil
