@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import type { LucideIcon } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   AlertCircle,
@@ -193,12 +194,17 @@ function PageTitle({ eyebrow, title, description }: { eyebrow: string; title: st
 }
 
 function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
+  const dashboardStats: Array<[string, string, LucideIcon]> = [
+    ["12", "Redações enviadas", FileText],
+    ["840", "Média atual", TrendingUp],
+    ["+80", "Evolução recente", BrainCircuit],
+  ];
   return <><PageTitle eyebrow="Seu espaço de evolução" title="Boa tarde, Davi!" description="Cada parágrafo é um passo. Continue construindo sua melhor nota." />
     <section className="relative overflow-hidden rounded-2xl bg-primary p-6 text-primary-foreground shadow-sm md:p-10">
       <div className="absolute right-8 top-1/2 hidden -translate-y-1/2 opacity-15 md:block"><Quote className="size-52" /></div>
       <div className="relative max-w-3xl"><span className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary-foreground/15 px-3 py-1 text-xs font-bold uppercase"><Sparkles className="size-3" /> Desafio do dia · +120 XP</span><h2 className="text-2xl font-bold leading-tight md:text-4xl">Desafios para o enfrentamento da insegurança alimentar no Brasil contemporâneo</h2><p className="mt-4 text-primary-foreground/75">Pratique repertório produtivo, construção de tese e proposta de intervenção completa.</p><Button onClick={() => goTo("laboratorio")} className="mt-7 rounded-xl bg-background text-foreground hover:bg-background/90">Começar a escrever <ArrowRight /></Button></div>
     </section>
-    <section className="mt-6 grid gap-4 sm:grid-cols-3">{[["12", "Redações enviadas", FileText], ["840", "Média atual", TrendingUp], ["+80", "Evolução recente", BrainCircuit]].map(([value,label,Icon]) => <div key={label as string} className="rounded-xl border border-border bg-card p-5 shadow-sm"><div className="mb-5 flex items-center justify-between"><span className="grid size-10 place-items-center rounded-lg bg-accent text-primary"><Icon className="size-5" /></span><span className="text-xs font-semibold text-success">este mês</span></div><strong className="text-3xl">{value}</strong><p className="mt-1 text-sm text-muted-foreground">{label}</p></div>)}</section>
+    <section className="mt-6 grid gap-4 sm:grid-cols-3">{dashboardStats.map(([value,label,Icon]) => <div key={label} className="rounded-xl border border-border bg-card p-5 shadow-sm"><div className="mb-5 flex items-center justify-between"><span className="grid size-10 place-items-center rounded-lg bg-accent text-primary"><Icon className="size-5" /></span><span className="text-xs font-semibold text-success">este mês</span></div><strong className="text-3xl">{value}</strong><p className="mt-1 text-sm text-muted-foreground">{label}</p></div>)}</section>
     <section className="mt-6 grid gap-6 lg:grid-cols-[1.4fr_1fr]"><div className="rounded-xl border border-border bg-card p-6 shadow-sm"><div className="mb-8 flex items-center justify-between"><div><h3 className="font-bold">Sua evolução</h3><p className="text-sm text-muted-foreground">Últimas cinco redações</p></div><span className="rounded-lg bg-accent px-3 py-1 text-xs font-semibold text-primary">+10,5%</span></div><div className="flex h-44 items-end justify-between gap-3 border-b border-border px-2">{[620,700,680,780,840].map((score,i) => <div key={score} className="flex h-full flex-1 flex-col justify-end gap-2 text-center"><span className="text-xs font-bold">{score}</span><div className="rounded-t-md bg-primary/20 transition-colors hover:bg-primary" style={{height: `${score/10}%`}} /><span className="pb-2 text-xs text-muted-foreground">R{i+1}</span></div>)}</div></div><div className="rounded-xl border border-border bg-card p-6 shadow-sm"><h3 className="font-bold">Próximo objetivo</h3><p className="mt-1 text-sm text-muted-foreground">Chegue à média 900</p><div className="my-6 grid place-items-center"><div className="grid size-32 place-items-center rounded-full border-[12px] border-accent"><div className="text-center"><strong className="text-2xl">840</strong><small className="block text-muted-foreground">de 900</small></div></div></div><Progress value={84} /><p className="mt-3 text-center text-xs text-muted-foreground">Você está a 60 pontos da meta.</p></div></section>
   </>;
 }
