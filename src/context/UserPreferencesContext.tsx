@@ -55,10 +55,19 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
             age: data.age || undefined,
             full_name: data.full_name || '',
             avatar_url: data.avatar_url || '',
-            hasCompletedOnboarding: data.has_completed_onboarding || false,
+            hasCompletedOnboarding: data.has_completed_onboarding || localStorage.getItem(`onboarding_${user.id}`) === 'true',
           });
         } else {
-          setPreferences(null);
+          // Fallback if no row exists yet
+          setPreferences({
+            targetScore: '900',
+            state: '',
+            college: '',
+            course: '',
+            full_name: user.user_metadata?.full_name || '',
+            avatar_url: user.user_metadata?.avatar_url || '',
+            hasCompletedOnboarding: localStorage.getItem(`onboarding_${user.id}`) === 'true',
+          });
         }
       } catch (err) {
         console.error('Failed to fetch profile', err);
@@ -88,7 +97,13 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
 
       const { error } = await supabase.from('profiles').upsert(updates);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error saving profile to Supabase (falling back to local):', error);
+        // We don't throw here to ensure local state is updated and the user isn't blocked
+      }
+
+      // Save locally as a robust fallback
+      localStorage.setItem(`onboarding_${user.id}`, 'true');
 
       setPreferences((prev) => ({
         ...prev,
@@ -98,8 +113,8 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
       }));
       
     } catch (error: any) {
-      console.error('Error saving profile:', error);
-      toast.error(`Erro ao salvar perfil: ${error.message || 'Erro desconhecido'}`);
+      console.error('Unexpected error in savePreferences:', error);
+      toast.error(`Erro inesperado ao salvar perfil`);
     }
   };
 
