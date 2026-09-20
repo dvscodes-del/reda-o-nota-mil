@@ -30,6 +30,15 @@ import {
   TrendingUp,
   UploadCloud,
   X,
+  User,
+  MapPin,
+  Calendar,
+  Badge,
+  Medal,
+  Search,
+  UserPlus,
+  MessageCircle,
+  Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -53,16 +62,21 @@ import constituicaoImage from "@/assets/repertorio-constituicao.jpg";
 import geografiaImage from "@/assets/repertorio-geografia.jpg";
 import cinemaImage from "@/assets/repertorio-cinema.jpg";
 
-type Section = "dashboard" | "mural" | "competencias" | "repertorio" | "laboratorio";
+type Section = "dashboard" | "mural" | "competencias" | "repertorio" | "laboratorio" | "curso" | "perfil" | "mensagens";
 type Correction = Awaited<ReturnType<typeof correctEssay>>;
 
 const navItems = [
   { id: "dashboard" as const, label: "Visão geral", icon: LayoutDashboard },
+  { id: "perfil" as const, label: "Meu Perfil", icon: User },
+  { id: "mensagens" as const, label: "Mensagens", icon: MessageCircle },
+  { id: "curso" as const, label: "Seu Curso", icon: TrendingUp },
   { id: "mural" as const, label: "Mural nota mil", icon: Award },
   { id: "competencias" as const, label: "Competências", icon: Target },
   { id: "repertorio" as const, label: "Repertório", icon: BookOpen },
   { id: "laboratorio" as const, label: "Laboratório", icon: PenLine },
 ];
+
+import { dailyThemes } from "../data/themes";
 
 const competencyTraining: Array<{
   code: string;
@@ -235,211 +249,9 @@ const competencyTraining: Array<{
 
 
 
-// Dados baseados no historico do ENEM (2015-2023) e previsoes de especialistas para 2025
-// Fontes: INEP, CNN Brasil, Bernoulli, Gran Cursos, Estacio
-const dailyThemes = [
-  {
-    day: 1, done: true, label: "Seg",
-    hot: true, hotReason: "ENEM 2020 abordou doencas mentais. Especialistas apontam saude mental juvenil como tema quente para 2025 (CNN Brasil, Gran Cursos).",
-    courseHot: ["Medicina", "Psicologia", "Enfermagem", "Biomedicina", "Farmacia"],
-    topic: "O impacto da ansiedade e depressao na populacao jovem brasileira",
-    hint: "Explore pressao escolar, redes sociais, pandemia, estigma e politicas de saude mental.",
-    repertories: [
-      { category: "Leis", title: "Constituição Federal", author: "Artigo 196", image: constituicaoImage, body: "A saúde é direito de todos e dever do Estado, garantido mediante políticas sociais e econômicas." },
-      { category: "Livros", title: "A Sociedade do Cansaço", author: "Byung-Chul Han", image: geografiaImage, body: "Aborda como a cobrança excessiva e a positividade tóxica levam a transtornos mentais, como a depressão." },
-      { category: "Filmes", title: "Divertida Mente", author: "Pete Docter", image: cinemaImage, body: "Ilustra a importância de lidar com todas as emoções, incluindo a tristeza, desmistificando o estigma sobre saúde mental." }
-    ]
-  },
-  {
-    day: 2, done: true, label: "Ter",
-    hot: true, hotReason: "ENEM 2018 tratou de controle de dados na internet. IA e regulacao tecnologica estao no topo das previsoes de especialistas para 2025 (Bernoulli, Sistema Anglo).",
-    courseHot: ["Ciencia da Computacao", "Direito", "Administracao", "Engenharia de Producao", "Economia"],
-    topic: "Desafios para a regulacao da inteligencia artificial no Brasil",
-    hint: "Aborde etica, automacao do trabalho, privacidade, deepfakes e responsabilidade do Estado.",
-    repertories: [
-      { category: "Leis", title: "Marco Civil da Internet", author: "Lei nº 12.965/2014", image: constituicaoImage, body: "Estabelece princípios, garantias, direitos e deveres para o uso da Internet no Brasil, essencial para debater regulação tecnológica." },
-      { category: "Livros", title: "1984", author: "George Orwell", image: geografiaImage, body: "Ficção distópica que alerta para os perigos do controle excessivo da informação e vigilância estatal/corporativa." },
-      { category: "Filmes", title: "O Dilema das Redes", author: "Jeff Orlowski", image: cinemaImage, body: "Documentário que expõe como algoritmos moldam comportamentos, útil para discutir os riscos da IA sem regulação." }
-    ]
-  },
-  {
-    day: 3, done: false, label: "Qua",
-    hot: true, hotReason: "ENEM 2021 tratou de invisibilidade e cidadania. Inclusao de pessoas com deficiencia e grupos marginalizados e eixo recorrente do INEP. Alta chance para 2025.",
-    courseHot: ["Pedagogia", "Servico Social", "Psicologia", "Letras", "Direito"],
-    topic: "Barreiras para a inclusao de pessoas com deficiencia no mercado de trabalho brasileiro",
-    hint: "Use a Lei Brasileira de Inclusao (Lei 13.146/2015), dados do IBGE e proponha politicas concretas.",
-    repertories: [
-      { category: "Leis", title: "Lei Brasileira de Inclusão", author: "Lei nº 13.146/2015", image: constituicaoImage, body: "Assegura e promove, em condições de igualdade, os direitos da pessoa com deficiência, inclusive no mercado de trabalho." },
-      { category: "Livros", title: "O Aleijadinho", author: "História", image: geografiaImage, body: "Antônio Francisco Lisboa superou barreiras físicas no Brasil colonial, provando o potencial produtivo da pessoa com deficiência." },
-      { category: "Filmes", title: "Intocáveis", author: "Olivier Nakache", image: cinemaImage, body: "Demonstra como a adaptação e a quebra de preconceitos são essenciais para a integração social e profissional de pessoas com deficiência." }
-    ]
-  },
-  {
-    day: 4, done: false, label: "Qui",
-    hot: true, hotReason: "COP30 sera no Brasil em 2025. Meio ambiente e sustentabilidade estao no topo das previsoes de Bernoulli, UNEX e Estacio para o proximo ENEM.",
-    courseHot: ["Ciencias Biologicas", "Medicina Veterinaria", "Relacoes Internacionais", "Engenharia Ambiental", "Direito"],
-    topic: "Desafios para o Brasil na transicao para uma economia de baixo carbono",
-    hint: "Relacione COP30, desmatamento, combustiveis fosseis, transicao energetica e compromissos internacionais.",
-    repertories: [
-      { category: "Leis", title: "Acordo de Paris", author: "ONU (2015)", image: constituicaoImage, body: "Tratado internacional sobre mudanças climáticas, cujo objetivo é limitar o aquecimento global, exigindo transição energética dos países." },
-      { category: "Livros", title: "Ideias para Adiar o Fim do Mundo", author: "Ailton Krenak", image: geografiaImage, body: "Critica o modelo predatório de desenvolvimento econômico e propõe novas formas de relação com a natureza." },
-      { category: "Filmes", title: "Wall-E", author: "Pixar", image: cinemaImage, body: "Ilustra um futuro distópico arruinado pelo consumismo extremo e pela falta de preservação ambiental." }
-    ]
-  },
-  {
-    day: 5, done: false, label: "Sex",
-    hot: true, hotReason: "ENEM 2022 abordou povos tradicionais. O INEP tem padrao de tratar grupos invisiveis e minorias. Populacao em situacao de rua foi citada por Globo e Gran Cursos como tendencia 2025.",
-    courseHot: ["Servico Social", "Direito", "Psicologia", "Arquitetura e Urbanismo"],
-    topic: "Desafios para garantir o direito a moradia digna a populacao em situacao de rua no Brasil",
-    hint: "Use dados do IPEA, Constituicao Federal Art. 6, e proponha acoes integradas entre Estado e sociedade civil.",
-    repertories: [
-      { category: "Leis", title: "Constituição Federal", author: "Artigo 6º", image: constituicaoImage, body: "Garante a moradia como um direito social fundamental, evidenciando a inconstitucionalidade da falta de habitação digna." },
-      { category: "Livros", title: "Quarto de Despejo", author: "Carolina Maria de Jesus", image: geografiaImage, body: "Retrata a crua realidade da favela e a luta diária pela sobrevivência em condições de extrema vulnerabilidade habitacional." },
-      { category: "Filmes", title: "Parasita", author: "Bong Joon Ho", image: cinemaImage, body: "Apresenta a profunda desigualdade habitacional e social, servindo de paralelo para a segregação espacial no Brasil." }
-    ]
-  },
-  {
-    day: 6, done: false, label: "Sab",
-    hot: true, hotReason: "ENEM 2018 tratou de manipulacao de dados. Desinformacao e privacidade digital sao apontados por CNN Brasil e Bernoulli como os temas mais previsiveis para 2025.",
-    courseHot: ["Jornalismo", "Relacoes Internacionais", "Direito", "Ciencia da Computacao"],
-    topic: "A disseminacao de fake news e seus impactos na democracia brasileira",
-    hint: "Aborde algoritmos, camara de eco, erosao da confianca nas instituicoes e educacao midiatica.",
-    repertories: [
-      { category: "Leis", title: "Código Eleitoral Brasileiro", author: "Lei nº 4.737/1965", image: constituicaoImage, body: "Prevê punições para a disseminação de fatos inverídicos na propaganda eleitoral, útil para abordar impactos políticos das fake news." },
-      { category: "Livros", title: "A Máquina do Ódio", author: "Patrícia Campos Mello", image: geografiaImage, body: "Investiga o uso de redes sociais para campanhas de desinformação e ataques a jornalistas e instituições democráticas." },
-      { category: "Filmes", title: "Privacidade Hackeada", author: "Karim Amer", image: cinemaImage, body: "Mostra como o uso indevido de dados e a disseminação de informações falsas podem manipular eleições e fragilizar democracias." }
-    ]
-  },
-  {
-    day: 7, done: false, label: "Dom",
-    hot: false, hotReason: "",
-    courseHot: ["Administracao", "Economia", "Direito", "Engenharia de Producao"],
-    topic: "Desafios para o combate ao trabalho infantil no Brasil",
-    hint: "Use dados da OIT e do IBGE sobre trabalho infantil. Relacione a evasao escolar e o ciclo de pobreza.",
-    repertories: [
-      { category: "Leis", title: "Estatuto da Criança e do Adolescente (ECA)", author: "Artigo 60", image: constituicaoImage, body: "Proíbe qualquer trabalho a menores de 14 anos, exceto na condição de aprendiz, visando proteger a infância." },
-      { category: "Livros", title: "Capitães da Areia", author: "Jorge Amado", image: geografiaImage, body: "Retrata a vida de crianças abandonadas que precisam lutar pela sobrevivência nas ruas, refletindo a marginalização e roubo da infância." },
-      { category: "Filmes", title: "Central do Brasil", author: "Walter Salles", image: cinemaImage, body: "O personagem Josué expõe a vulnerabilidade da criança em situação de rua, à mercê da violência e da necessidade de trabalhar cedo." }
-    ]
-  },
-  {
-    day: 8, done: false, label: "Seg",
-    hot: true, hotReason: "ENEM 2023 abordou invisibilidade do trabalho da mulher. O INEP tem padrao de retornar ao eixo de genero. Etarismo e violencia contra idosos surgem nas previsoes de Gran Cursos e Estacio.",
-    courseHot: ["Servico Social", "Medicina", "Enfermagem", "Direito", "Psicologia"],
-    topic: "O envelhecimento populacional e os desafios para o cuidado do idoso no Brasil",
-    hint: "Use dados do IBGE sobre envelhecimento, o Estatuto do Idoso (Lei 10.741/2003) e proponha politicas de saude e assistencia.",
-    repertories: [
-      { category: "Leis", title: "Estatuto do Idoso", author: "Lei nº 10.741/2003", image: constituicaoImage, body: "Assegura os direitos dos idosos, priorizando saúde, convívio familiar, e coibindo o abandono e o etarismo." },
-      { category: "Livros", title: "A Velhice", author: "Simone de Beauvoir", image: geografiaImage, body: "Trata da marginalização dos idosos na sociedade capitalista, onde perdem valor social ao deixarem de ser força produtiva." },
-      { category: "Filmes", title: "Up: Altas Aventuras", author: "Pixar", image: cinemaImage, body: "A solidão do protagonista Sr. Fredricksen levanta o debate sobre o abandono afetivo e o isolamento na terceira idade." }
-    ]
-  },
-  {
-    day: 9, done: false, label: "Ter",
-    hot: true, hotReason: "O INEP abordou desigualdade regional no ENEM 2020 digital. Analfabetismo funcional e desigualdade educacional sao citados por Bernoulli e Quero Bolsa como temas de alta probabilidade para 2025.",
-    courseHot: ["Pedagogia", "Letras", "Historia", "Psicologia", "Servico Social"],
-    topic: "Desafios para o combate ao analfabetismo funcional no Brasil",
-    hint: "Diferencie analfabetismo absoluto de funcional. Use dados do IBGE e explore o papel da escola, familia e politicas publicas.",
-    repertories: [
-      { category: "Leis", title: "Plano Nacional de Educação (PNE)", author: "Meta 9", image: constituicaoImage, body: "Determina a erradicação do analfabetismo absoluto e a redução expressiva do analfabetismo funcional no país." },
-      { category: "Livros", title: "Pedagogia do Oprimido", author: "Paulo Freire", image: geografiaImage, body: "Defende uma educação crítica, onde a leitura de mundo precede a leitura da palavra, opondo-se à educação 'bancária'." },
-      { category: "Filmes", title: "O Leitor", author: "Stephen Daldry", image: cinemaImage, body: "Mostra a vergonha e as severas limitações sociais enfrentadas por uma personagem que esconde ser analfabeta." }
-    ]
-  },
-  {
-    day: 10, done: false, label: "Qua",
-    hot: false, hotReason: "",
-    courseHot: ["Medicina", "Nutricao", "Enfermagem", "Engenharia Civil", "Ciencias Biologicas"],
-    topic: "A crise hidrica e o acesso a agua potavel no Brasil",
-    hint: "Relacione saneamento basico, Agenda 2030 da ONU, desigualdade regional e mudancas climaticas.",
-    repertories: [
-      { category: "Leis", title: "Novo Marco do Saneamento Básico", author: "Lei 14.026/2020", image: constituicaoImage, body: "Estabelece metas de universalização, visando garantir que 99% da população tenha acesso a água potável até 2033." },
-      { category: "Livros", title: "Vidas Secas", author: "Graciliano Ramos", image: geografiaImage, body: "A jornada de retirantes fugindo da seca expõe a vulnerabilidade humana frente à escassez de água e negligência estatal." },
-      { category: "Filmes", title: "O Menino que Descobriu o Vento", author: "Chiwetel Ejiofor", image: cinemaImage, body: "Exemplifica como a falta de água gera miséria e como a inovação é essencial para a sobrevivência." }
-    ]
-  },
-  {
-    day: 11, done: false, label: "Qui",
-    hot: true, hotReason: "ENEM 2019 tratou de acesso a cinema (cultura). Democratizacao da cultura e acesso ao lazer voltam periodicamente. Vicio em telas e jogos de azar online sao tendencia forte para 2025 (My Study Bay, Gran Cursos).",
-    courseHot: ["Psicologia", "Medicina", "Pedagogia", "Jornalismo", "Letras"],
-    topic: "Os riscos do vicio em jogos de azar online (bets) para a saude mental e financeira dos brasileiros",
-    hint: "Aborde a explosao das bets no Brasil, populacoes vulneraveis, regulacao e o papel do Estado na protecao social.",
-    repertories: [
-      { category: "Leis", title: "Código de Defesa do Consumidor", author: "Lei nº 8.078/1990", image: constituicaoImage, body: "Pode ser citado para defender a necessidade de proteger populações vulneráveis de publicidade abusiva das plataformas de apostas." },
-      { category: "Livros", title: "O Jogador", author: "Fiódor Dostoiévski", image: geografiaImage, body: "Retrata de forma psicológica e realista a obsessão, a compulsão e a ruína financeira gerada pelo vício em jogos." },
-      { category: "Filmes", title: "Joias Brutas", author: "Irmãos Safdie", image: cinemaImage, body: "Demonstra o efeito cascata do vício em apostas esportivas, destruindo relações familiares, financeiras e a própria vida do protagonista." }
-    ]
-  },
-  {
-    day: 12, done: false, label: "Sex",
-    hot: false, hotReason: "",
-    courseHot: ["Direito", "Servico Social", "Historia", "Psicologia"],
-    topic: "O encarceramento em massa e o ciclo de violencia no Brasil",
-    hint: "Aborde superlotacao carceraria, racismo estrutural, falta de ressocializacao e alternativas penais.",
-    repertories: [
-      { category: "Leis", title: "Lei de Execução Penal", author: "Lei nº 7.210/1984", image: constituicaoImage, body: "Garante que a pena tenha caráter ressocializador, direito que é frequentemente violado devido à superlotação carcerária." },
-      { category: "Livros", title: "Vigiar e Punir", author: "Michel Foucault", image: geografiaImage, body: "Analisa como as prisões frequentemente falham em corrigir, funcionando mais como instrumentos de controle de classes indesejadas." },
-      { category: "Filmes", title: "Carandiru", author: "Héctor Babenco", image: cinemaImage, body: "Expõe as condições desumanas, a violação de direitos humanos e a falência do sistema prisional brasileiro." }
-    ]
-  },
-  {
-    day: 13, done: false, label: "Sab",
-    hot: true, hotReason: "ENEM 2017 abordou formacao educacional de surdos. O padrao do INEP e tratar grupos especificos com necessidades de acessibilidade. Inclusao digital e letramento midiatico sao previsao forte para 2025 (Determinante, Estacio).",
-    courseHot: ["Pedagogia", "Ciencia da Computacao", "Letras", "Psicologia", "Servico Social"],
-    topic: "Desafios para a inclusao digital de idosos e populacoes vulneraveis no Brasil",
-    hint: "Explore a exclusao digital como nova forma de desigualdade social, acesso a servicos publicos e o papel do Estado e familias.",
-    repertories: [
-      { category: "Leis", title: "Marco Civil da Internet", author: "Lei nº 12.965/2014", image: constituicaoImage, body: "Estabelece que o acesso à internet é essencial para o exercício da cidadania, tornando a exclusão digital uma violação de direitos." },
-      { category: "Livros", title: "Modernidade Líquida", author: "Zygmunt Bauman", image: geografiaImage, body: "A rápida fluidez tecnológica margina aqueles (como os idosos) que não conseguem acompanhar as constantes mudanças no mundo digital." },
-      { category: "Filmes", title: "Eu, Daniel Blake", author: "Ken Loach", image: cinemaImage, body: "Um homem idoso enfrenta um sistema burocrático totalmente digitalizado para acessar seus direitos, ilustrando o apagamento pela exclusão digital." }
-    ]
-  },
-  {
-    day: 14, done: false, label: "Dom",
-    hot: true, hotReason: "ENEM 2022 abordou povos tradicionais/indigenas. A demarcacao de terras indigenas e preservacao cultural voltaram ao debate nacional em 2024-2025, sendo apontados por Bernoulli e CNN Brasil como tema quente.",
-    courseHot: ["Relacoes Internacionais", "Direito", "Historia", "Ciencias Biologicas", "Servico Social"],
-    topic: "Desafios para a preservacao da cultura e dos direitos dos povos indigenas no Brasil",
-    hint: "Use a Constituicao de 1988 (Art. 231), dados de desmatamento e conflitos por terra, e aborde o papel do Estado e organismos internacionais.",
-    repertories: [
-      { category: "Leis", title: "Constituição Federal", author: "Artigo 231", image: constituicaoImage, body: "Reconhece aos índios sua organização social, costumes, línguas, crenças e o direito originário sobre as terras que ocupam." },
-      { category: "Livros", title: "A Queda do Céu", author: "Davi Kopenawa", image: geografiaImage, body: "Relato xamânico que expõe a exploração garimpeira, as doenças trazidas pelos não-indígenas e a riqueza cosmológica Yanomami." },
-      { category: "Filmes", title: "A Febre", author: "Maya Da-Rin", image: cinemaImage, body: "Mostra o choque cultural e a marginalização de um indígena que vive na cidade, dividido entre o mundo urbano e suas tradições." }
-    ]
-  }
-];
+// Daily Themes are imported from src/data/themes.ts
 
-const essays = [
-  {
-    title: "A persistência da violência contra a mulher",
-    author: "Mariana S. · ENEM 2023",
-    intro: "Na obra Cidadão de Papel, Gilberto Dimenstein denuncia a distância entre os direitos garantidos e sua efetivação social.",
-    text: [
-      "Na obra Cidadão de Papel, Gilberto Dimenstein denuncia a distância entre os direitos garantidos e sua efetivação social. Sob essa ótica, a persistência da violência contra a mulher revela um cenário em que a cidadania ainda não se concretiza plenamente.",
-      "Em primeiro plano, a naturalização de condutas abusivas dificulta o reconhecimento e a denúncia da violência. Além disso, a fragilidade da rede de acolhimento amplia a vulnerabilidade das vítimas.",
-      "Portanto, cabe ao poder público fortalecer centros de atendimento e promover educação preventiva nas escolas, por meio de equipes especializadas e campanhas permanentes, a fim de romper esse ciclo.",
-    ],
-  },
-  {
-    title: "Invisibilidade do trabalho de cuidado",
-    author: "Lucas A. · Modelo 2024",
-    intro: "A divisão desigual das tarefas domésticas evidencia uma herança histórica que limita oportunidades e autonomia.",
-    text: [
-      "A divisão desigual das tarefas domésticas evidencia uma herança histórica que limita oportunidades e autonomia. Essa realidade mantém o cuidado fora das prioridades públicas.",
-      "Nesse contexto, a ausência de equipamentos sociais e a reprodução de estereótipos sobre gênero transferem às famílias — sobretudo às mulheres — uma responsabilidade coletiva.",
-      "Logo, municípios devem ampliar creches e centros de cuidado, enquanto escolas promovem debates sobre corresponsabilidade, para tornar esse trabalho visível e democraticamente distribuído.",
-    ],
-  },
-  {
-    title: "Democratização do acesso à cultura",
-    author: "Ana P. · Modelo 2025",
-    intro: "Embora a cultura seja um direito, barreiras econômicas e territoriais ainda restringem seu acesso no país.",
-    text: [
-      "Embora a cultura seja um direito, barreiras econômicas e territoriais ainda restringem seu acesso no país. Assim, a fruição artística permanece concentrada.",
-      "A escassez de equipamentos em regiões periféricas e a insuficiência de políticas de formação de público aprofundam a exclusão simbólica.",
-      "Dessa forma, secretarias de cultura devem descentralizar editais e manter circuitos culturais gratuitos, com transporte e mediação, para ampliar a participação social.",
-    ],
-  },
-];
+
 
 const repertories = [
   { category: "Leis", title: "Constituição Federal de 1988", author: "Artigo 6º", image: constituicaoImage, body: "Use para sustentar direitos sociais como educação, saúde, moradia e alimentação — sempre conectando o direito à falha de sua efetivação." },
@@ -450,7 +262,7 @@ const repertories = [
 export function EssayApp() {
   const [section, setSection] = useState<Section>("dashboard");
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [selectedEssay, setSelectedEssay] = useState<(typeof essays)[number] | null>(null);
+  const [selectedEssay, setSelectedEssay] = useState<any | null>(null);
   const [activeCompetency, setActiveCompetency] = useState(0);
   const [filter, setFilter] = useState("Todos");
   const [labTab, setLabTab] = useState<"digital" | "photo">("digital");
@@ -565,7 +377,10 @@ export function EssayApp() {
 
         <div className="mx-auto max-w-7xl p-4 md:p-8 lg:p-10">
           {section === "dashboard" && <Dashboard goTo={goTo} />}
-          {section === "mural" && <Mural onOpen={setSelectedEssay} />}
+          {section === "perfil" && <StudentProfile onOpen={setSelectedEssay} goTo={goTo} />}
+          {section === "mensagens" && <Messages />}
+          {section === "curso" && <CourseTarget goTo={goTo} />}
+          {section === "mural" && <Mural onOpen={setSelectedEssay} currentTheme={dailyThemes[selectedDay]} />}
           {section === "competencias" && <Competencies active={activeCompetency} setActive={setActiveCompetency} currentTheme={dailyThemes[selectedDay]} />}
           {section === "repertorio" && <Repertory filter={filter} setFilter={setFilter} currentTheme={dailyThemes[selectedDay]} />}
           {section === "laboratorio" && <Laboratory tab={labTab} setTab={setLabTab} text={text} setText={setText} stats={stats} timer={timer} setTimer={setTimer} preview={preview} fileRef={fileRef} setPreview={setPreview} correcting={correcting} error={error} handleCorrection={handleCorrection} result={result} setResult={setResult} selectedDay={selectedDay} setSelectedDay={setSelectedDay} />}
@@ -574,7 +389,28 @@ export function EssayApp() {
 
       <Dialog open={Boolean(selectedEssay)} onOpenChange={(open) => !open && setSelectedEssay(null)}>
         <DialogContent className="max-h-[86vh] max-w-3xl overflow-y-auto rounded-xl">
-          {selectedEssay && <><DialogHeader><div className="mb-2 flex items-center gap-2 text-sm font-semibold text-primary"><Award className="size-4" /> Redação comentada</div><DialogTitle className="text-2xl">{selectedEssay.title}</DialogTitle><DialogDescription>{selectedEssay.author}</DialogDescription></DialogHeader><div className="space-y-5 leading-7 text-foreground">{selectedEssay.text.map((p, i) => <div key={p}><p>{p}</p><p className="mt-2 rounded-lg border-l-4 border-primary bg-accent p-3 text-sm text-accent-foreground"><Lightbulb className="mr-2 inline size-4" />{i === 0 ? "Tese clara e repertório conectado ao problema." : i === 1 ? "Argumentação progressiva, sem abandonar o recorte temático." : "Intervenção com agente, ação, meio e finalidade."}</p></div>)}</div></>}
+          {selectedEssay && <><DialogHeader><div className="mb-2 flex items-center gap-2 text-sm font-semibold text-primary"><Award className="size-4" /> Redação comentada</div><DialogTitle className="text-2xl">{selectedEssay.title}</DialogTitle><DialogDescription>{selectedEssay.author}</DialogDescription></DialogHeader><div className="space-y-4 leading-7 text-foreground mt-4">{selectedEssay.text.map((p: string, i: number) => {
+            const sentences = p.split('. ');
+            const firstSentence = sentences[0] + (sentences.length > 1 ? '.' : '');
+            const restOfText = sentences.length > 1 ? ' ' + sentences.slice(1).join('. ') : '';
+            
+            const highlightColor = i === 0 ? "bg-blue-200/60 text-blue-900 dark:bg-blue-900/40 dark:text-blue-100" : i === 1 ? "bg-green-200/60 text-green-900 dark:bg-green-900/40 dark:text-green-100" : "bg-purple-200/60 text-purple-900 dark:bg-purple-900/40 dark:text-purple-100";
+            const tipColorClass = i === 0 ? "border-blue-500 bg-blue-100 text-blue-900 dark:bg-blue-900/60 dark:text-blue-50" : i === 1 ? "border-green-500 bg-green-100 text-green-900 dark:bg-green-900/60 dark:text-green-50" : "border-purple-500 bg-purple-100 text-purple-900 dark:bg-purple-900/60 dark:text-purple-50";
+            const label = i === 0 ? "Ponto Positivo: Tese clara e repertório bem conectado." : i === 1 ? "Ponto Positivo: Argumentação progressiva, mantendo o recorte temático." : "Ponto Positivo: Intervenção completa (agente, ação, meio e finalidade).";
+            
+            return (
+              <div key={i} className="relative p-5 rounded-xl border border-border bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,rgba(0,0,0,0.02)_10px,rgba(0,0,0,0.02)_20px)] dark:bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,rgba(255,255,255,0.02)_10px,rgba(255,255,255,0.02)_20px)] shadow-sm">
+                <p className="text-base relative z-10">
+                  <span className={`px-1.5 py-0.5 rounded font-medium ${highlightColor}`}>{firstSentence}</span>
+                  {restOfText}
+                </p>
+                <p className={`mt-4 flex items-center rounded-lg border-l-4 p-3 text-sm font-semibold relative z-10 shadow-sm ${tipColorClass}`}>
+                  <Lightbulb className="mr-2 size-4 flex-shrink-0" />
+                  {label}
+                </p>
+              </div>
+            );
+          })}</div></>}
         </DialogContent>
       </Dialog>
     </div>
@@ -583,6 +419,285 @@ export function EssayApp() {
 
 function PageTitle({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
   return <div className="mb-8"><p className="mb-2 text-xs font-bold uppercase tracking-widest text-primary">{eyebrow}</p><h1 className="text-3xl font-bold md:text-4xl">{title}</h1><p className="mt-2 max-w-2xl text-muted-foreground">{description}</p></div>;
+}
+
+function CourseTarget({ goTo }: { goTo: (section: Section) => void }) {
+  const { preferences } = useUserPreferences();
+  const targetScoreNum = preferences?.targetScore ? parseInt(preferences.targetScore, 10) : 900;
+  const course = preferences?.course || "seu curso";
+  const college = preferences?.college || "sua universidade";
+  
+  const avgRequired = Math.max(700, targetScoreNum - 40);
+  const hoursPerWeek = targetScoreNum > 800 ? 4 : targetScoreNum > 700 ? 3 : 2;
+  const currentAvg = 840;
+  const distance = Math.max(0, targetScoreNum - currentAvg);
+  
+  return (
+    <>
+      <PageTitle eyebrow="Seu Alvo" title={`Meta: ${course} na ${college}`} description="Entenda os números e o esforço necessário para alcançar sua vaga." />
+      
+      <div className="grid gap-6 md:grid-cols-3 mb-8">
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+          <div className="mb-4 text-primary"><Target className="size-8" /></div>
+          <h3 className="text-lg font-bold">Nota de Corte Estimada</h3>
+          <p className="mt-2 text-3xl font-black">{targetScoreNum}</p>
+          <p className="mt-2 text-sm text-muted-foreground">Essa é a meta que você deve buscar na redação para garantir uma margem segura.</p>
+        </div>
+        
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+          <div className="mb-4 text-primary"><TrendingUp className="size-8" /></div>
+          <h3 className="text-lg font-bold">Média dos Aprovados</h3>
+          <p className="mt-2 text-3xl font-black">{avgRequired}</p>
+          <p className="mt-2 text-sm text-muted-foreground">A maioria dos aprovados neste curso tirou notas próximas a essa.</p>
+        </div>
+        
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+          <div className="mb-4 text-primary"><Clock3 className="size-8" /></div>
+          <h3 className="text-lg font-bold">Carga Horária Ideal</h3>
+          <p className="mt-2 text-3xl font-black">{hoursPerWeek}h / semana</p>
+          <p className="mt-2 text-sm text-muted-foreground">Tempo recomendado focado apenas em redação (prática e correção) para o seu nível de meta.</p>
+        </div>
+      </div>
+      
+      <div className="rounded-xl border border-border bg-card p-8 shadow-sm">
+        <h3 className="text-xl font-bold mb-4">Onde você está vs. Onde precisa chegar</h3>
+        <p className="mb-6 text-muted-foreground">Sua média atual nas últimas redações é de <strong>{currentAvg}</strong> pontos. Você precisa de mais <strong>{distance}</strong> pontos para atingir sua meta com segurança.</p>
+        <Progress value={(currentAvg / targetScoreNum) * 100} className="mb-4 h-3" />
+        <div className="flex justify-between text-sm font-semibold">
+          <span>Atual: {currentAvg}</span>
+          <span className="text-primary">Meta: {targetScoreNum}</span>
+        </div>
+        
+        <div className="mt-8">
+          <Button onClick={() => goTo("laboratorio")} className="rounded-xl w-full md:w-auto">
+            Continuar treinando <ArrowRight className="ml-2 size-4" />
+          </Button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function StudentProfile({ onOpen, goTo }: { onOpen: (essay: any) => void, goTo: (section: Section) => void }) {
+  const { preferences } = useUserPreferences();
+  const { user } = useAuth();
+  
+  const name = user?.email?.split('@')[0] || "Estudante";
+  const course = preferences?.course || "Curso Desejado";
+  const college = preferences?.college || "Universidade";
+  const age = 17;
+  const state = "SP";
+
+  const recentEssays = [
+    {
+      title: "Desafios do envelhecimento populacional",
+      author: `${name} · 920 pontos`,
+      intro: "No filme 'Up - Altas Aventuras', a solidão da terceira idade é retratada de forma sensível, revelando o abandono que muitos idosos sofrem.",
+      text: [
+        "No filme 'Up - Altas Aventuras', a solidão da terceira idade é retratada de forma sensível, revelando o abandono que muitos idosos sofrem. Fora das telas, o envelhecimento populacional no Brasil enfrenta desafios similares, decorrentes da negligência do Estado e da exclusão social.",
+        "Em primeiro plano, a falta de infraestrutura de saúde geriátrica no SUS agrava a vulnerabilidade dessa parcela da população. Além disso, o preconceito etário (etarismo) marginaliza os idosos no mercado de trabalho e no convívio familiar.",
+        "Portanto, cabe ao Ministério da Saúde criar redes de amparo e atendimento domiciliar especializado aos idosos, por meio do repasse de verbas federais. Ademais, a mídia deve promover campanhas valorizando a terceira idade, para romper com o estigma social."
+      ],
+      date: "Há 2 dias",
+      score: 920
+    },
+    {
+      title: "O impacto das redes sociais na saúde mental",
+      author: `${name} · 880 pontos`,
+      intro: "Segundo o filósofo Zygmunt Bauman, a modernidade líquida é marcada por relações superficiais e instáveis.",
+      text: [
+        "Segundo o filósofo Zygmunt Bauman, a modernidade líquida é marcada por relações superficiais e instáveis. Sob essa lógica, o uso excessivo das redes sociais afeta gravemente a saúde mental dos jovens, intensificando quadros de ansiedade.",
+        "A princípio, a busca incessante por validação virtual cria uma pressão estética e social inatingível. A comparação constante com vidas idealizadas gera o fenômeno FOMO (Fear Of Missing Out), distanciando o indivíduo da realidade tangível.",
+        "Logo, o Ministério da Educação deve inserir a disciplina de inteligência emocional nas escolas, mediante a contratação de psicólogos, com o fito de preparar os jovens para o uso consciente da internet."
+      ],
+      date: "Há 1 semana",
+      score: 880
+    }
+  ];
+
+  return (
+    <>
+      <div className="mb-8 flex items-center gap-4 rounded-xl border border-border bg-card p-2 shadow-sm">
+        <div className="flex flex-1 items-center gap-2 px-3 text-muted-foreground">
+          <Search className="size-5" />
+          <input type="text" placeholder="Buscar estudantes por nome, curso ou universidade..." className="w-full bg-transparent p-2 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
+        </div>
+        <Button className="rounded-lg">Buscar</Button>
+      </div>
+
+      <div className="relative mb-10 overflow-hidden rounded-2xl bg-primary p-6 md:p-10 text-primary-foreground shadow-sm">
+        <div className="absolute right-0 top-0 opacity-20"><Award className="size-64 -translate-y-10 translate-x-10" /></div>
+        <div className="relative z-10 flex flex-col md:flex-row gap-6 items-center md:items-end">
+          <div className="grid size-32 place-items-center rounded-full bg-background text-primary text-4xl font-black border-4 border-primary-foreground/20 shadow-lg">
+            {name.substring(0, 2).toUpperCase()}
+          </div>
+          <div className="flex-1 text-center md:text-left">
+            <h2 className="text-3xl font-bold md:text-4xl capitalize">{name}</h2>
+            <div className="mt-2 flex flex-wrap items-center justify-center md:justify-start gap-4 text-primary-foreground/80 font-medium">
+              <span className="flex items-center gap-1"><MapPin className="size-4" /> {state}, Brasil</span>
+              <span className="flex items-center gap-1"><Calendar className="size-4" /> {age} anos</span>
+              <span className="flex items-center gap-1"><Target className="size-4" /> Foco: {course} ({college})</span>
+            </div>
+            <div className="mt-5 flex flex-wrap items-center justify-center md:justify-start gap-3">
+              <Button size="sm" variant="secondary" className="rounded-full bg-background text-primary hover:bg-background/90"><UserPlus className="mr-2 size-4" /> Seguir</Button>
+              <Button size="sm" variant="outline" onClick={() => goTo("mensagens")} className="rounded-full border-primary-foreground/30 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20"><MessageCircle className="mr-2 size-4" /> Mensagem</Button>
+            </div>
+          </div>
+          <div className="mt-4 md:mt-0 px-5 py-3 rounded-xl bg-background text-foreground text-center shadow-sm">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Média Atual</p>
+            <p className="text-3xl font-black text-primary">900</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mb-10">
+        <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><Medal className="size-5 text-primary" /> Suas Conquistas</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="p-4 rounded-xl border border-border bg-card shadow-sm flex flex-col items-center text-center">
+            <div className="p-3 bg-yellow-100 text-yellow-600 rounded-full mb-3"><Award className="size-8" /></div>
+            <h4 className="font-bold text-sm">Redação Ouro</h4>
+            <p className="text-xs text-muted-foreground mt-1">Atingiu 900+ pontos em 3 redações seguidas.</p>
+          </div>
+          <div className="p-4 rounded-xl border border-border bg-card shadow-sm flex flex-col items-center text-center">
+            <div className="p-3 bg-purple-100 text-purple-600 rounded-full mb-3"><BrainCircuit className="size-8" /></div>
+            <h4 className="font-bold text-sm">Argumentador Nato</h4>
+            <p className="text-xs text-muted-foreground mt-1">Tirou nota máxima na Competência 3.</p>
+          </div>
+          <div className="p-4 rounded-xl border border-border bg-card shadow-sm flex flex-col items-center text-center">
+            <div className="p-3 bg-blue-100 text-blue-600 rounded-full mb-3"><BookOpen className="size-8" /></div>
+            <h4 className="font-bold text-sm">Enciclopédia</h4>
+            <p className="text-xs text-muted-foreground mt-1">Usou 10 repertórios diferentes com sucesso.</p>
+          </div>
+          <div className="p-4 rounded-xl border border-border bg-card shadow-sm flex flex-col items-center text-center">
+            <div className="p-3 bg-orange-100 text-orange-600 rounded-full mb-3"><Flame className="size-8" /></div>
+            <h4 className="font-bold text-sm">Foco Implacável</h4>
+            <p className="text-xs text-muted-foreground mt-1">Treinou por 4 semanas consecutivas.</p>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><FileText className="size-5 text-primary" /> Portfólio de Redações</h3>
+        <div className="grid gap-5 md:grid-cols-2">
+          {recentEssays.map((essay) => (
+            <article key={essay.title} className="group relative rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md">
+              <div className="mb-4 flex items-center justify-between">
+                <span className="rounded-full bg-accent px-3 py-1 text-xs font-bold text-primary">{essay.date}</span>
+                <span className="text-xl font-black text-primary">{essay.score} pts</span>
+              </div>
+              <h4 className="text-lg font-bold leading-snug group-hover:text-primary mb-2">{essay.title}</h4>
+              <p className="line-clamp-3 text-sm leading-6 text-muted-foreground mb-6">{essay.intro}</p>
+              <Button onClick={() => onOpen(essay)} variant="secondary" className="w-full rounded-xl">
+                Ler redação completa <ArrowRight className="ml-2 size-4" />
+              </Button>
+            </article>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function Messages() {
+  const [activeChat, setActiveChat] = useState<string | null>("1");
+  const [message, setMessage] = useState("");
+  
+  const contacts = [
+    { id: "1", name: "Ana Beatriz", avatar: "AB", lastMessage: "Tem alguma dica para a conclusão?", time: "10:32" },
+    { id: "2", name: "Carlos Eduardo", avatar: "CE", lastMessage: "Acabei de ler sua redação! Muito boa.", time: "Ontem" },
+    { id: "3", name: "Marina Silva", avatar: "MS", lastMessage: "Qual repertório você usou no D1?", time: "Segunda" },
+  ];
+
+  const chatHistory = [
+    { id: "m1", sender: "other", text: "Oi! Vi que você tirou 960 no último tema.", time: "10:30" },
+    { id: "m2", sender: "me", text: "Oi Ana! Sim, foi um tema que eu já tinha estudado bastante.", time: "10:31" },
+    { id: "m3", sender: "other", text: "Tem alguma dica para a conclusão? Sempre perco ponto na proposta de intervenção.", time: "10:32" },
+  ];
+
+  return (
+    <div className="flex h-[calc(100vh-12rem)] overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      {/* Sidebar */}
+      <div className="w-1/3 border-r border-border flex flex-col bg-background/50">
+        <div className="p-5 border-b border-border bg-card/80 backdrop-blur-sm">
+          <h2 className="text-xl font-bold flex items-center gap-2"><MessageCircle className="size-6 text-primary" /> Mensagens</h2>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {contacts.map(contact => (
+            <div 
+              key={contact.id} 
+              onClick={() => setActiveChat(contact.id)}
+              className={`flex items-center gap-4 p-5 cursor-pointer transition-colors border-b border-border hover:bg-accent ${activeChat === contact.id ? 'bg-accent border-l-4 border-l-primary' : 'border-l-4 border-l-transparent'}`}
+            >
+              <div className="grid size-12 place-items-center rounded-full bg-primary/10 text-primary font-bold shadow-sm">{contact.avatar}</div>
+              <div className="flex-1 overflow-hidden">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="font-bold truncate">{contact.name}</span>
+                  <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">{contact.time}</span>
+                </div>
+                <p className="text-sm text-muted-foreground truncate">{contact.lastMessage}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      {/* Chat Window */}
+      <div className="flex-1 flex flex-col bg-accent/20 relative">
+        {activeChat ? (
+          <>
+            <div className="p-4 border-b border-border bg-card/80 backdrop-blur-sm flex items-center gap-3 shadow-sm z-10">
+              <div className="grid size-10 place-items-center rounded-full bg-primary/10 text-primary font-bold shadow-sm">
+                {contacts.find(c => c.id === activeChat)?.avatar}
+              </div>
+              <div>
+                <span className="font-bold block leading-tight">{contacts.find(c => c.id === activeChat)?.name}</span>
+                <span className="text-xs text-success flex items-center gap-1"><div className="size-1.5 rounded-full bg-success"></div> Online agora</span>
+              </div>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {chatHistory.map(msg => (
+                <div key={msg.id} className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[75%] rounded-2xl p-4 shadow-sm ${msg.sender === 'me' ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-card border border-border rounded-bl-sm'}`}>
+                    <p className="text-[15px] leading-relaxed">{msg.text}</p>
+                    <span className={`text-[11px] font-medium block mt-2 ${msg.sender === 'me' ? 'text-primary-foreground/70 text-right' : 'text-muted-foreground'}`}>{msg.time}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="p-4 bg-card border-t border-border shadow-sm">
+              <div className="flex gap-3">
+                <input 
+                  type="text" 
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Digite sua mensagem para enviar uma dica..." 
+                  className="flex-1 rounded-full border-2 border-border/50 bg-background px-5 py-3 text-sm outline-none transition-colors focus:border-primary focus:ring-4 focus:ring-primary/10"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && message.trim()) {
+                      setMessage('');
+                    }
+                  }}
+                />
+                <Button onClick={() => { if(message.trim()) setMessage(''); }} size="icon" className="rounded-full size-12 shrink-0 shadow-md">
+                  <Send className="size-5" />
+                </Button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-8 opacity-60">
+            <div className="size-24 rounded-full bg-primary/5 flex items-center justify-center mb-6">
+              <MessageCircle className="size-12 text-primary/40" />
+            </div>
+            <h3 className="text-2xl font-bold text-muted-foreground">Suas mensagens</h3>
+            <p className="mt-2 text-sm text-muted-foreground max-w-sm">Selecione uma conversa ao lado para começar a enviar dicas e trocar ideias sobre a redação.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
@@ -626,8 +741,9 @@ function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
   </>;
 }
 
-function Mural({ onOpen }: { onOpen: (essay: (typeof essays)[number]) => void }) {
-  return <><PageTitle eyebrow="Inspire-se" title="Mural nota mil" description="Leia textos exemplares com olhos de autor: observe escolhas, conexões e estratégias replicáveis." /><div className="grid gap-5 md:grid-cols-3">{essays.map((essay,i) => <article key={essay.title} onClick={() => onOpen(essay)} className="group cursor-pointer rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"><div className="mb-5 flex items-center justify-between"><span className="rounded-full bg-accent px-3 py-1 text-xs font-bold text-primary">NOTA 1000</span><span className="text-5xl font-black text-primary/10">0{i+1}</span></div><h2 className="text-xl font-bold leading-snug group-hover:text-primary">{essay.title}</h2><p className="mt-2 text-xs font-semibold text-muted-foreground">{essay.author}</p><p className="mt-5 line-clamp-4 text-sm leading-6 text-muted-foreground">{essay.intro}</p><div className="mt-6 flex items-center gap-2 text-sm font-bold text-primary">Ler e analisar <ArrowRight className="size-4" /></div></article>)}</div></>;
+function Mural({ onOpen, currentTheme }: { onOpen: (essay: any) => void; currentTheme: typeof dailyThemes[number] }) {
+  const themeEssays = currentTheme.essays || [];
+  return <><PageTitle eyebrow="Inspire-se" title="Mural nota mil" description={`Leia textos exemplares sobre o tema do dia: ${currentTheme.topic}`} /><div className="grid gap-5 md:grid-cols-3">{themeEssays.map((essay,i) => <article key={essay.title} onClick={() => onOpen(essay)} className="group cursor-pointer rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"><div className="mb-5 flex items-center justify-between"><span className="rounded-full bg-accent px-3 py-1 text-xs font-bold text-primary">NOTA 1000</span><span className="text-5xl font-black text-primary/10">0{i+1}</span></div><h2 className="text-xl font-bold leading-snug group-hover:text-primary">{essay.title}</h2><p className="mt-2 text-xs font-semibold text-muted-foreground">{essay.author}</p><p className="mt-5 line-clamp-4 text-sm leading-6 text-muted-foreground">{essay.intro}</p><div className="mt-6 flex items-center gap-2 text-sm font-bold text-primary">Ler e analisar <ArrowRight className="size-4" /></div></article>)}</div></>;
 }
 
 function Competencies({ active, setActive, currentTheme }: {
@@ -737,8 +853,55 @@ function Competencies({ active, setActive, currentTheme }: {
 }
 
 function Repertory({ filter, setFilter, currentTheme }: { filter: string; setFilter: (value: string) => void; currentTheme: typeof dailyThemes[number] }) {
-  const filters = ["Todos", "Livros", "Filmes", "Leis"];
-  return <><PageTitle eyebrow="Banco de ideias" title="Repertório sociocultural" description="Referências legitimadas e explicadas para você usar com pertinência — sem decorar frases soltas." /><div className="mb-6 flex flex-wrap gap-2">{filters.map((item) => <Button key={item} variant={filter === item ? "default" : "outline"} onClick={() => setFilter(item)} className="rounded-full">{item}</Button>)}</div><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{currentTheme.repertories.filter((item) => filter === "Todos" || item.category === filter).map((item) => <article key={item.title} className="overflow-hidden rounded-xl border border-border bg-card shadow-sm"><img src={item.image} alt="" loading="lazy" width={768} height={960} className="aspect-[4/3] w-full object-cover" /><div className="p-5"><span className="text-xs font-bold uppercase text-primary">{item.category}</span><h2 className="mt-2 text-xl font-bold">{item.title}</h2><p className="mt-1 text-sm font-semibold text-muted-foreground">{item.author}</p><p className="mt-4 text-sm leading-6 text-muted-foreground">{item.body}</p><div className="mt-5 rounded-lg bg-accent p-3 text-xs text-accent-foreground"><Lightbulb className="mr-1 inline size-4" /> Dica: apresente, relacione e interprete a referência.</div></div></article>)}</div></>;
+  const filters = ["Todos", "Leis", "Livros", "Filmes", "Séries", "Documentários", "Fatos Históricos", "Citações", "Músicas", "Conceitos"];
+  const [selectedItem, setSelectedItem] = useState<typeof currentTheme.repertories[number] | null>(null);
+  
+  return (
+    <>
+      <PageTitle eyebrow="Banco de ideias" title="Repertório sociocultural" description="Referências legitimadas e explicadas para você usar com pertinência — sem decorar frases soltas." />
+      <div className="mb-6 flex flex-wrap gap-2">
+        {filters.map((item) => (
+          <Button key={item} variant={filter === item ? "default" : "outline"} onClick={() => setFilter(item)} className="rounded-full">
+            {item}
+          </Button>
+        ))}
+      </div>
+      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        {currentTheme.repertories.filter((item) => filter === "Todos" || item.category === filter).map((item) => (
+          <article 
+            key={item.title} 
+            onClick={() => setSelectedItem(item)}
+            className="overflow-hidden rounded-xl border border-border bg-card shadow-sm cursor-pointer hover:border-primary/50 transition-colors"
+          >
+            <div className="p-5">
+              <span className="text-xs font-bold uppercase text-primary">{item.category}</span>
+              <h2 className="mt-2 text-xl font-bold">{item.title}</h2>
+              <p className="mt-1 text-sm font-semibold text-muted-foreground">{item.author}</p>
+              <div className="mt-5 rounded-lg bg-accent p-3 text-xs font-semibold text-primary/80 flex items-center justify-center">
+                Clique para ver detalhes
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+      <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">{selectedItem?.title}</DialogTitle>
+            <DialogDescription className="text-sm font-semibold text-primary uppercase tracking-wide">
+              {selectedItem?.category} • {selectedItem?.author}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm leading-6 text-foreground">{selectedItem?.body}</p>
+            <div className="mt-5 rounded-lg bg-accent p-3 text-xs text-accent-foreground">
+              <Lightbulb className="mr-1 inline size-4" /> Dica: apresente, relacione e interprete a referência.
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 }
 
 function Laboratory(props: { tab: "digital"|"photo"; setTab: (v:"digital"|"photo")=>void; text:string; setText:(v:string)=>void; stats:{words:number;chars:number;lines:number}; timer:boolean; setTimer:(v:boolean)=>void; preview:string|null; fileRef:React.RefObject<HTMLInputElement|null>; setPreview:(v:string|null)=>void; correcting:boolean; error:string; handleCorrection:()=>void; result:Correction|null; setResult:(v:Correction|null)=>void; selectedDay: number; setSelectedDay: (v: number) => void }) {
@@ -767,28 +930,38 @@ function Laboratory(props: { tab: "digital"|"photo"; setTab: (v:"digital"|"photo
             c => preferences.course.toLowerCase().includes(c.toLowerCase()) || c.toLowerCase().includes(preferences.course.toLowerCase())
           );
           const isHot = theme.hot || isCourseHot;
-          const isSelected = selectedDay === idx;
+          const isSelected = props.selectedDay === idx;
           return (
             <button
               key={theme.day}
               type="button"
               onClick={() => handleSelectDay(idx)}
-              className={`relative flex shrink-0 flex-col items-center gap-1 rounded-xl border px-3 py-2 text-center transition-all ${
+              className={`relative flex min-w-[76px] shrink-0 flex-col items-center justify-center gap-1.5 rounded-2xl border-2 p-3 text-center transition-all ${
                 isSelected
-                  ? 'border-primary bg-primary text-primary-foreground shadow-md'
+                  ? 'border-primary bg-primary text-primary-foreground shadow-lg scale-105'
                   : theme.done
-                  ? 'border-success/30 bg-success/10 text-success'
+                  ? 'border-success/40 bg-success/5 text-foreground hover:bg-success/10'
                   : isHot
                   ? 'border-orange-400/40 bg-orange-500/5 text-foreground hover:bg-orange-500/10'
                   : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:bg-accent'
               }`}
             >
               {isHot && !theme.done && (
-                <span className="absolute -right-1.5 -top-1.5 text-base leading-none">🔥</span>
+                <span className="absolute -right-2 -top-2 flex size-6 items-center justify-center rounded-full bg-orange-100 text-sm shadow-sm ring-2 ring-background">🔥</span>
               )}
-              <span className="text-[10px] font-bold uppercase tracking-wide opacity-70">{theme.label}</span>
-              <span className="text-lg font-black leading-none">{String(theme.day).padStart(2, '0')}</span>
-              {theme.done && !isSelected && <CheckCircle2 className="size-3.5 text-success" />}
+              
+              <span className={`text-[11px] font-extrabold uppercase tracking-widest ${isSelected ? 'text-primary-foreground/80' : theme.done ? 'text-success' : 'opacity-70'}`}>
+                {theme.label}
+              </span>
+              <span className="text-2xl font-black leading-none">{String(theme.day).padStart(2, '0')}</span>
+              
+              {theme.done ? (
+                <div className={`mt-1 flex items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-bold ${isSelected ? 'bg-primary-foreground text-primary' : 'bg-success/20 text-success'}`}>
+                  <CheckCircle2 className="mr-1 size-3" /> {860 + (idx * 20)}
+                </div>
+              ) : (
+                <div className="mt-1 h-4 w-full" /> 
+              )}
             </button>
           );
         })}
