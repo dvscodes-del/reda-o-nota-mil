@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useUserPreferences } from '@/context/UserPreferencesContext';
+import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -15,6 +16,11 @@ export const Route = createFileRoute('/onboarding')({
 function OnboardingPage() {
   const [targetScore, setTargetScore] = useState('900');
   
+  const { user } = useAuth(); // need to import useAuth
+  const [fullName, setFullName] = useState(user?.user_metadata?.full_name || '');
+  const [age, setAge] = useState<string>('');
+
+  
   const [state, setState] = useState('');
   const [college, setCollege] = useState('');
   const [course, setCourse] = useState('');
@@ -26,13 +32,15 @@ function OnboardingPage() {
   const { savePreferences } = useUserPreferences();
   const navigate = useNavigate();
 
-  const handleFinish = (e: React.FormEvent) => {
+  const handleFinish = async (e: React.FormEvent) => {
     e.preventDefault();
-    savePreferences({
+    await savePreferences({
       targetScore,
       state: state === 'Outro' ? customState : state,
       college: college === 'Outro' ? customCollege : college,
       course: course === 'Outro' ? customCourse : course,
+      full_name: fullName,
+      age: age ? parseInt(age, 10) : undefined,
     });
     // Redirect to home/dashboard
     navigate({ to: '/' });
@@ -54,6 +62,33 @@ function OnboardingPage() {
         <form onSubmit={handleFinish}>
           <CardContent className="space-y-6 mt-4">
             
+            <div className="space-y-2">
+              <Label htmlFor="fullName" className="text-base font-semibold">
+                Como você quer ser chamado?
+              </Label>
+              <Input
+                id="fullName"
+                type="text"
+                placeholder="Seu nome"
+                required
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="age" className="text-base font-semibold">
+                Qual a sua idade?
+              </Label>
+              <Input
+                id="age"
+                type="number"
+                placeholder="Ex: 17"
+                value={age}
+                onChange={(e) => setAge(e.target.value)}
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="targetScore" className="text-base font-semibold">
                 Qual a sua meta de nota na redação?

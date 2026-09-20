@@ -156,14 +156,7 @@ function LoginPage() {
               </svg>
               Entrar com Google
             </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              className="w-full"
-              onClick={handleMockLogin}
-            >
-              Pular Login (Modo Teste)
-            </Button>
+
           </CardFooter>
         </form>
       </Card>
