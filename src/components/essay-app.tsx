@@ -144,6 +144,7 @@ export function EssayApp() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {mobileOpen && <button type="button" aria-label="Fechar menu" onClick={() => setMobileOpen(false)} className="fixed inset-0 z-30 bg-foreground/20 lg:hidden" />}
       <aside className={`fixed inset-y-0 left-0 z-40 w-72 border-r border-border bg-sidebar p-5 transition-transform lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex h-full flex-col">
           <div className="mb-10 flex items-center justify-between">
