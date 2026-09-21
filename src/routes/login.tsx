@@ -16,12 +16,12 @@ function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { user, mockSignIn } = useAuth();
-  const { preferences } = useUserPreferences();
+  const { user, mockSignIn, isLoading: isAuthLoading } = useAuth();
+  const { preferences, isLoading: isPrefsLoading } = useUserPreferences();
   const navigate = useNavigate();
 
   // If already logged in, redirect based on preferences
-  if (user) {
+  if (user && !isAuthLoading && !isPrefsLoading) {
     if (!preferences?.hasCompletedOnboarding) {
       navigate({ to: '/onboarding' });
     } else {

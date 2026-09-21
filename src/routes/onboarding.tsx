@@ -29,8 +29,13 @@ function OnboardingPage() {
   const [customCollege, setCustomCollege] = useState('');
   const [customCourse, setCustomCourse] = useState('');
 
-  const { savePreferences } = useUserPreferences();
+  const { savePreferences, preferences, isLoading: isPrefsLoading } = useUserPreferences();
   const navigate = useNavigate();
+
+  // Redirect to home if they already finished onboarding
+  if (user && !isPrefsLoading && preferences?.hasCompletedOnboarding) {
+    navigate({ to: '/' });
+  }
 
   const handleFinish = async (e: React.FormEvent) => {
     e.preventDefault();
