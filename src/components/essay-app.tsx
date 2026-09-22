@@ -274,7 +274,15 @@ export function EssayApp() {
   const [correcting, setCorrecting] = useState(false);
   const [error, setError] = useState("");
   const [timer, setTimer] = useState(false);
-  const [selectedDay, setSelectedDay] = useState(2); // dia atual (0-indexed)
+  const [chatTarget, setChatTarget] = useState<any>(null);
+  const getTodayThemeIndex = () => {
+    const day = new Date().getDay(); // 0 = Domingo, 1 = Segunda...
+    const index = day === 0 ? 6 : day - 1;
+    // Garante que o índice não passe do tamanho do array
+    return index < dailyThemes.length ? index : 0;
+  };
+  
+  const [selectedDay, setSelectedDay] = useState(getTodayThemeIndex()); // dia atual dinâmico
   const fileRef = useRef<HTMLInputElement>(null);
   const runCorrection = useServerFn(correctEssay);
   const { user, signOut } = useAuth();
@@ -388,8 +396,8 @@ export function EssayApp() {
 
         <div className="mx-auto max-w-7xl p-4 md:p-8 lg:p-10">
           {section === "dashboard" && <Dashboard goTo={goTo} />}
-          {section === "perfil" && <StudentProfile onOpen={setSelectedEssay} goTo={goTo} />}
-          {section === "mensagens" && <Messages />}
+          {section === "perfil" && <StudentProfile onOpen={setSelectedEssay} goTo={goTo} onStartChat={(profile) => { setChatTarget(profile); goTo("mensagens"); }} />}
+          {section === "mensagens" && <Messages initialUser={chatTarget} onClearInitial={() => setChatTarget(null)} />}
           {section === "curso" && <CourseTarget goTo={goTo} />}
           {section === "mural" && <Mural onOpen={setSelectedEssay} currentTheme={dailyThemes[selectedDay]} />}
           {section === "competencias" && <Competencies active={activeCompetency} setActive={setActiveCompetency} currentTheme={dailyThemes[selectedDay]} />}
@@ -440,7 +448,7 @@ function CourseTarget({ goTo }: { goTo: (section: Section) => void }) {
   
   const avgRequired = Math.max(700, targetScoreNum - 40);
   const hoursPerWeek = targetScoreNum > 800 ? 4 : targetScoreNum > 700 ? 3 : 2;
-  const currentAvg = 840;
+  const currentAvg = 0;
   const distance = Math.max(0, targetScoreNum - currentAvg);
   
   return (
@@ -473,7 +481,7 @@ function CourseTarget({ goTo }: { goTo: (section: Section) => void }) {
       <div className="rounded-xl border border-border bg-card p-8 shadow-sm">
         <h3 className="text-xl font-bold mb-4">Onde você está vs. Onde precisa chegar</h3>
         <p className="mb-6 text-muted-foreground">Sua média atual nas últimas redações é de <strong>{currentAvg}</strong> pontos. Você precisa de mais <strong>{distance}</strong> pontos para atingir sua meta com segurança.</p>
-        <Progress value={(currentAvg / targetScoreNum) * 100} className="mb-4 h-3" />
+        <Progress value={0} className="mb-4 h-3" />
         <div className="flex justify-between text-sm font-semibold">
           <span>Atual: {currentAvg}</span>
           <span className="text-primary">Meta: {targetScoreNum}</span>
@@ -481,7 +489,7 @@ function CourseTarget({ goTo }: { goTo: (section: Section) => void }) {
         
         <div className="mt-8">
           <Button onClick={() => goTo("laboratorio")} className="rounded-xl w-full md:w-auto">
-            Continuar treinando <ArrowRight className="ml-2 size-4" />
+            Começar a treinar <ArrowRight className="ml-2 size-4" />
           </Button>
         </div>
       </div>
@@ -495,9 +503,9 @@ function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
   const targetScoreNum = preferences?.targetScore ? parseInt(preferences.targetScore, 10) : 900;
   
   const dashboardStats: Array<[string, string, LucideIcon]> = [
-    ["12", "Redações enviadas", FileText],
-    ["840", "Média atual", TrendingUp],
-    ["+80", "Evolução recente", BrainCircuit],
+    ["0", "Redações enviadas", FileText],
+    ["0", "Média atual", TrendingUp],
+    ["0", "Evolução recente", BrainCircuit],
   ];
   return <><PageTitle eyebrow="Seu espaço de evolução" title={`Boa tarde, ${user?.email?.split('@')[0] || 'Estudante'}!`} description={preferences ? `Seu foco: ${preferences.course} na ${preferences.college}` : "Cada parágrafo é um passo. Continue construindo sua melhor nota."} />
     <section className="relative overflow-hidden rounded-2xl bg-primary p-6 text-primary-foreground shadow-sm md:p-10">
@@ -526,7 +534,7 @@ function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
         </Button>
       </div>
     </section>
-    <section className="mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]"><div className="rounded-xl border border-border bg-card p-6 shadow-sm"><div className="mb-8 flex items-center justify-between"><div><h3 className="font-bold">Sua evolução</h3><p className="text-sm text-muted-foreground">Últimas cinco redações</p></div><span className="rounded-lg bg-accent px-3 py-1 text-xs font-semibold text-primary">+10,5%</span></div><div className="flex h-44 items-end justify-between gap-3 border-b border-border px-2">{[620,700,680,780,840].map((score,i) => <div key={score} className="flex h-full flex-1 flex-col justify-end gap-2 text-center"><span className="text-xs font-bold">{score}</span><div className="rounded-t-md bg-primary/20 transition-colors hover:bg-primary" style={{height: `${score/10}%`}} /><span className="pb-2 text-xs text-muted-foreground">R{i+1}</span></div>)}</div></div><div className="rounded-xl border border-border bg-card p-6 shadow-sm"><h3 className="font-bold">Sua Meta (Target)</h3><p className="mt-1 text-sm text-muted-foreground">Chegue à média {targetScoreNum}</p><div className="my-6 grid place-items-center"><div className="grid size-32 place-items-center rounded-full border-[12px] border-accent"><div className="text-center"><strong className="text-2xl">840</strong><small className="block text-muted-foreground">de {targetScoreNum}</small></div></div></div><Progress value={(840 / targetScoreNum) * 100} /><p className="mt-3 text-center text-xs text-muted-foreground">Você está a {Math.max(0, targetScoreNum - 840)} pontos da meta.</p></div></section>
+    <section className="mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]"><div className="rounded-xl border border-border bg-card p-6 shadow-sm"><div className="mb-8 flex items-center justify-between"><div><h3 className="font-bold">Sua evolução</h3><p className="text-sm text-muted-foreground">Últimas cinco redações</p></div><span className="rounded-lg bg-accent px-3 py-1 text-xs font-semibold text-primary">0%</span></div><div className="flex h-44 items-end justify-between gap-3 border-b border-border px-2">{[0,0,0,0,0].map((score,i) => <div key={score} className="flex h-full flex-1 flex-col justify-end gap-2 text-center"><span className="text-xs font-bold">{score > 0 ? score : "-"}</span><div className="rounded-t-md bg-primary/20 transition-colors hover:bg-primary" style={{height: `${score > 0 ? score/10 : 0}%`}} /><span className="pb-2 text-xs text-muted-foreground">R{i+1}</span></div>)}</div></div><div className="rounded-xl border border-border bg-card p-6 shadow-sm"><h3 className="font-bold">Sua Meta (Target)</h3><p className="mt-1 text-sm text-muted-foreground">Chegue à média {targetScoreNum}</p><div className="my-6 grid place-items-center"><div className="grid size-32 place-items-center rounded-full border-[12px] border-accent"><div className="text-center"><strong className="text-2xl">0</strong><small className="block text-muted-foreground">de {targetScoreNum}</small></div></div></div><Progress value={0} /><p className="mt-3 text-center text-xs text-muted-foreground">Você está a {targetScoreNum} pontos da meta.</p></div></section>
   </>;
 }
 
@@ -702,7 +710,7 @@ function Laboratory(props: { tab: "digital"|"photo"; setTab: (v:"digital"|"photo
     props.setText('');
   };
 
-  if (props.result) return <Feedback result={props.result} onBack={() => props.setResult(null)} />;
+  if (props.result) return <Feedback result={props.result} text={props.text} onBack={() => props.setResult(null)} />;
 
   return <>
     <PageTitle eyebrow="Hora de escrever" title="Laboratório de redação" description={`A Inteligência Artificial avaliará no nível de exigência para ${preferences?.course || 'o seu curso'}. Escolha o tema do dia abaixo!`} />
@@ -807,11 +815,134 @@ function Laboratory(props: { tab: "digital"|"photo"; setTab: (v:"digital"|"photo
     </div>
     {props.tab === "digital" ? <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4"><div className="flex items-center gap-4 text-xs font-semibold text-muted-foreground"><span>{props.stats.words} palavras</span><span>{props.stats.chars} caracteres</span><span>{props.stats.lines}/30 linhas</span></div><Button variant="outline" size="sm" onClick={() => props.setTimer(!props.timer)} className="rounded-lg"><Clock3 /> {props.timer ? "01:29:42" : "Ativar temporizador"}</Button></div><textarea value={props.text} onChange={(e) => props.setText(e.target.value)} placeholder={`Tema: "${currentTheme.topic}"
 
-Comece pela sua tese. O que você defende sobre este tema?`} className="min-h-[480px] w-full resize-none bg-card p-6 text-base leading-8 outline-none md:p-10" style={{ backgroundImage: "linear-gradient(to bottom, transparent 31px, var(--line) 32px)", backgroundSize: "100% 32px" }} /><div className="flex flex-col items-end gap-2 border-t border-border p-4"><Button size="lg" onClick={props.handleCorrection} disabled={props.correcting} className="h-12 rounded-xl px-6"><Sparkles /> {props.correcting ? "Analisando com rigor adaptado..." : "Corrigir com Inteligência Artificial"}</Button>{props.error && <p className="text-sm text-destructive">{props.error}</p>}</div></div> : <div className="rounded-xl border-2 border-dashed border-border bg-card p-8 text-center shadow-sm md:p-16"><input ref={props.fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => { const file=e.target.files?.[0]; if(file) props.setPreview(URL.createObjectURL(file)); }} />{props.preview ? <img src={props.preview} alt="Prévia da redação" className="mx-auto max-h-[520px] rounded-xl object-contain shadow-sm" /> : <><span className="mx-auto grid size-16 place-items-center rounded-full bg-accent text-primary"><UploadCloud className="size-7" /></span><h2 className="mt-5 text-xl font-bold">Envie uma foto nítida da sua redação</h2><p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">Posicione a folha inteira, evite sombras e confira se o texto está legível.</p></>}<div className="mt-6 flex flex-wrap justify-center gap-2"><Button className="rounded-xl" onClick={() => props.fileRef.current?.click()}><ImagePlus /> Escolher imagem</Button><Button variant="outline" className="rounded-xl" onClick={() => props.fileRef.current?.click()}><Camera /> Usar câmera</Button></div></div>}
-  </>;
+Comece pela sua tese. O que você defende sobre este tema?`} className="min-h-[480px] w-full resize-none bg-card p-6 text-base leading-8 outline-none md:p-10" style={{ backgroundImage: "linear-gradient(to bottom, transparent 31px, var(--line) 32px)", backgroundSize: "100% 32px" }} /><div className="flex flex-col items-end gap-2 border-t border-border p-4"><Button size="lg" onClick={props.handleCorrection} disabled={props.correcting} className="h-12 rounded-xl px-6"><Sparkles /> {props.correcting ? "Analisando com rigor adaptado..." : "Corrigir com Inteligência Artificial"}</Button>{props.error && <p className="text-sm text-destructive">{props.error}</p>}</div></div> : <div className="rounded-xl border-2 border-dashed border-border bg-card p-8 text-center shadow-sm md:p-16"><input ref={props.fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => { const file=e.target.files?.[0]; if(file) props.setPreview(URL.createObjectURL(file)); }} />{props.preview ? <img src={props.preview} alt="Prévia da redação" className="mx-auto max-h-[520px] rounded-xl object-contain shadow-sm" /> : <><span className="mx-auto grid size-16 place-items-center rounded-full bg-accent text-primary"><UploadCloud className="size-7" /></span><h2 className="mt-5 text-xl font-bold">Envifunction HighlightedText({ text, annotations }: { text: string; annotations: Correction['annotations'] }) {
+  if (!annotations || annotations.length === 0) return <div className="whitespace-pre-wrap leading-relaxed">{text}</div>;
+
+  const matches: {start: number, end: number, type: 'acerto'|'erro'}[] = [];
+  annotations.forEach(ann => {
+    let index = text.indexOf(ann.excerpt);
+    while (index !== -1) {
+      matches.push({ start: index, end: index + ann.excerpt.length, type: ann.type || 'erro' });
+      index = text.indexOf(ann.excerpt, index + 1);
+    }
+  });
+
+  matches.sort((a, b) => a.start - b.start);
+  const validMatches: typeof matches = [];
+  let lastEnd = 0;
+  for (const match of matches) {
+    if (match.start >= lastEnd) {
+      validMatches.push(match);
+      lastEnd = match.end;
+    }
+  }
+
+  const nodes = [];
+  let currentIndex = 0;
+  validMatches.forEach((match, i) => {
+    if (match.start > currentIndex) {
+      nodes.push(<span key={`text-${i}`}>{text.substring(currentIndex, match.start)}</span>);
+    }
+    const colorClass = match.type === 'acerto' ? 'bg-success/20 text-success-foreground border-b-2 border-success' : 'bg-highlight/20 text-highlight-foreground border-b-2 border-highlight';
+    nodes.push(
+      <span key={`match-${i}`} className={`px-1 py-0.5 rounded-sm font-medium ${colorClass}`} title={match.type === 'acerto' ? 'Acerto' : 'Ponto de melhoria'}>
+        {text.substring(match.start, match.end)}
+      </span>
+    );
+    currentIndex = match.end;
+  });
+
+  if (currentIndex < text.length) {
+    nodes.push(<span key="text-end">{text.substring(currentIndex)}</span>);
+  }
+
+  return <div className="whitespace-pre-wrap leading-relaxed">{nodes}</div>;
 }
 
-function Feedback({ result, onBack }: { result: Correction; onBack: () => void }) {
+function Feedback({ result, text, onBack }: { result: Correction; text: string; onBack: () => void }) {
   const score = Math.max(0, Math.min(1000, Math.round(result.score)));
-  return <><div className="mb-8 flex flex-wrap items-end justify-between gap-4"><PageTitle eyebrow="Correção concluída" title="Seu feedback personalizado" description="Use os comentários como um mapa para a próxima versão do seu texto." /><Button variant="outline" onClick={onBack} className="rounded-xl">Voltar ao texto</Button></div><div className="grid gap-6 lg:grid-cols-[320px_1fr]"><div className="rounded-xl border border-border bg-card p-7 text-center shadow-sm"><div className="mx-auto grid size-48 place-items-center rounded-full border-[14px] border-primary bg-accent"><div><strong className="text-5xl text-primary">{score}</strong><span className="block text-sm text-muted-foreground">de 1000</span></div></div><h2 className="mt-6 text-xl font-bold">Ótimo avanço!</h2><p className="mt-2 text-sm text-muted-foreground">Sua argumentação tem uma base promissora. Agora é hora de lapidar.</p></div><div className="rounded-xl border border-border bg-card p-6 shadow-sm"><h2 className="text-xl font-bold">Desempenho por competência</h2><div className="mt-6 space-y-5">{result.competencies.slice(0,5).map((item,i) => <div key={`${item.name}-${i}`}><div className="mb-2 flex justify-between gap-3 text-sm"><span className="font-semibold">C{i+1} · {item.name}</span><strong className="text-primary">{Math.round(item.score)}/200</strong></div><Progress value={Math.max(0,Math.min(100,item.score/2))} /><p className="mt-2 text-xs text-muted-foreground">{item.feedback}</p></div>)}</div></div></div><div className="mt-6 grid gap-6 md:grid-cols-2"><div className="rounded-xl border border-border bg-card p-6 shadow-sm"><h2 className="flex items-center gap-2 text-lg font-bold text-success"><CheckCircle2 /> O que está excelente</h2><ul className="mt-5 space-y-4">{result.strengths.map((item) => <li key={item} className="flex gap-3 text-sm leading-6"><CheckCircle2 className="mt-1 size-4 shrink-0 text-success" />{item}</li>)}</ul></div><div className="rounded-xl border border-border bg-card p-6 shadow-sm"><h2 className="flex items-center gap-2 text-lg font-bold text-highlight"><AlertCircle /> O que precisa melhorar</h2><ul className="mt-5 space-y-4">{result.improvements.map((item) => <li key={item} className="flex gap-3 text-sm leading-6"><AlertCircle className="mt-1 size-4 shrink-0 text-highlight" />{item}</li>)}</ul></div></div>{result.annotations.length > 0 && <div className="mt-6 rounded-xl border border-border bg-card p-6 shadow-sm"><h2 className="text-lg font-bold">Intervenções no seu texto</h2><div className="mt-5 space-y-4">{result.annotations.map((item) => <div key={item.excerpt} className="rounded-lg border-l-4 border-primary bg-accent p-4"><p className="font-medium">“{item.excerpt}”</p><p className="mt-2 text-sm text-muted-foreground"><Sparkles className="mr-2 inline size-4 text-primary" />{item.suggestion}</p></div>)}</div></div>}</>;
+  return (
+    <>
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <PageTitle eyebrow="Correção concluída" title="Seu feedback personalizado" description="Use os comentários como um mapa para a próxima versão do seu texto." />
+        <Button variant="outline" onClick={onBack} className="rounded-xl">Voltar ao texto</Button>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-2">
+        {/* Lado Esquerdo: Texto Grifado */}
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm h-fit sticky top-24">
+          <h2 className="text-xl font-bold mb-4">Sua Redação</h2>
+          <div className="text-base text-foreground/90 bg-accent/30 p-5 rounded-lg border border-border/50">
+            <HighlightedText text={text} annotations={result.annotations} />
+          </div>
+          <div className="mt-6 flex flex-wrap gap-4 text-sm font-semibold">
+            <span className="flex items-center gap-2"><div className="size-3 rounded-full bg-success"></div> Acertos</span>
+            <span className="flex items-center gap-2"><div className="size-3 rounded-full bg-highlight"></div> Pontos de Melhoria</span>
+          </div>
+        </div>
+
+        {/* Lado Direito: Feedback */}
+        <div className="space-y-6">
+          <div className="grid gap-6 sm:grid-cols-[1fr_1.5fr]">
+            <div className="rounded-xl border border-border bg-card p-7 text-center shadow-sm">
+              <div className="mx-auto grid size-32 sm:size-40 place-items-center rounded-full border-[10px] sm:border-[14px] border-primary bg-accent">
+                <div>
+                  <strong className="text-4xl sm:text-5xl text-primary">{score}</strong>
+                  <span className="block text-xs sm:text-sm text-muted-foreground">de 1000</span>
+                </div>
+              </div>
+              <h2 className="mt-6 text-lg sm:text-xl font-bold">Ótimo avanço!</h2>
+            </div>
+            
+            <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+              <h2 className="text-lg font-bold">Competências</h2>
+              <div className="mt-4 space-y-4">
+                {result.competencies.slice(0,5).map((item,i) => (
+                  <div key={`${item.name}-${i}`}>
+                    <div className="mb-1.5 flex justify-between gap-3 text-xs sm:text-sm">
+                      <span className="font-semibold truncate">C{i+1} · {item.name}</span>
+                      <strong className="text-primary">{Math.round(item.score)}/200</strong>
+                    </div>
+                    <Progress value={Math.max(0,Math.min(100,item.score/2))} className="h-2" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+              <h2 className="flex items-center gap-2 text-base font-bold text-success"><CheckCircle2 className="size-5" /> O que está excelente</h2>
+              <ul className="mt-4 space-y-3">
+                {result.strengths.map((item) => <li key={item} className="flex gap-2 text-sm leading-6"><CheckCircle2 className="mt-1 size-4 shrink-0 text-success" />{item}</li>)}
+              </ul>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+              <h2 className="flex items-center gap-2 text-base font-bold text-highlight"><AlertCircle className="size-5" /> O que precisa melhorar</h2>
+              <ul className="mt-4 space-y-3">
+                {result.improvements.map((item) => <li key={item} className="flex gap-2 text-sm leading-6"><AlertCircle className="mt-1 size-4 shrink-0 text-highlight" />{item}</li>)}
+              </ul>
+            </div>
+          </div>
+
+          {result.annotations.length > 0 && (
+            <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+              <h2 className="text-lg font-bold">Intervenções no seu texto</h2>
+              <div className="mt-5 space-y-4">
+                {result.annotations.map((item) => (
+                  <div key={item.excerpt} className={`rounded-lg border-l-4 p-4 ${item.type === 'acerto' ? 'border-success bg-success/10' : 'border-highlight bg-highlight/10'}`}>
+                    <p className="font-medium text-sm italic">“{item.excerpt}”</p>
+                    <p className={`mt-2 text-sm font-medium ${item.type === 'acerto' ? 'text-success' : 'text-highlight'}`}>
+                      <Sparkles className="mr-1.5 inline size-4" />{item.suggestion}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}></div>{result.annotations.length > 0 && <div className="mt-6 rounded-xl border border-border bg-card p-6 shadow-sm"><h2 className="text-lg font-bold">Intervenções no seu texto</h2><div className="mt-5 space-y-4">{result.annotations.map((item) => <div key={item.excerpt} className="rounded-lg border-l-4 border-primary bg-accent p-4"><p className="font-medium">“{item.excerpt}”</p><p className="mt-2 text-sm text-muted-foreground"><Sparkles className="mr-2 inline size-4 text-primary" />{item.suggestion}</p></div>)}</div></div>}</>;
 }

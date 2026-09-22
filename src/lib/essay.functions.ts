@@ -1,6 +1,6 @@
-import { createOpenAI } from "@ai-sdk/openai";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createServerFn } from "@tanstack/react-start";
-import { Output, streamText } from "ai";
+import { generateObject } from "ai";
 import { z } from "zod";
 
 const EssayInput = z.object({
@@ -25,6 +25,7 @@ const CorrectionSchema = z.object({
     z.object({
       excerpt: z.string(),
       suggestion: z.string(),
+      type: z.enum(["acerto", "erro"]),
     }),
   ),
 });
@@ -32,36 +33,22 @@ const CorrectionSchema = z.object({
 export const correctEssay = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => EssayInput.parse(input))
   .handler(async ({ data }) => {
-    const apiKey = process.env["LOVABLE_API_KEY"];
-    if (!apiKey) throw new Error("A correção inteligente ainda não está configurada.");
+    const apiKey = process.env["LOVABLE_API_KEY"] || process.env["GEMINI_API_KEY"];
+    if (!apiKey) throw new Error("A correção inteligente ainda não está configurada (Falta API Key).");
 
-    const lovable = createOpenAI({
-      baseURL: "https://ai.gateway.lovable.dev/v1",
+    const google = createGoogleGenerativeAI({
       apiKey,
-      headers: {
-        "Lovable-API-Key": apiKey,
-        "X-Lovable-AIG-SDK": "vercel-ai-sdk",
-      },
     });
 
     const goalContext = data.course && data.college 
       ? `O aluno tem o objetivo de ingressar em ${data.course} na ${data.college} com uma meta de ${data.targetScore || 900} pontos. Ajuste seu rigor, sua exigência gramatical e a profundidade dos argumentos esperados de acordo com essa concorrência.`
       : `O aluno tem uma meta de ${data.targetScore || 900} pontos.`;
 
-    const result = streamText({
-      model: lovable.responses("openai/gpt-6-astra"),
-      output: Output.object({ schema: CorrectionSchema }),
-      prompt: `Atue como corretor pedagógico implacável de redações do ENEM. ${goalContext} Avalie o texto abaixo pelas cinco competências oficiais. Cada competência vale de 0 a 200 e a soma deve ser a nota final de 0 a 1000. Seja criterioso, focado no objetivo do aluno e específico. Produza exatamente cinco competências em ordem, 2 a 4 forças, 2 a 4 melhorias e até 3 anotações com trechos literais do texto.\n\nREDAÇÃO:\n${data.essay}`,
-      providerOptions: {
-        openai: {
-          forceReasoning: true,
-          reasoningEffort: "medium",
-          reasoningSummary: "auto",
-          store: false,
-          include: ["reasoning.encrypted_content"],
-        },
-      },
+    const result = await generateObject({
+      model: google("gemini-flash-latest"),
+      schema: CorrectionSchema,
+      prompt: `Atue como corretor pedagógico implacável de redações do ENEM. ${goalContext} Avalie o texto abaixo pelas cinco competências oficiais. Cada competência vale de 0 a 200 e a soma deve ser a nota final de 0 a 1000. Seja criterioso, focado no objetivo do aluno e específico. Produza exatamente cinco competências em ordem, 2 a 4 forças, 2 a 4 melhorias e até 5 anotações (indicando o tipo 'acerto' ou 'erro') com trechos literais do texto.\n\nREDAÇÃO:\n${data.essay}`,
     });
 
-    return await result.output;
+    return result.object;
   });
