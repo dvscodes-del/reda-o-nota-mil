@@ -15,20 +15,21 @@ type Profile = {
   avatar_url: string | null;
 };
 
-// Extending standard profile type for the view
 type ExtendedProfile = Profile & {
-  course: string;
-  college: string;
-  age: number;
-  state: string;
+  course: string | null;
+  college: string | null;
+  age: number | null;
+  state: string | null;
 };
 
 export function StudentProfile({ 
   onOpen, 
-  goTo 
+  goTo,
+  onStartChat
 }: { 
   onOpen: (essay: any) => void;
   goTo: (section: string) => void;
+  onStartChat: (profile: any) => void;
 }) {
   const { preferences } = useUserPreferences();
   const { user } = useAuth();
@@ -37,6 +38,7 @@ export function StudentProfile({
   const [searchResults, setSearchResults] = useState<Profile[]>([]);
   const [viewingProfile, setViewingProfile] = useState<ExtendedProfile | null>(null);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [followersCount, setFollowersCount] = useState(0);
 
   // Inicializa o perfil visualizado como o próprio usuário se nada estiver selecionado
   useEffect(() => {
@@ -48,9 +50,18 @@ export function StudentProfile({
         email: user.email || null,
         course: preferences?.course || "Curso Desejado",
         college: preferences?.college || "Universidade",
-        age: 17,
-        state: "SP"
+        age: preferences?.age || null,
+        state: preferences?.state || "SP"
       });
+      
+      const fetchMyFollowers = async () => {
+        const { count } = await supabase
+          .from('follows')
+          .select('*', { count: 'exact', head: true })
+          .eq('following_id', user.id);
+        setFollowersCount(count || 0);
+      };
+      fetchMyFollowers();
     }
   }, [user, preferences, viewingProfile]);
 
@@ -63,8 +74,8 @@ export function StudentProfile({
     
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, name, avatar_url')
-      .ilike('name', `%${searchQuery}%`)
+      .select('id, name:full_name, avatar_url, course, college, age, state')
+      .ilike('full_name', `%${searchQuery}%`)
       .limit(5);
       
     if (error) console.error("Search error:", error);
@@ -80,18 +91,24 @@ export function StudentProfile({
   }, [searchQuery]);
 
   // Carrega o perfil selecionado da busca
-  const loadProfile = async (profile: Profile) => {
+  const loadProfile = async (profile: any) => {
     setViewingProfile({
       ...profile,
-      // Como não temos esses dados no public.profiles ainda, mockamos
-      course: "Medicina",
-      college: "USP",
-      age: 18,
-      state: "RJ"
+      course: profile.course || "Não informado",
+      college: profile.college || "Não informado",
+      age: profile.age || null,
+      state: profile.state || "Não informado"
     });
     setSearchResults([]);
     setSearchQuery("");
     
+    // Busca número de seguidores
+    const { count } = await supabase
+      .from('follows')
+      .select('*', { count: 'exact', head: true })
+      .eq('following_id', profile.id);
+    setFollowersCount(count || 0);
+
     // Verifica se já sigo esse usuário
     if (user && profile.id !== user.id) {
       const { data } = await supabase
@@ -115,6 +132,7 @@ export function StudentProfile({
         .eq('follower_id', user.id)
         .eq('following_id', viewingProfile.id);
       setIsFollowing(false);
+      setFollowersCount(prev => Math.max(0, prev - 1));
     } else {
       await supabase
         .from('follows')
@@ -123,6 +141,7 @@ export function StudentProfile({
           following_id: viewingProfile.id
         });
       setIsFollowing(true);
+      setFollowersCount(prev => prev + 1);
     }
   };
 
@@ -191,8 +210,9 @@ export function StudentProfile({
             <h2 className="text-3xl font-bold md:text-4xl capitalize">{name}</h2>
             <div className="mt-2 flex flex-wrap items-center justify-center md:justify-start gap-4 text-primary-foreground/80 font-medium">
               <span className="flex items-center gap-1"><MapPin className="size-4" /> {viewingProfile.state}, Brasil</span>
-              <span className="flex items-center gap-1"><Calendar className="size-4" /> {viewingProfile.age} anos</span>
+              {viewingProfile.age && <span className="flex items-center gap-1"><Calendar className="size-4" /> {viewingProfile.age} anos</span>}
               <span className="flex items-center gap-1"><Target className="size-4" /> Foco: {viewingProfile.course} ({viewingProfile.college})</span>
+              <span className="flex items-center gap-1 bg-primary-foreground/20 px-3 py-1 rounded-full"><UserPlus className="size-4" /> {followersCount} seguidores</span>
             </div>
             
             {!isOwnProfile && (
@@ -206,7 +226,7 @@ export function StudentProfile({
                   {isFollowing ? <CheckCircle2 className="mr-2 size-4" /> : <UserPlus className="mr-2 size-4" />} 
                   {isFollowing ? "Seguindo" : "Seguir"}
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => goTo("mensagens")} className="rounded-full border-primary-foreground/30 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20"><MessageCircle className="mr-2 size-4" /> Mensagem</Button>
+                <Button size="sm" variant="outline" onClick={() => onStartChat(viewingProfile)} className="rounded-full border-primary-foreground/30 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20"><MessageCircle className="mr-2 size-4" /> Mensagem</Button>
               </div>
             )}
           </div>
