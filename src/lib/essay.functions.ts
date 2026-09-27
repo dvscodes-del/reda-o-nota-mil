@@ -45,7 +45,7 @@ export const correctEssay = createServerFn({ method: "POST" })
       : `O aluno tem uma meta de ${data.targetScore || 900} pontos.`;
 
     const result = await generateObject({
-      model: google("gemini-1.5-pro-latest"),
+      model: google("gemini-3.1-pro-preview"),
       schema: CorrectionSchema,
       prompt: `Atue como corretor pedagógico implacável de redações do ENEM. ${goalContext} Avalie o texto abaixo pelas cinco competências oficiais. Cada competência vale de 0 a 200 e a soma deve ser a nota final de 0 a 1000. Seja criterioso, focado no objetivo do aluno e específico. Produza exatamente cinco competências em ordem, 2 a 4 forças, 2 a 4 melhorias e até 5 anotações (indicando o tipo 'acerto' ou 'erro') com trechos literais do texto.\n\nREDAÇÃO:\n${data.essay}`,
     });
