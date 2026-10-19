@@ -23,9 +23,9 @@ function ProfilePage() {
   }
 
   // Use the name from preferences, or fallback to auth metadata, or email
-  const fullName = preferences.full_name || user.user_metadata?.full_name || 'Estudante';
+  const fullName = preferences.full_name || (user.user_metadata?.['full_name'] as string | undefined) || 'Estudante';
   const initial = fullName.charAt(0).toUpperCase();
-  const avatarUrl = preferences.avatar_url || user.user_metadata?.avatar_url;
+  const avatarUrl = preferences.avatar_url || (user.user_metadata?.['avatar_url'] as string | undefined);
 
   return (
     <div className="container mx-auto p-4 max-w-4xl space-y-6">

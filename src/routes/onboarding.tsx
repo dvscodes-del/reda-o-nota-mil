@@ -17,7 +17,7 @@ function OnboardingPage() {
   const [targetScore, setTargetScore] = useState('900');
   
   const { user } = useAuth(); // need to import useAuth
-  const [fullName, setFullName] = useState(user?.user_metadata?.full_name || '');
+  const [fullName, setFullName] = useState((user?.user_metadata?.['full_name'] as string | undefined) || '');
   const [age, setAge] = useState<string>('');
 
   
@@ -53,7 +53,7 @@ function OnboardingPage() {
 
   const availableStates = Object.keys(universityData);
   const availableColleges = state && state !== 'Outro' ? Object.keys(universityData[state] || {}) : [];
-  const availableCourses = state && state !== 'Outro' && college && college !== 'Outro' ? universityData[state][college] || [] : [];
+  const availableCourses = state && state !== 'Outro' && college && college !== 'Outro' ? (universityData[state]?.[college] || []) : [];
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50/50 p-4">

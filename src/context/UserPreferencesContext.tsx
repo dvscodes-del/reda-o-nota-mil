@@ -1,16 +1,16 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './AuthContext';
+import { useAuth, isLocalEnvironment, LOCAL_DEV_USER } from './AuthContext';
 import { toast } from 'sonner';
 
 export interface UserPreferences {
   targetScore: string;
-  state?: string;
+  state?: string | undefined;
   college: string;
   course: string;
-  age?: number;
-  full_name?: string;
-  avatar_url?: string;
+  age?: number | undefined;
+  full_name?: string | undefined;
+  avatar_url?: string | undefined;
   hasCompletedOnboarding: boolean;
 }
 
@@ -35,6 +35,36 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
         return;
       }
 
+      // Para o usuário do dev local, carrega preferências prontas com onboarding já concluído
+      if (isLocalEnvironment() && user.id === LOCAL_DEV_USER.id) {
+        try {
+          const stored = localStorage.getItem('local_dev_preferences');
+          if (stored) {
+            setPreferences(JSON.parse(stored));
+            setIsLoading(false);
+            return;
+          }
+        } catch (e) {
+          console.warn('Erro ao ler preferências locais:', e);
+        }
+
+        const defaultDevPrefs: UserPreferences = {
+          targetScore: '960',
+          state: 'SP',
+          college: 'USP',
+          course: 'Medicina',
+          age: 18,
+          full_name: (user.user_metadata?.['full_name'] as string | undefined) || 'Davi (Dev Local)',
+          avatar_url: '',
+          hasCompletedOnboarding: true,
+        };
+        setPreferences(defaultDevPrefs);
+        localStorage.setItem('local_dev_preferences', JSON.stringify(defaultDevPrefs));
+        localStorage.setItem(`onboarding_${user.id}`, 'true');
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const { data, error } = await supabase
           .from('profiles')
@@ -46,16 +76,17 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
           console.error('Error loading profile:', error);
         }
 
-        if (data) {
+        const profileData = data as any;
+        if (profileData) {
           setPreferences({
-            targetScore: data.target_score || '900',
-            state: data.state || '',
-            college: data.college || '',
-            course: data.course || '',
-            age: data.age || undefined,
-            full_name: data.full_name || '',
-            avatar_url: data.avatar_url || '',
-            hasCompletedOnboarding: data.has_completed_onboarding || localStorage.getItem(`onboarding_${user.id}`) === 'true',
+            targetScore: profileData.target_score || '900',
+            state: profileData.state || '',
+            college: profileData.college || '',
+            course: profileData.course || '',
+            age: profileData.age || undefined,
+            full_name: profileData.full_name || '',
+            avatar_url: profileData.avatar_url || '',
+            hasCompletedOnboarding: profileData.has_completed_onboarding || localStorage.getItem(`onboarding_${user.id}`) === 'true',
           });
         } else {
           // Fallback if no row exists yet
@@ -64,8 +95,8 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
             state: '',
             college: '',
             course: '',
-            full_name: user.user_metadata?.full_name || '',
-            avatar_url: user.user_metadata?.avatar_url || '',
+            full_name: (user.user_metadata?.['full_name'] as string | undefined) || '',
+            avatar_url: (user.user_metadata?.['avatar_url'] as string | undefined) || '',
             hasCompletedOnboarding: localStorage.getItem(`onboarding_${user.id}`) === 'true',
           });
         }
@@ -82,6 +113,20 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
   const savePreferences = async (prefs: Omit<UserPreferences, 'hasCompletedOnboarding' | 'avatar_url'>) => {
     if (!user) return;
 
+    // Salva localmente para o dev local sem depender do banco remoto
+    if (isLocalEnvironment() && user.id === LOCAL_DEV_USER.id) {
+      const updatedPrefs: UserPreferences = {
+        ...prefs,
+        avatar_url: preferences?.avatar_url || '',
+        hasCompletedOnboarding: true,
+      };
+      setPreferences(updatedPrefs);
+      localStorage.setItem('local_dev_preferences', JSON.stringify(updatedPrefs));
+      localStorage.setItem(`onboarding_${user.id}`, 'true');
+      toast.success('Perfil atualizado com sucesso!');
+      return;
+    }
+
     try {
       const updates = {
         id: user.id,
@@ -95,11 +140,12 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
         updated_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase.from('profiles').upsert(updates);
+      const { error } = await supabase.from('profiles').upsert(updates as any);
 
       if (error) {
         console.error('Error saving profile to Supabase (falling back to local):', error);
-        // We don't throw here to ensure local state is updated and the user isn't blocked
+      } else {
+        toast.success('Perfil atualizado com sucesso!');
       }
 
       // Save locally as a robust fallback
