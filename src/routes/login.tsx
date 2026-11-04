@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth, isLocalEnvironment } from '@/context/AuthContext';
 import { useUserPreferences } from '@/context/UserPreferencesContext';
@@ -21,13 +21,15 @@ function LoginPage() {
   const navigate = useNavigate();
 
   // If already logged in, redirect based on preferences
-  if (user && !isAuthLoading && !isPrefsLoading) {
-    if (!preferences?.hasCompletedOnboarding) {
-      navigate({ to: '/onboarding' });
-    } else {
-      navigate({ to: '/' });
+  useEffect(() => {
+    if (user && !isAuthLoading && !isPrefsLoading) {
+      if (!preferences?.hasCompletedOnboarding) {
+        navigate({ to: '/onboarding' });
+      } else {
+        navigate({ to: '/' });
+      }
     }
-  }
+  }, [user, isAuthLoading, isPrefsLoading, preferences, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

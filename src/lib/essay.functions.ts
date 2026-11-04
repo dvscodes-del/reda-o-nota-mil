@@ -31,7 +31,7 @@ const CorrectionSchema = z.object({
 });
 
 export const correctEssay = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => EssayInput.parse(input))
+  .validator((input: unknown) => EssayInput.parse(input))
   .handler(async ({ data }) => {
     const apiKey = process.env["LOVABLE_API_KEY"] || process.env["GEMINI_API_KEY"];
     if (!apiKey) throw new Error("A correção inteligente ainda não está configurada (Falta API Key).");

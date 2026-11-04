@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUserPreferences } from '@/context/UserPreferencesContext';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -33,9 +33,11 @@ function OnboardingPage() {
   const navigate = useNavigate();
 
   // Redirect to home if they already finished onboarding
-  if (user && !isPrefsLoading && preferences?.hasCompletedOnboarding) {
-    navigate({ to: '/' });
-  }
+  useEffect(() => {
+    if (user && !isPrefsLoading && preferences?.hasCompletedOnboarding) {
+      navigate({ to: '/' });
+    }
+  }, [user, isPrefsLoading, preferences, navigate]);
 
   const handleFinish = async (e: React.FormEvent) => {
     e.preventDefault();
