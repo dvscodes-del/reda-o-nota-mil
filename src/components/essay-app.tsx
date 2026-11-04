@@ -4,6 +4,7 @@ import { useMemo, useRef, useState, useEffect } from "react";
 import type { LucideIcon } from "lucide-react";
 import { useUserPreferences } from "@/context/UserPreferencesContext";
 import { useAuth } from "@/context/AuthContext";
+import { useEssays } from "@/context/EssaysContext";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -285,22 +286,25 @@ export function EssayApp() {
   const [selectedDay, setSelectedDay] = useState(getTodayThemeIndex()); // dia atual dinâmico
   const fileRef = useRef<HTMLInputElement>(null);
   const runCorrection = useServerFn(correctEssay);
-  const { user, signOut } = useAuth();
+  const { user, signOut, isLoading } = useAuth();
   const navigate = useNavigate();
-  const { preferences } = useUserPreferences();
+  const { preferences, isLoading: isPrefsLoading } = useUserPreferences();
+  const { saveEssay } = useEssays();
 
   useEffect(() => {
+    if (isLoading || (user && isPrefsLoading)) return;
     if (user === null) {
       navigate({ to: '/login' });
     } else if (user && preferences && !preferences.hasCompletedOnboarding) {
       navigate({ to: '/onboarding' });
     }
-  }, [user, preferences, navigate]);
+  }, [user, preferences, isLoading, isPrefsLoading, navigate]);
 
   const stats = useMemo(() => {
     const words = text.trim() ? text.trim().split(/\s+/).length : 0;
     return { words, chars: text.length, lines: Math.min(30, Math.max(1, Math.ceil(text.length / 78))) };
   }, [text]);
+  const activeTheme = (dailyThemes[selectedDay] || dailyThemes[0])!;
 
   function goTo(next: Section) {
     setSection(next);
@@ -325,6 +329,20 @@ export function EssayApp() {
         } 
       });
       setResult(correction);
+
+      const currentThemeItem = dailyThemes[selectedDay];
+      if (currentThemeItem) {
+        await saveEssay({
+          theme_day: currentThemeItem.day,
+          theme_topic: currentThemeItem.topic,
+          essay_text: text,
+          score: correction.score,
+          competencies: correction.competencies,
+          strengths: correction.strengths,
+          improvements: correction.improvements,
+          annotations: correction.annotations,
+        });
+      }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível corrigir agora. Tente novamente em instantes.");
     } finally {
@@ -373,7 +391,7 @@ export function EssayApp() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
                   <div className="grid h-full w-full place-items-center rounded-full bg-accent font-bold text-accent-foreground ring-2 ring-transparent transition-all hover:ring-primary">
-                    {user?.email?.[0].toUpperCase() || 'ES'}
+                    {user?.email?.[0]?.toUpperCase() || 'ES'}
                   </div>
                 </Button>
               </DropdownMenuTrigger>
@@ -396,12 +414,12 @@ export function EssayApp() {
 
         <div className="mx-auto max-w-7xl p-4 md:p-8 lg:p-10">
           {section === "dashboard" && <Dashboard goTo={goTo} />}
-          {section === "perfil" && <StudentProfile onOpen={setSelectedEssay} goTo={goTo} onStartChat={(profile) => { setChatTarget(profile); goTo("mensagens"); }} />}
+          {section === "perfil" && <StudentProfile onOpen={setSelectedEssay} goTo={(s: string) => goTo(s as Section)} onStartChat={(profile) => { setChatTarget(profile); goTo("mensagens"); }} />}
           {section === "mensagens" && <Messages initialUser={chatTarget} onClearInitial={() => setChatTarget(null)} />}
           {section === "curso" && <CourseTarget goTo={goTo} />}
-          {section === "mural" && <Mural onOpen={setSelectedEssay} currentTheme={dailyThemes[selectedDay]} />}
-          {section === "competencias" && <Competencies active={activeCompetency} setActive={setActiveCompetency} currentTheme={dailyThemes[selectedDay]} />}
-          {section === "repertorio" && <Repertory filter={filter} setFilter={setFilter} currentTheme={dailyThemes[selectedDay]} />}
+          {section === "mural" && <Mural onOpen={setSelectedEssay} currentTheme={activeTheme} />}
+          {section === "competencias" && <Competencies active={activeCompetency} setActive={setActiveCompetency} currentTheme={activeTheme} />}
+          {section === "repertorio" && <Repertory filter={filter} setFilter={setFilter} currentTheme={activeTheme} />}
           {section === "laboratorio" && <Laboratory tab={labTab} setTab={setLabTab} text={text} setText={setText} stats={stats} timer={timer} setTimer={setTimer} preview={preview} fileRef={fileRef} setPreview={setPreview} correcting={correcting} error={error} handleCorrection={handleCorrection} result={result} setResult={setResult} selectedDay={selectedDay} setSelectedDay={setSelectedDay} />}
         </div>
       </main>
@@ -442,13 +460,14 @@ function PageTitle({ eyebrow, title, description }: { eyebrow: string; title: st
 
 function CourseTarget({ goTo }: { goTo: (section: Section) => void }) {
   const { preferences } = useUserPreferences();
+  const { stats: essayStats } = useEssays();
   const targetScoreNum = preferences?.targetScore ? parseInt(preferences.targetScore, 10) : 900;
   const course = preferences?.course || "seu curso";
   const college = preferences?.college || "sua universidade";
   
   const avgRequired = Math.max(700, targetScoreNum - 40);
   const hoursPerWeek = targetScoreNum > 800 ? 4 : targetScoreNum > 700 ? 3 : 2;
-  const currentAvg = 0;
+  const currentAvg = essayStats.averageScore;
   const distance = Math.max(0, targetScoreNum - currentAvg);
   
   return (
@@ -481,7 +500,7 @@ function CourseTarget({ goTo }: { goTo: (section: Section) => void }) {
       <div className="rounded-xl border border-border bg-card p-8 shadow-sm">
         <h3 className="text-xl font-bold mb-4">Onde você está vs. Onde precisa chegar</h3>
         <p className="mb-6 text-muted-foreground">Sua média atual nas últimas redações é de <strong>{currentAvg}</strong> pontos. Você precisa de mais <strong>{distance}</strong> pontos para atingir sua meta com segurança.</p>
-        <Progress value={0} className="mb-4 h-3" />
+        <Progress value={targetScoreNum > 0 ? Math.min(100, Math.round((currentAvg / targetScoreNum) * 100)) : 0} className="mb-4 h-3" />
         <div className="flex justify-between text-sm font-semibold">
           <span>Atual: {currentAvg}</span>
           <span className="text-primary">Meta: {targetScoreNum}</span>
@@ -500,12 +519,13 @@ function CourseTarget({ goTo }: { goTo: (section: Section) => void }) {
 function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
   const { preferences } = useUserPreferences();
   const { user } = useAuth();
+  const { stats: essayStats } = useEssays();
   const targetScoreNum = preferences?.targetScore ? parseInt(preferences.targetScore, 10) : 900;
   
   const dashboardStats: Array<[string, string, LucideIcon]> = [
-    ["0", "Redações enviadas", FileText],
-    ["0", "Média atual", TrendingUp],
-    ["0", "Evolução recente", BrainCircuit],
+    [essayStats.totalCompleted.toString(), "Redações enviadas", FileText],
+    [essayStats.totalCompleted > 0 ? essayStats.averageScore.toString() : "-", "Média atual", TrendingUp],
+    [essayStats.totalCompleted > 1 ? `${essayStats.evolutionPercent >= 0 ? '+' : ''}${essayStats.evolutionPercent}%` : (essayStats.totalCompleted === 1 ? "1ª concluída" : "-"), "Evolução recente", BrainCircuit],
   ];
   return <><PageTitle eyebrow="Seu espaço de evolução" title={`Boa tarde, ${user?.email?.split('@')[0] || 'Estudante'}!`} description={preferences ? `Seu foco: ${preferences.course} na ${preferences.college}` : "Cada parágrafo é um passo. Continue construindo sua melhor nota."} />
     <section className="relative overflow-hidden rounded-2xl bg-primary p-6 text-primary-foreground shadow-sm md:p-10">
@@ -534,7 +554,7 @@ function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
         </Button>
       </div>
     </section>
-    <section className="mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]"><div className="rounded-xl border border-border bg-card p-6 shadow-sm"><div className="mb-8 flex items-center justify-between"><div><h3 className="font-bold">Sua evolução</h3><p className="text-sm text-muted-foreground">Últimas cinco redações</p></div><span className="rounded-lg bg-accent px-3 py-1 text-xs font-semibold text-primary">0%</span></div><div className="flex h-44 items-end justify-between gap-3 border-b border-border px-2">{[0,0,0,0,0].map((score,i) => <div key={score} className="flex h-full flex-1 flex-col justify-end gap-2 text-center"><span className="text-xs font-bold">{score > 0 ? score : "-"}</span><div className="rounded-t-md bg-primary/20 transition-colors hover:bg-primary" style={{height: `${score > 0 ? score/10 : 0}%`}} /><span className="pb-2 text-xs text-muted-foreground">R{i+1}</span></div>)}</div></div><div className="rounded-xl border border-border bg-card p-6 shadow-sm"><h3 className="font-bold">Sua Meta (Target)</h3><p className="mt-1 text-sm text-muted-foreground">Chegue à média {targetScoreNum}</p><div className="my-6 grid place-items-center"><div className="grid size-32 place-items-center rounded-full border-[12px] border-accent"><div className="text-center"><strong className="text-2xl">0</strong><small className="block text-muted-foreground">de {targetScoreNum}</small></div></div></div><Progress value={0} /><p className="mt-3 text-center text-xs text-muted-foreground">Você está a {targetScoreNum} pontos da meta.</p></div></section>
+    <section className="mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]"><div className="rounded-xl border border-border bg-card p-6 shadow-sm"><div className="mb-8 flex items-center justify-between"><div><h3 className="font-bold">Sua evolução</h3><p className="text-sm text-muted-foreground">Últimas cinco redações</p></div><span className="rounded-lg bg-accent px-3 py-1 text-xs font-semibold text-primary">{essayStats.totalCompleted > 1 ? `${essayStats.evolutionPercent >= 0 ? '+' : ''}${essayStats.evolutionPercent}%` : `${essayStats.totalCompleted} concluída(s)`}</span></div><div className="flex h-44 items-end justify-between gap-3 border-b border-border px-2">{essayStats.recentScores.map((score,i) => <div key={i} className="flex h-full flex-1 flex-col justify-end gap-2 text-center"><span className="text-xs font-bold">{score > 0 ? score : "-"}</span><div className="rounded-t-md bg-primary/20 transition-colors hover:bg-primary" style={{height: `${score > 0 ? score/10 : 0}%`}} /><span className="pb-2 text-xs text-muted-foreground">R{i+1}</span></div>)}</div></div><div className="rounded-xl border border-border bg-card p-6 shadow-sm"><h3 className="font-bold">Sua Meta (Target)</h3><p className="mt-1 text-sm text-muted-foreground">Chegue à média {targetScoreNum}</p><div className="my-6 grid place-items-center"><div className="grid size-32 place-items-center rounded-full border-[12px] border-accent"><div className="text-center"><strong className="text-2xl">{essayStats.averageScore}</strong><small className="block text-muted-foreground">de {targetScoreNum}</small></div></div></div><Progress value={targetScoreNum > 0 ? Math.min(100, Math.round((essayStats.averageScore / targetScoreNum) * 100)) : 0} /><p className="mt-3 text-center text-xs text-muted-foreground">{essayStats.totalCompleted === 0 ? "Envie sua primeira redação para começar a medir a distância da meta." : essayStats.averageScore >= targetScoreNum ? "🎉 Parabéns! Você já superou sua meta!" : `Você está a ${Math.max(0, targetScoreNum - essayStats.averageScore)} pontos da meta.`}</p></div></section>
   </>;
 }
 
@@ -600,11 +620,11 @@ function Competencies({ active, setActive, currentTheme }: {
                     onClick={() => setActiveSection(prev => ({ ...prev, [i]: section.id }))}
                     className={`shrink-0 rounded-lg border px-4 py-1.5 text-sm font-semibold transition-all ${
                       currentSection === section.id
-                        ? sectionLabels[section.id].color + ' shadow-sm'
+                        ? (sectionLabels[section.id]?.color || '') + ' shadow-sm'
                         : 'border-transparent text-muted-foreground hover:bg-accent'
                     }`}
                   >
-                    {sectionLabels[section.id].short}
+                    {sectionLabels[section.id]?.short || section.label}
                   </button>
                 ))}
               </div>
@@ -703,10 +723,19 @@ function Repertory({ filter, setFilter, currentTheme }: { filter: string; setFil
 
 function Laboratory(props: { tab: "digital"|"photo"; setTab: (v:"digital"|"photo")=>void; text:string; setText:(v:string)=>void; stats:{words:number;chars:number;lines:number}; timer:boolean; setTimer:(v:boolean)=>void; preview:string|null; fileRef:React.RefObject<HTMLInputElement|null>; setPreview:(v:string|null)=>void; correcting:boolean; error:string; handleCorrection:()=>void; result:Correction|null; setResult:(v:Correction|null)=>void; selectedDay: number; setSelectedDay: (v: number) => void }) {
   const { preferences } = useUserPreferences();
-  const currentTheme = dailyThemes[props.selectedDay];
+  const { getEssayForTheme, essays } = useEssays();
+  const currentTheme = dailyThemes[props.selectedDay] ?? dailyThemes[0]!;
 
   const handleSelectDay = (idx: number) => {
     props.setSelectedDay(idx);
+    const targetTheme = dailyThemes[idx];
+    if (targetTheme) {
+      const existing = getEssayForTheme(targetTheme.day);
+      if (existing) {
+        props.setText(existing.essay_text);
+        return;
+      }
+    }
     props.setText('');
   };
 
@@ -719,7 +748,7 @@ function Laboratory(props: { tab: "digital"|"photo"; setTab: (v:"digital"|"photo
     <div className="mb-6 rounded-2xl border border-border bg-card p-4 shadow-sm">
       <div className="mb-3 flex items-center justify-between">
         <p className="text-sm font-bold">📅 Trilha de temas — 14 dias</p>
-        <span className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-primary">{dailyThemes.filter(d => d.done).length}/{dailyThemes.length} concluídos</span>
+        <span className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-primary">{dailyThemes.filter(d => !!getEssayForTheme(d.day)).length}/{dailyThemes.length} concluídos</span>
       </div>
       <div className="flex gap-2 overflow-x-auto pb-2">
         {dailyThemes.map((theme, idx) => {
@@ -727,6 +756,9 @@ function Laboratory(props: { tab: "digital"|"photo"; setTab: (v:"digital"|"photo
             c => preferences.course.toLowerCase().includes(c.toLowerCase()) || c.toLowerCase().includes(preferences.course.toLowerCase())
           );
           const isHot = theme.hot || isCourseHot;
+          const completedEssay = getEssayForTheme(theme.day);
+          const isDone = Boolean(completedEssay);
+          const score = completedEssay?.score;
           const isSelected = props.selectedDay === idx;
           return (
             <button
@@ -736,25 +768,25 @@ function Laboratory(props: { tab: "digital"|"photo"; setTab: (v:"digital"|"photo
               className={`relative flex min-w-[76px] shrink-0 flex-col items-center justify-center gap-1.5 rounded-2xl border-2 p-3 text-center transition-all ${
                 isSelected
                   ? 'border-primary bg-primary text-primary-foreground shadow-lg scale-105'
-                  : theme.done
+                  : isDone
                   ? 'border-success/40 bg-success/5 text-foreground hover:bg-success/10'
                   : isHot
                   ? 'border-orange-400/40 bg-orange-500/5 text-foreground hover:bg-orange-500/10'
                   : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:bg-accent'
               }`}
             >
-              {isHot && !theme.done && (
+              {isHot && !isDone && (
                 <span className="absolute -right-2 -top-2 flex size-6 items-center justify-center rounded-full bg-orange-100 text-sm shadow-sm ring-2 ring-background">🔥</span>
               )}
               
-              <span className={`text-[11px] font-extrabold uppercase tracking-widest ${isSelected ? 'text-primary-foreground/80' : theme.done ? 'text-success' : 'opacity-70'}`}>
+              <span className={`text-[11px] font-extrabold uppercase tracking-widest ${isSelected ? 'text-primary-foreground/80' : isDone ? 'text-success' : 'opacity-70'}`}>
                 {theme.label}
               </span>
               <span className="text-2xl font-black leading-none">{String(theme.day).padStart(2, '0')}</span>
               
-              {theme.done ? (
+              {isDone ? (
                 <div className={`mt-1 flex items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-bold ${isSelected ? 'bg-primary-foreground text-primary' : 'bg-success/20 text-success'}`}>
-                  <CheckCircle2 className="mr-1 size-3" /> {860 + (idx * 20)}
+                  <CheckCircle2 className="mr-1 size-3" /> {score}
                 </div>
               ) : (
                 <div className="mt-1 h-4 w-full" /> 
@@ -770,6 +802,7 @@ function Laboratory(props: { tab: "digital"|"photo"; setTab: (v:"digital"|"photo
           c => preferences.course.toLowerCase().includes(c.toLowerCase()) || c.toLowerCase().includes(preferences.course.toLowerCase())
         );
         const isHot = currentTheme.hot || isCourseHot;
+        const currentCompleted = getEssayForTheme(currentTheme.day);
         return (
           <div className={`mt-3 rounded-xl p-4 ${isHot ? 'border border-orange-400/30 bg-orange-500/8' : 'bg-accent/60'}`}>
             <div className="flex items-start gap-3">
@@ -795,13 +828,44 @@ function Laboratory(props: { tab: "digital"|"photo"; setTab: (v:"digital"|"photo
                 <p className="mt-1 text-sm text-muted-foreground">{currentTheme.hint}</p>
               </div>
               <Button size="sm" variant="outline" className={`shrink-0 rounded-lg ${isHot ? 'border-orange-400/40 hover:bg-orange-500/10' : ''}`} onClick={() => props.setText('')}>
-                Comecar
+                {currentCompleted ? "Reescrever" : "Começar"}
               </Button>
             </div>
             {isHot && currentTheme.hotReason && (
               <div className="mt-3 flex items-start gap-2 rounded-lg bg-orange-500/10 px-3 py-2">
                 <span className="text-sm">📊</span>
                 <p className="text-xs leading-5 text-orange-700">{currentTheme.hotReason}</p>
+              </div>
+            )}
+            {currentCompleted && (
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs">
+                <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-200">
+                  <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
+                  <span>
+                    Redação concluída neste tema! Nota: <strong>{currentCompleted.score}/1000</strong>
+                  </span>
+                </div>
+                {currentCompleted.competencies && currentCompleted.competencies.length > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 rounded-md border-emerald-600/30 bg-card text-xs text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950/40"
+                    onClick={() => {
+                      props.setResult({
+                        score: currentCompleted.score,
+                        competencies: currentCompleted.competencies as any,
+                        strengths: currentCompleted.strengths || [],
+                        improvements: currentCompleted.improvements || [],
+                        annotations: (currentCompleted.annotations || []) as any,
+                      });
+                      if (currentCompleted.essay_text) {
+                        props.setText(currentCompleted.essay_text);
+                      }
+                    }}
+                  >
+                    Ver correção anterior
+                  </Button>
+                )}
               </div>
             )}
           </div>

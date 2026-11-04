@@ -16,6 +16,7 @@ type Profile = {
 };
 
 type ExtendedProfile = Profile & {
+  email?: string | null;
   course: string | null;
   college: string | null;
   age: number | null;
@@ -45,8 +46,8 @@ export function StudentProfile({
     if (user && !viewingProfile) {
       setViewingProfile({
         id: user.id,
-        name: user.user_metadata?.name || user.email?.split('@')[0] || "Estudante",
-        avatar_url: user.user_metadata?.avatar_url || null,
+        name: (user.user_metadata?.['name'] as string | undefined) || user.email?.split('@')[0] || "Estudante",
+        avatar_url: (user.user_metadata?.['avatar_url'] as string | undefined) || null,
         email: user.email || null,
         course: preferences?.course || "Curso Desejado",
         college: preferences?.college || "Universidade",

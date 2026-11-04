@@ -1,7 +1,7 @@
 export const dailyThemes = [
   {
     "day": 1,
-    "done": true,
+    "done": false,
     "label": "Seg",
     "hot": true,
     "hotReason": "Especialistas apontam saúde mental juvenil como tema quente para 2025.",
@@ -81,7 +81,7 @@ export const dailyThemes = [
   },
   {
     "day": 2,
-    "done": true,
+    "done": false,
     "label": "Ter",
     "hot": true,
     "hotReason": "IA e regulação tecnológica estão no topo das previsões de especialistas para 2025.",

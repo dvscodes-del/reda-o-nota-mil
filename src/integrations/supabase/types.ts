@@ -54,6 +54,100 @@ export type Database = {
           target_score?: string | null
           has_completed_onboarding?: boolean | null
         }
+        Relationships: []
+      }
+      essays: {
+        Row: {
+          id: string
+          user_id: string
+          theme_day: number
+          theme_topic: string
+          essay_text: string
+          score: number
+          competencies: Json | null
+          strengths: string[] | null
+          improvements: string[] | null
+          annotations: Json | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          theme_day: number
+          theme_topic: string
+          essay_text: string
+          score: number
+          competencies?: Json | null
+          strengths?: string[] | null
+          improvements?: string[] | null
+          annotations?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          theme_day?: number
+          theme_topic?: string
+          essay_text?: string
+          score?: number
+          competencies?: Json | null
+          strengths?: string[] | null
+          improvements?: string[] | null
+          annotations?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          id: string
+          sender_id: string
+          receiver_id: string
+          content: string
+          is_read: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          sender_id: string
+          receiver_id: string
+          content: string
+          is_read?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          sender_id?: string
+          receiver_id?: string
+          content?: string
+          is_read?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
+      follows: {
+        Row: {
+          id: string
+          follower_id: string
+          following_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          follower_id: string
+          following_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          follower_id?: string
+          following_id?: string
+          created_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {

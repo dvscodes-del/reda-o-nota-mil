@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUserPreferences } from '@/context/UserPreferencesContext';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ function OnboardingPage() {
   const [targetScore, setTargetScore] = useState('900');
   
   const { user } = useAuth(); // need to import useAuth
-  const [fullName, setFullName] = useState(user?.user_metadata?.full_name || '');
+  const [fullName, setFullName] = useState((user?.user_metadata?.['full_name'] as string | undefined) || '');
   const [age, setAge] = useState<string>('');
 
   
@@ -33,9 +33,11 @@ function OnboardingPage() {
   const navigate = useNavigate();
 
   // Redirect to home if they already finished onboarding
-  if (user && !isPrefsLoading && preferences?.hasCompletedOnboarding) {
-    navigate({ to: '/' });
-  }
+  useEffect(() => {
+    if (user && !isPrefsLoading && preferences?.hasCompletedOnboarding) {
+      navigate({ to: '/' });
+    }
+  }, [user, isPrefsLoading, preferences, navigate]);
 
   const handleFinish = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +55,7 @@ function OnboardingPage() {
 
   const availableStates = Object.keys(universityData);
   const availableColleges = state && state !== 'Outro' ? Object.keys(universityData[state] || {}) : [];
-  const availableCourses = state && state !== 'Outro' && college && college !== 'Outro' ? universityData[state][college] || [] : [];
+  const availableCourses = state && state !== 'Outro' && college && college !== 'Outro' ? (universityData[state]?.[college] || []) : [];
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50/50 p-4">

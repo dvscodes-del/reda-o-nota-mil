@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, isLocalEnvironment } from '@/context/AuthContext';
 import { useUserPreferences } from '@/context/UserPreferencesContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,13 +21,15 @@ function LoginPage() {
   const navigate = useNavigate();
 
   // If already logged in, redirect based on preferences
-  if (user && !isAuthLoading && !isPrefsLoading) {
-    if (!preferences?.hasCompletedOnboarding) {
-      navigate({ to: '/onboarding' });
-    } else {
-      navigate({ to: '/' });
+  useEffect(() => {
+    if (user && !isAuthLoading && !isPrefsLoading) {
+      if (!preferences?.hasCompletedOnboarding) {
+        navigate({ to: '/onboarding' });
+      } else {
+        navigate({ to: '/' });
+      }
     }
-  }
+  }, [user, isAuthLoading, isPrefsLoading, preferences, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,6 +158,17 @@ function LoginPage() {
               </svg>
               Entrar com Google
             </Button>
+
+            {isLocalEnvironment() && (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-blue-200 bg-blue-50/50 hover:bg-blue-100 text-blue-700 font-medium flex items-center justify-center gap-2 h-11"
+                onClick={handleMockLogin}
+              >
+                <span>💻</span> Entrar como Dev Local (Automático)
+              </Button>
+            )}
 
           </CardFooter>
         </form>
