@@ -270,7 +270,16 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
         .eq('sender_id', activeChat.id)
         .eq('is_read', false);
     };
-    markAsRead();
+    // Polling suave a cada 4 segundos quando o chat estiver ativo para sincronizar visualização
+    const readCheckInterval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchMessages();
+      }
+    }, 4000);
+
+    return () => {
+      clearInterval(readCheckInterval);
+    };
   }, [user, activeChat]);
 
   const openChat = async (contact: Profile) => {
@@ -417,11 +426,28 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
 
                     {/* Preview da última mensagem e contador numérico */}
                     <div className="flex items-center justify-between gap-2">
-                      <p className={`text-xs truncate ${hasUnread ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>
+                      <p className={`text-xs truncate flex items-center gap-1 ${hasUnread ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>
                         {lastMsg ? (
                           <>
-                            {lastMsg.sender_id === user?.id && <span className="opacity-70">Você: </span>}
-                            {lastMsg.content}
+                            {lastMsg.sender_id === user?.id ? (
+                              <>
+                                <span className="opacity-70 shrink-0">Você:</span>
+                                <span className="truncate">{lastMsg.content}</span>
+                                <span className="shrink-0 ml-1 inline-flex items-center">
+                                  {lastMsg.is_read ? (
+                                    <span className="text-sky-500 font-semibold inline-flex items-center gap-0.5 text-[10px]" title="Visualizada">
+                                      <CheckCheck className="size-3.5 stroke-[2.5]" />
+                                    </span>
+                                  ) : (
+                                    <span className="opacity-70 inline-flex items-center gap-0.5 text-[10px]" title="Enviada (ainda não visualizada)">
+                                      <Check className="size-3 stroke-[2]" />
+                                    </span>
+                                  )}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="truncate">{lastMsg.content}</span>
+                            )}
                           </>
                         ) : (
                           <span className="italic opacity-60">Iniciar conversa</span>
@@ -476,15 +502,29 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
               {chatHistory.map(msg => (
                 <div key={msg.id} className={`flex ${msg.sender_id === user?.id ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[75%] rounded-2xl p-4 shadow-sm relative ${msg.sender_id === user?.id ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-card border border-border rounded-bl-sm'}`}>
-                    <p className="text-[15px] leading-relaxed">{msg.content}</p>
-                    <div className={`flex items-center gap-1 mt-2 ${msg.sender_id === user?.id ? 'justify-end' : 'justify-start'}`}>
-                      <span className={`text-[11px] font-medium ${msg.sender_id === user?.id ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                    <p className="text-[15px] leading-relaxed break-words">{msg.content}</p>
+                    <div className={`flex items-center gap-1.5 mt-2 ${msg.sender_id === user?.id ? 'justify-end' : 'justify-start'}`}>
+                      <span className={`text-[11px] font-medium ${msg.sender_id === user?.id ? 'text-primary-foreground/75' : 'text-muted-foreground'}`}>
                         {formatTime(msg.created_at)}
                       </span>
                       {msg.sender_id === user?.id && (
-                        <span className="text-primary-foreground/90 ml-1">
-                          {msg.is_read ? <CheckCheck className="size-3.5" /> : <Check className="size-3.5 opacity-60" />}
-                        </span>
+                        msg.is_read ? (
+                          <span 
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-sky-200 bg-sky-950/35 px-1.5 py-0.5 rounded-md"
+                            title={`Mensagem visualizada por ${activeChat.full_name || 'estudante'}`}
+                          >
+                            <CheckCheck className="size-3.5 text-sky-300 stroke-[2.5]" />
+                            <span>Visualizada</span>
+                          </span>
+                        ) : (
+                          <span 
+                            className="inline-flex items-center gap-1 text-[11px] font-medium text-primary-foreground/75 bg-black/15 px-1.5 py-0.5 rounded-md"
+                            title="Enviada · O destinatário ainda não visualizou"
+                          >
+                            <Check className="size-3.5 opacity-80 stroke-[2]" />
+                            <span>Enviada</span>
+                          </span>
+                        )
                       )}
                     </div>
                   </div>
