@@ -418,8 +418,12 @@ export function EssayApp() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
-                  <div className="grid h-full w-full place-items-center rounded-full bg-accent font-bold text-accent-foreground ring-2 ring-transparent transition-all hover:ring-primary">
-                    {user?.email?.[0]?.toUpperCase() || 'ES'}
+                  <div className="grid h-full w-full place-items-center rounded-full bg-accent font-bold text-accent-foreground ring-2 ring-transparent transition-all hover:ring-primary overflow-hidden">
+                    {preferences?.avatar_url ? (
+                      <img src={preferences.avatar_url} alt="Foto de perfil" className="w-full h-full object-cover" />
+                    ) : (
+                      user?.email?.[0]?.toUpperCase() || 'ES'
+                    )}
                   </div>
                 </Button>
               </DropdownMenuTrigger>
