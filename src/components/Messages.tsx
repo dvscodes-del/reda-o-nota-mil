@@ -25,6 +25,11 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
   const activeChatRef = useRef<Profile | null>(null);
   activeChatRef.current = activeChat;
 
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const isInitialLoadRef = useRef(true);
+  const prevMessagesCountRef = useRef(0);
+
   const [message, setMessage] = useState("");
   const [contacts, setContacts] = useState<Profile[]>([]);
   const [chatHistory, setChatHistory] = useState<Message[]>([]);
@@ -282,6 +287,48 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
     };
   }, [user, activeChat]);
 
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior, block: 'end' });
+    } else if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
+  };
+
+  // Quando troca o chat ativo, sinaliza carga inicial para pular imediatamente ao final
+  useEffect(() => {
+    isInitialLoadRef.current = true;
+    prevMessagesCountRef.current = 0;
+  }, [activeChat?.id]);
+
+  // Rola automaticamente para a última mensagem ao entrar ou receber novas mensagens
+  useEffect(() => {
+    if (chatHistory.length === 0) return;
+
+    if (isInitialLoadRef.current) {
+      // Ao entrar na conversa, rola instantaneamente para a última mensagem
+      scrollToBottom('auto');
+      const t1 = setTimeout(() => scrollToBottom('auto'), 50);
+      const t2 = setTimeout(() => {
+        scrollToBottom('auto');
+        isInitialLoadRef.current = false;
+      }, 150);
+      prevMessagesCountRef.current = chatHistory.length;
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
+    }
+
+    if (chatHistory.length > prevMessagesCountRef.current) {
+      // Novas mensagens enviadas ou recebidas
+      scrollToBottom('smooth');
+      prevMessagesCountRef.current = chatHistory.length;
+    }
+
+    return () => {};
+  }, [chatHistory]);
+
   const openChat = async (contact: Profile) => {
     setActiveChat(contact);
     setSearchQuery("");
@@ -307,6 +354,9 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
     const msgText = message.trim();
     setMessage('');
     
+    // Rola suavemente para baixo ao enviar
+    setTimeout(() => scrollToBottom('smooth'), 40);
+
     const { data } = await supabase.from('messages').insert({
       sender_id: user.id,
       receiver_id: activeChat.id,
@@ -493,7 +543,7 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
               </div>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 flex flex-col">
+            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-6 space-y-6 flex flex-col">
               {chatHistory.length === 0 && (
                 <div className="flex-1 grid place-items-center opacity-50">
                   <p>Mande um "Oi!" para iniciar a conversa.</p>
@@ -530,6 +580,7 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
                   </div>
                 </div>
               ))}
+              <div ref={messagesEndRef} className="h-0 w-0 shrink-0" />
             </div>
 
             <div className="p-4 bg-card border-t border-border shadow-sm">

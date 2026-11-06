@@ -334,3 +334,4 @@ export function Notifications({ goTo, onStartChat, onOpenEssay }: NotificationsP
     </div>
   );
 }
+
