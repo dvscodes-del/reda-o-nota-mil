@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { CheckCircle2, Mail, ArrowRight, RotateCcw } from 'lucide-react';
+import { CheckCircle2, Mail, ArrowRight, RotateCcw, Eye, EyeOff } from 'lucide-react';
 
 export const Route = createFileRoute('/login')({
   component: LoginPage,
@@ -46,6 +46,9 @@ function LoginPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [showSignupConfirmPassword, setShowSignupConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [createdEmail, setCreatedEmail] = useState<string | null>(null);
 
@@ -272,14 +275,25 @@ function LoginPage() {
                     <label htmlFor="login-password" className="text-sm font-medium leading-none">
                       Senha
                     </label>
-                    <Input
-                      id="login-password"
-                      type="password"
-                      placeholder="••••••••"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
+                    <div className="relative">
+                      <Input
+                        id="login-password"
+                        type={showLoginPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowLoginPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-0.5"
+                        aria-label={showLoginPassword ? "Ocultar senha" : "Ver senha"}
+                      >
+                        {showLoginPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </button>
+                    </div>
                   </div>
                 </CardContent>
 
@@ -334,29 +348,51 @@ function LoginPage() {
                     <label htmlFor="signup-password" className="text-sm font-medium leading-none">
                       Criar Senha
                     </label>
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      placeholder="Mínimo de 6 caracteres"
-                      required
-                      minLength={6}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
+                    <div className="relative">
+                      <Input
+                        id="signup-password"
+                        type={showSignupPassword ? "text" : "password"}
+                        placeholder="Mínimo de 6 caracteres"
+                        required
+                        minLength={6}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSignupPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-0.5"
+                        aria-label={showSignupPassword ? "Ocultar senha" : "Ver senha"}
+                      >
+                        {showSignupPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </button>
+                    </div>
                   </div>
                   <div className="space-y-1.5">
                     <label htmlFor="signup-confirm-password" className="text-sm font-medium leading-none">
                       Confirmar Senha
                     </label>
-                    <Input
-                      id="signup-confirm-password"
-                      type="password"
-                      placeholder="Repita sua senha"
-                      required
-                      minLength={6}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                    />
+                    <div className="relative">
+                      <Input
+                        id="signup-confirm-password"
+                        type={showSignupConfirmPassword ? "text" : "password"}
+                        placeholder="Repita sua senha"
+                        required
+                        minLength={6}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSignupConfirmPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-0.5"
+                        aria-label={showSignupConfirmPassword ? "Ocultar senha" : "Ver senha"}
+                      >
+                        {showSignupConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </button>
+                    </div>
                   </div>
                 </CardContent>
 
