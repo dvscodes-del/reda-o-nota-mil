@@ -134,10 +134,22 @@ function LoginPage() {
       });
 
       if (error) {
+        // Se o Supabase atingiu o limite de envio de emails (rate limit), em ambiente local permite entrar direto
+        if (error.message.toLowerCase().includes('rate limit') && isLocalEnvironment()) {
+          mockSignIn({ email: cleanEmail, full_name: fullName.trim() });
+          toast.success(`Cadastro e login local realizados com sucesso! Bem-vindo, ${fullName.trim() || cleanEmail}!`);
+          return;
+        }
         toast.error(formatSupabaseAuthError(error.message));
       } else if (data?.session) {
         toast.success('Conta criada com sucesso! Entrando...');
       } else if (data?.user) {
+        // Em ambiente local, se a conta foi criada no Supabase mas exige email, loga o usuário localmente de imediato
+        if (isLocalEnvironment()) {
+          mockSignIn({ email: cleanEmail, full_name: fullName.trim() });
+          toast.success(`Conta criada! Entrando como ${fullName.trim() || cleanEmail}...`);
+          return;
+        }
         setCreatedEmail(cleanEmail);
         toast.success('Conta criada com sucesso!');
       }

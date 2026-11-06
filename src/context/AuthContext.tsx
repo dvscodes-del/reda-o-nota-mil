@@ -7,7 +7,7 @@ export interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   signOut: () => Promise<void>;
-  mockSignIn: () => void;
+  mockSignIn: (customUser?: { email: string; full_name?: string }) => void;
   isLocalDev: boolean;
 }
 
@@ -150,9 +150,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
   };
 
-  const mockSignIn = () => {
+  const mockSignIn = (customUser?: { email: string; full_name?: string }) => {
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem('local_dev_logged_out');
+    }
+    if (customUser) {
+      const generatedUser: User = {
+        ...LOCAL_DEV_USER,
+        id: 'user_' + btoa(customUser.email).replace(/[^a-zA-Z0-9]/g, '').slice(0, 20),
+        email: customUser.email,
+        user_metadata: {
+          full_name: customUser.full_name || customUser.email.split('@')[0],
+          name: customUser.full_name || customUser.email.split('@')[0],
+          avatar_url: '',
+        },
+      };
+      const generatedSession: Session = {
+        ...LOCAL_DEV_SESSION,
+        user: generatedUser,
+      };
+      setUser(generatedUser);
+      setSession(generatedSession);
+      return;
     }
     setUser(LOCAL_DEV_USER);
     setSession(LOCAL_DEV_SESSION);
