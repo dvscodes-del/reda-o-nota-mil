@@ -37,3 +37,4 @@ export const markChatMessagesAsRead = async (userId: string, contactId: string):
     console.warn('Erro ao atualizar status de leitura de mensagens no Supabase:', err);
   }
 };
+
