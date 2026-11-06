@@ -19,7 +19,7 @@ function OnboardingPage() {
   const { user } = useAuth(); // need to import useAuth
   const [fullName, setFullName] = useState((user?.user_metadata?.['full_name'] as string | undefined) || '');
   const [age, setAge] = useState<string>('');
-
+  const [gender, setGender] = useState<string>('');
   
   const [state, setState] = useState('');
   const [college, setCollege] = useState('');
@@ -31,6 +31,13 @@ function OnboardingPage() {
 
   const { savePreferences, preferences, isLoading: isPrefsLoading } = useUserPreferences();
   const navigate = useNavigate();
+
+  // Se já houver preferências carregadas, pré-preenche o gênero
+  useEffect(() => {
+    if (preferences?.gender && !gender) {
+      setGender(preferences.gender);
+    }
+  }, [preferences, gender]);
 
   // Redirect to home if they already finished onboarding
   useEffect(() => {
@@ -48,6 +55,7 @@ function OnboardingPage() {
       course: course === 'Outro' ? customCourse : course,
       full_name: fullName,
       age: age ? parseInt(age, 10) : undefined,
+      gender: gender || undefined,
     });
     // Redirect to home/dashboard
     navigate({ to: '/' });
@@ -94,6 +102,24 @@ function OnboardingPage() {
                 value={age}
                 onChange={(e) => setAge(e.target.value)}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="gender" className="text-base font-semibold">
+                Qual o seu gênero?
+              </Label>
+              <Select value={gender} onValueChange={setGender}>
+                <SelectTrigger id="gender">
+                  <SelectValue placeholder="Selecione seu gênero" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Feminino">Feminino</SelectItem>
+                  <SelectItem value="Masculino">Masculino</SelectItem>
+                  <SelectItem value="Não-binário">Não-binário</SelectItem>
+                  <SelectItem value="Outro">Outro</SelectItem>
+                  <SelectItem value="Prefiro não informar">Prefiro não informar</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">

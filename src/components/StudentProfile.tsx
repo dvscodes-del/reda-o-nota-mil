@@ -21,6 +21,7 @@ type ExtendedProfile = Profile & {
   course: string | null;
   college: string | null;
   age: number | null;
+  gender?: string | null;
   state: string | null;
 };
 
@@ -55,6 +56,7 @@ export function StudentProfile({
         course: preferences?.course || "Curso Desejado",
         college: preferences?.college || "Universidade",
         age: preferences?.age || null,
+        gender: preferences?.gender || (user.user_metadata?.['gender'] as string | undefined) || null,
         state: preferences?.state || "SP"
       });
       
@@ -352,6 +354,7 @@ export function StudentProfile({
             <div className="mt-2 flex flex-wrap items-center justify-center md:justify-start gap-4 text-primary-foreground/80 font-medium">
               <span className="flex items-center gap-1"><MapPin className="size-4" /> {viewingProfile.state}, Brasil</span>
               {viewingProfile.age && <span className="flex items-center gap-1"><Calendar className="size-4" /> {viewingProfile.age} anos</span>}
+              {viewingProfile.gender && <span className="flex items-center gap-1 bg-primary-foreground/15 px-2.5 py-0.5 rounded-full text-xs font-semibold">{viewingProfile.gender}</span>}
               <span className="flex items-center gap-1"><Target className="size-4" /> Foco: {viewingProfile.course} ({viewingProfile.college})</span>
               <span className="flex items-center gap-1 bg-primary-foreground/20 px-3 py-1 rounded-full"><UserPlus className="size-4" /> {followersCount} seguidores</span>
             </div>

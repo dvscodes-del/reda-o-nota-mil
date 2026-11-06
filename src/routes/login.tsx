@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { CheckCircle2, Mail, ArrowRight, RotateCcw, Eye, EyeOff } from 'lucide-react';
 
@@ -46,6 +47,7 @@ function LoginPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [gender, setGender] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [showSignupConfirmPassword, setShowSignupConfirmPassword] = useState(false);
@@ -129,9 +131,16 @@ function LoginPage() {
         options: {
           data: {
             full_name: fullName.trim() || undefined,
+            gender: gender || undefined,
           },
         },
       });
+
+      if (gender) {
+        try {
+          localStorage.setItem('temp_signup_gender', gender);
+        } catch {}
+      }
 
       if (error) {
         // Se o Supabase atingiu o limite de envio de emails (rate limit), em ambiente local permite entrar direto
@@ -342,6 +351,23 @@ function LoginPage() {
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                     />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label htmlFor="signup-gender" className="text-sm font-medium leading-none">
+                      Gênero
+                    </label>
+                    <Select value={gender} onValueChange={setGender}>
+                      <SelectTrigger id="signup-gender">
+                        <SelectValue placeholder="Selecione seu gênero (opcional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Feminino">Feminino</SelectItem>
+                        <SelectItem value="Masculino">Masculino</SelectItem>
+                        <SelectItem value="Não-binário">Não-binário</SelectItem>
+                        <SelectItem value="Outro">Outro</SelectItem>
+                        <SelectItem value="Prefiro não informar">Prefiro não informar</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-1.5">
                     <label htmlFor="signup-email" className="text-sm font-medium leading-none">
