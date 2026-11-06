@@ -3,6 +3,7 @@ import { MessageCircle, Send, ArrowLeft, Check, CheckCheck, Bell } from "lucide-
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { getChatLastReadTime, setChatLastReadTime, markChatMessagesAsRead } from "@/lib/messages";
 
 type Profile = {
   id: string;
@@ -62,19 +63,43 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
       const contactIds = new Set<string>();
       const unreadMap: Record<string, number> = {};
       const lastMsgMap: Record<string, Message> = {};
+      const latestSentByUser: Record<string, number> = {};
 
+      // Primeiro passo: identificar última mensagem enviada por mim e a última mensagem geral
       messages.forEach((msg: Message) => {
         const otherId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
         contactIds.add(otherId);
 
-        // Contabiliza não lidas enviadas para mim
-        if (msg.sender_id === otherId && msg.receiver_id === user.id && !msg.is_read) {
-          unreadMap[otherId] = (unreadMap[otherId] || 0) + 1;
+        if (msg.sender_id === user.id) {
+          const sentTime = new Date(msg.created_at).getTime();
+          if (!latestSentByUser[otherId] || sentTime > latestSentByUser[otherId]) {
+            latestSentByUser[otherId] = sentTime;
+          }
         }
 
-        // Salva a última mensagem (já ordenado desc)
+        // Salva a última mensagem geral (já ordenado desc)
         if (!lastMsgMap[otherId]) {
           lastMsgMap[otherId] = msg;
+        }
+      });
+
+      // Segundo passo: contabilizar apenas mensagens não lidas que não foram lidas/respondidas
+      messages.forEach((msg: Message) => {
+        const otherId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
+
+        // Se for mensagem recebida de otherId para mim
+        if (msg.sender_id === otherId && msg.receiver_id === user.id) {
+          const msgTime = new Date(msg.created_at).getTime();
+          const localReadTime = getChatLastReadTime(user.id, otherId);
+          const lastSentTime = latestSentByUser[otherId] || 0;
+          const cutoff = Math.max(localReadTime, lastSentTime);
+
+          const isEffectivelyRead = msg.is_read || (cutoff > 0 && msgTime <= cutoff);
+          const isChatOpen = activeChatRef.current?.id === otherId;
+
+          if (!isEffectivelyRead && !isChatOpen) {
+            unreadMap[otherId] = (unreadMap[otherId] || 0) + 1;
+          }
         }
       });
 
@@ -126,11 +151,7 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
             // Se o chat com esse remetente estiver aberto na tela
             if (activeChatRef.current?.id === senderId) {
               setChatHistory(prev => [...prev, newMsg]);
-              supabase
-                .from('messages')
-                .update({ is_read: true })
-                .eq('id', newMsg.id)
-                .then();
+              markChatMessagesAsRead(user.id, senderId);
             } else {
               // Notificação: incrementa não lidas
               setUnreadCounts(prev => ({
@@ -265,20 +286,13 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
     };
 
     fetchMessages();
+    markChatMessagesAsRead(user.id, activeChat.id);
 
-    // Marca as mensagens recebidas como lidas
-    const markAsRead = async () => {
-      await supabase
-        .from('messages')
-        .update({ is_read: true })
-        .eq('receiver_id', user.id)
-        .eq('sender_id', activeChat.id)
-        .eq('is_read', false);
-    };
     // Polling suave a cada 4 segundos quando o chat estiver ativo para sincronizar visualização
     const readCheckInterval = setInterval(() => {
       if (document.visibilityState === 'visible') {
         fetchMessages();
+        markChatMessagesAsRead(user.id, activeChat.id);
       }
     }, 4000);
 
@@ -340,12 +354,7 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
     }));
 
     if (user) {
-      await supabase
-        .from('messages')
-        .update({ is_read: true })
-        .eq('receiver_id', user.id)
-        .eq('sender_id', contact.id)
-        .eq('is_read', false);
+      await markChatMessagesAsRead(user.id, contact.id);
     }
   };
 
@@ -356,6 +365,13 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
     
     // Rola suavemente para baixo ao enviar
     setTimeout(() => scrollToBottom('smooth'), 40);
+
+    // Marca imediatamente como lidas e zera não lidas
+    setUnreadCounts(prev => ({
+      ...prev,
+      [activeChat.id]: 0
+    }));
+    markChatMessagesAsRead(user.id, activeChat.id);
 
     const { data } = await supabase.from('messages').insert({
       sender_id: user.id,

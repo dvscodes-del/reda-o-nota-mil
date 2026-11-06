@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { useEssays } from './EssaysContext';
 import { toast } from 'sonner';
+import { getChatLastReadTime } from '@/lib/messages';
 
 export type NotificationType = 'follower' | 'essay' | 'message' | 'milestone';
 
@@ -168,6 +169,11 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
           }
 
           unreadMsgs.forEach((m: any) => {
+            const localReadTime = getChatLastReadTime(user.id, m.sender_id);
+            if (localReadTime > 0 && new Date(m.created_at).getTime() <= localReadTime) {
+              return;
+            }
+
             const notifId = `msg_${m.id}`;
             const sender = senderMap.get(m.sender_id);
             const name = sender?.full_name || 'Alguém';
