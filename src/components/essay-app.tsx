@@ -1,16 +1,19 @@
 import { StudentProfile } from "./StudentProfile";
 import { Messages } from "./Messages";
+import { Notifications } from "./Notifications";
 import { useMemo, useRef, useState, useEffect } from "react";
 import type { LucideIcon } from "lucide-react";
 import { useUserPreferences } from "@/context/UserPreferencesContext";
 import { useAuth } from "@/context/AuthContext";
 import { useEssays } from "@/context/EssaysContext";
+import { useNotifications } from "@/context/NotificationsContext";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
 import {
   AlertCircle,
   ArrowRight,
   Award,
+  Bell,
   BookOpen,
   BrainCircuit,
   Camera,
@@ -66,12 +69,13 @@ import constituicaoImage from "@/assets/repertorio-constituicao.jpg";
 import geografiaImage from "@/assets/repertorio-geografia.jpg";
 import cinemaImage from "@/assets/repertorio-cinema.jpg";
 
-type Section = "dashboard" | "mural" | "competencias" | "repertorio" | "laboratorio" | "curso" | "perfil" | "mensagens";
+type Section = "dashboard" | "mural" | "competencias" | "repertorio" | "laboratorio" | "curso" | "perfil" | "mensagens" | "notificacoes";
 type Correction = Awaited<ReturnType<typeof correctEssay>>;
 
 const navItems = [
   { id: "dashboard" as const, label: "Visão geral", icon: LayoutDashboard },
   { id: "perfil" as const, label: "Meu Perfil", icon: User },
+  { id: "notificacoes" as const, label: "Notificações", icon: Bell },
   { id: "mensagens" as const, label: "Mensagens", icon: MessageCircle },
   { id: "curso" as const, label: "Seu Curso", icon: TrendingUp },
   { id: "mural" as const, label: "Mural nota mil", icon: Award },
@@ -318,6 +322,7 @@ export function EssayApp() {
   const navigate = useNavigate();
   const { preferences, isLoading: isPrefsLoading } = useUserPreferences();
   const { saveEssay } = useEssays();
+  const { unreadCount, refreshNotifications } = useNotifications();
 
   useEffect(() => {
     if (isLoading || (user && isPrefsLoading)) return;
@@ -370,6 +375,7 @@ export function EssayApp() {
           improvements: correction.improvements,
           annotations: correction.annotations,
         });
+        await refreshNotifications();
       }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível corrigir agora. Tente novamente em instantes.");
@@ -391,7 +397,38 @@ export function EssayApp() {
             <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMobileOpen(false)} aria-label="Fechar menu"><X /></Button>
           </div>
           <nav className="space-y-1.5 flex-1" aria-label="Navegação principal">
-            {navItems.map((item) => <Button key={item.id} variant="ghost" onClick={() => goTo(item.id)} className={`h-11 w-full justify-start rounded-xl px-3 ${section === item.id ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : "text-muted-foreground"}`}><item.icon className="mr-2" />{item.label}</Button>)}
+            {navItems.map((item) => {
+              const isNotifs = item.id === "notificacoes";
+              const hasUnread = isNotifs && unreadCount > 0;
+              return (
+                <Button
+                  key={item.id}
+                  variant="ghost"
+                  onClick={() => goTo(item.id)}
+                  className={`h-11 w-full justify-between rounded-xl px-3 ${
+                    section === item.id
+                      ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  <span className="flex items-center">
+                    <item.icon className="mr-2 size-4" />
+                    {item.label}
+                  </span>
+                  {hasUnread && (
+                    <span
+                      className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${
+                        section === item.id
+                          ? "bg-primary-foreground text-primary"
+                          : "bg-primary text-primary-foreground animate-pulse"
+                      }`}
+                    >
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
+                </Button>
+              );
+            })}
           </nav>
           <div className="mt-auto space-y-4">
             <div className="rounded-xl bg-sidebar-accent p-4">
@@ -411,6 +448,21 @@ export function EssayApp() {
           <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMobileOpen(true)} aria-label="Abrir menu"><Menu /></Button>
           <div className="hidden text-sm text-muted-foreground sm:block">Foco no seu objetivo!</div>
           <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => goTo("notificacoes")}
+              className={`relative rounded-full text-muted-foreground hover:text-foreground ${section === "notificacoes" ? "bg-accent text-primary" : ""}`}
+              aria-label="Abrir notificações"
+            >
+              <Bell className="size-5" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 flex size-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                  <span className="relative inline-flex rounded-full size-2.5 bg-primary"></span>
+                </span>
+              )}
+            </Button>
             <div className="hidden text-right sm:block">
               <strong className="block text-sm">{user?.email?.split('@')[0] || 'Estudante'}</strong>
               <small className="text-muted-foreground">Nível 8 · 1.240 XP</small>
@@ -447,6 +499,7 @@ export function EssayApp() {
         <div className="mx-auto max-w-7xl p-4 md:p-8 lg:p-10">
           {section === "dashboard" && <Dashboard goTo={goTo} />}
           {section === "perfil" && <StudentProfile onOpen={setSelectedEssay} goTo={(s: string) => goTo(s as Section)} onStartChat={(profile) => { setChatTarget(profile); goTo("mensagens"); }} />}
+          {section === "notificacoes" && <Notifications goTo={goTo} onStartChat={(profile) => { setChatTarget(profile); goTo("mensagens"); }} onOpenEssay={(essay) => setSelectedEssay(essay)} />}
           {section === "mensagens" && <Messages initialUser={chatTarget} onClearInitial={() => setChatTarget(null)} />}
           {section === "curso" && <CourseTarget goTo={goTo} />}
           {section === "mural" && <Mural onOpen={setSelectedEssay} currentTheme={activeTheme} />}
