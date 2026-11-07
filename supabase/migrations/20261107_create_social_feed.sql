@@ -46,6 +46,10 @@ CREATE TABLE IF NOT EXISTS public.posts (
   -- type: 'text' | 'essay_share' | 'achievement' | 'question'
   content TEXT NOT NULL,
   image_url TEXT,
+  video_url TEXT,
+  media_type TEXT,
+  document_url TEXT,
+  document_title TEXT,
   -- Dados opcionais quando o tipo é 'essay_share' (sem chave estrangeira rígida para evitar conflitos)
   essay_id UUID,
   essay_score INT,
@@ -59,6 +63,12 @@ CREATE TABLE IF NOT EXISTS public.posts (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Garante novas colunas caso a tabela já tenha sido criada anteriormente
+ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS video_url TEXT;
+ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS media_type TEXT;
+ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS document_url TEXT;
+ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS document_title TEXT;
 
 -- ============================================================
 -- 3. Tabela de curtidas em posts

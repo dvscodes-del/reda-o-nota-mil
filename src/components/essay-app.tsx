@@ -308,6 +308,7 @@ export function EssayApp() {
     };
   }, [timer]);
   const [chatTarget, setChatTarget] = useState<any>(null);
+  const [profileTarget, setProfileTarget] = useState<any>(null);
   const getTodayThemeIndex = () => {
     const day = new Date().getDay(); // 0 = Domingo, 1 = Segunda...
     const index = day === 0 ? 6 : day - 1;
@@ -701,7 +702,7 @@ export function EssayApp() {
               <strong className="block text-sm font-semibold leading-tight">{preferences?.full_name || user?.email?.split('@')[0] || 'Estudante'}</strong>
               <small className="text-xs text-muted-foreground">Meta: {preferences?.targetScore ? `${preferences.targetScore} pts` : '900+ pts'}</small>
             </div>
-            <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0" onClick={() => goTo("perfil")} aria-label="Ir para meu perfil" title="Meu perfil">
+            <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0" onClick={() => { setProfileTarget(null); goTo("perfil"); }} aria-label="Ir para meu perfil" title="Meu perfil">
               <div className="grid h-full w-full place-items-center rounded-full bg-accent font-bold text-accent-foreground ring-2 ring-transparent transition-all hover:ring-primary overflow-hidden">
                 {preferences?.avatar_url ? (
                   <img src={preferences.avatar_url} alt="Foto de perfil" className="w-full h-full object-cover" />
@@ -715,8 +716,35 @@ export function EssayApp() {
 
         <div className="mx-auto max-w-7xl p-4 md:p-8 lg:p-10">
           {section === "dashboard" && <Dashboard goTo={goTo} />}
-          {section === "feed" && <SocialFeed goTo={goTo} onOpenEssay={setSelectedEssay} onStartChat={(profile) => { setChatTarget(profile); goTo("mensagens"); }} />}
-          {section === "perfil" && <StudentProfile onOpen={setSelectedEssay} goTo={(s: string) => goTo(s as Section)} onStartChat={(profile) => { setChatTarget(profile); goTo("mensagens"); }} />}
+          {section === "feed" && (
+            <SocialFeed
+              goTo={goTo}
+              onOpenEssay={setSelectedEssay}
+              onStartChat={(profile) => {
+                setChatTarget(profile);
+                goTo("mensagens");
+              }}
+              onOpenProfile={(profile) => {
+                setProfileTarget(profile);
+                setSection("perfil");
+              }}
+            />
+          )}
+          {section === "perfil" && (
+            <StudentProfile
+              targetProfile={profileTarget}
+              onBackToMyProfile={() => setProfileTarget(null)}
+              onOpen={setSelectedEssay}
+              goTo={(s: string) => {
+                if (s === "perfil") setProfileTarget(null);
+                goTo(s as Section);
+              }}
+              onStartChat={(profile) => {
+                setChatTarget(profile);
+                goTo("mensagens");
+              }}
+            />
+          )}
           {section === "notificacoes" && <Notifications goTo={goTo} onStartChat={(profile) => { setChatTarget(profile); goTo("mensagens"); }} onOpenEssay={(essay) => setSelectedEssay(essay)} />}
           {section === "mensagens" && <Messages initialUser={chatTarget} onClearInitial={() => setChatTarget(null)} />}
           {section === "curso" && <CourseTarget goTo={goTo} />}

@@ -6,6 +6,7 @@ import {
   Laugh, ThumbsUp, Lightbulb, UserPlus, TrendingUp, Hash,
   Globe, Lock, Users, ChevronRight, Bookmark, Bell, Award,
   Medal, Eye, Repeat2, Check, RotateCw, GraduationCap, MapPin,
+  Image as ImageIcon, Video, Paperclip, Play, ExternalLink, Maximize2, Link as LinkIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -27,6 +28,10 @@ export interface FeedPost {
   type: PostType;
   content: string;
   image_url?: string | null;
+  video_url?: string | null;
+  media_type?: "image" | "video" | "document" | null;
+  document_url?: string | null;
+  document_title?: string | null;
   essay_id?: string | null;
   essay_score?: number | null;
   essay_topic?: string | null;
@@ -127,6 +132,23 @@ function getScoreGrade(score: number) {
   if (score >= 800) return { label: "Nota Ótima", color: "from-emerald-500 to-green-400", text: "text-emerald-900" };
   if (score >= 700) return { label: "Nota Boa", color: "from-blue-500 to-sky-400", text: "text-blue-900" };
   return { label: "Em desenvolvimento", color: "from-slate-400 to-slate-300", text: "text-slate-800" };
+}
+
+function getYouTubeEmbedUrl(url?: string | null): string | null {
+  if (!url) return null;
+  try {
+    const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
+    if (ytMatch && ytMatch[1]) {
+      return `https://www.youtube-nocookie.com/embed/${ytMatch[1]}`;
+    }
+    const vimeoMatch = url.match(/vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/(?:[^\/]*)\/videos\/|album\/(?:\d+)\/video\/|video\/|)(\d+)/);
+    if (vimeoMatch && vimeoMatch[1]) {
+      return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -235,7 +257,7 @@ function StoriesBar({ currentUserName, currentUserAvatar, onWritePost, onSelectT
 }
 
 // ─────────────────────────────────────────────
-// Modal de Criação de Post
+// Modal de Criação de Post Estilo LinkedIn
 // ─────────────────────────────────────────────
 function CreatePostModal({
   open,
@@ -254,31 +276,91 @@ function CreatePostModal({
 }) {
   const [postType, setPostType] = useState<PostType>("text");
   const [content, setContent] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
+  const [documentTitle, setDocumentTitle] = useState("");
+  const [documentUrl, setDocumentUrl] = useState("");
+  const [activeMedia, setActiveMedia] = useState<"none" | "image" | "video" | "document">("none");
   const [achievementTitle, setAchievementTitle] = useState("");
   const [achievementIcon, setAchievementIcon] = useState("🏆");
   const [publishing, setPublishing] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const ICONS = ["🏆", "🔥", "⭐", "🎯", "⚡", "📚", "🏅", "✨", "💪", "🎓"];
 
-  const POST_TYPES: { type: PostType; icon: React.ElementType; label: string }[] = [
-    { type: "essay_share", icon: FileText, label: "Compartilhar Redação" },
-    { type: "achievement", icon: Trophy, label: "Conquista" },
-    { type: "question", icon: HelpCircle, label: "Tirar Dúvida" },
-    { type: "text", icon: PenLine, label: "Pensamento" },
-  ];
+  const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Por favor, selecione uma imagem válida (JPEG, PNG ou WEBP).");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const maxSize = 1200;
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > maxSize) {
+            height = Math.round((height * maxSize) / width);
+            width = maxSize;
+          }
+        } else {
+          if (height > maxSize) {
+            width = Math.round((width * maxSize) / height);
+            height = maxSize;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          setImageUrl(canvas.toDataURL("image/jpeg", 0.85));
+          setActiveMedia("image");
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handlePublish = async () => {
-    if (!content.trim()) { toast.error("Escreva algo antes de publicar!"); return; }
-    if (postType === "achievement" && !achievementTitle.trim()) { toast.error("Escreva o nome da conquista!"); return; }
+    if (!content.trim() && !imageUrl && !videoUrl && !documentTitle) {
+      toast.error("Escreva algo ou anexe uma foto/vídeo antes de publicar!");
+      return;
+    }
+    if (postType === "achievement" && !achievementTitle.trim()) {
+      toast.error("Escreva o nome da conquista!");
+      return;
+    }
+
     setPublishing(true);
     await onPublish({
       type: postType,
       content: content.trim(),
+      image_url: imageUrl.trim() || null,
+      video_url: videoUrl.trim() || null,
+      media_type: activeMedia !== "none" ? activeMedia : (imageUrl ? "image" : videoUrl ? "video" : null),
+      document_title: documentTitle.trim() || null,
+      document_url: documentUrl.trim() || null,
       ...(postType === "essay_share" && latestEssay ? { essay_id: latestEssay.id, essay_score: latestEssay.score, essay_topic: latestEssay.theme_topic } : {}),
       ...(postType === "achievement" ? { achievement_title: achievementTitle.trim(), achievement_icon: achievementIcon } : {}),
     });
-    setContent(""); setAchievementTitle(""); setPostType("text"); onClose();
+
+    setContent("");
+    setImageUrl("");
+    setVideoUrl("");
+    setDocumentTitle("");
+    setDocumentUrl("");
+    setActiveMedia("none");
+    setAchievementTitle("");
+    setPostType("text");
+    onClose();
     setPublishing(false);
   };
 
@@ -288,18 +370,20 @@ function CreatePostModal({
 
   if (!open) return null;
 
+  const ytEmbed = getYouTubeEmbedUrl(videoUrl);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-foreground/40 backdrop-blur-sm animate-in fade-in-0 duration-200" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="w-full max-w-lg rounded-2xl border border-border/80 bg-card shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="w-full max-w-lg rounded-2xl border border-border/80 bg-card shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border/60 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-border/60 px-5 py-3.5 shrink-0">
           <div className="flex items-center gap-3">
-            <Avatar name={currentUserName} url={currentUserAvatar} size={11} ring />
+            <Avatar name={currentUserName} url={currentUserAvatar} size={10} ring />
             <div>
               <p className="font-bold text-sm leading-tight">{currentUserName ?? "Estudante"}</p>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span className="rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground flex items-center gap-1">
-                  <Globe className="size-2.5" /> Público
+                  <Globe className="size-2.5" /> Público no Feed
                 </span>
               </div>
             </div>
@@ -309,92 +393,268 @@ function CreatePostModal({
           </button>
         </div>
 
-        {/* Tipo de post */}
-        <div className="px-5 pt-4 pb-2 flex gap-2 overflow-x-auto no-scrollbar">
-          {POST_TYPES.map(({ type, icon: Icon, label }) => (
-            <button
-              key={type}
-              type="button"
-              onClick={() => setPostType(type)}
-              className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${postType === type ? "border-primary bg-primary/10 text-primary" : "border-border/60 text-muted-foreground hover:border-primary/30 hover:text-foreground"}`}
-            >
-              <Icon className="size-3.5" />
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {/* Preview redação real */}
-        {postType === "essay_share" && latestEssay && (() => {
-          const grade = getScoreGrade(latestEssay.score);
-          return (
-            <div className={`mx-5 mb-3 rounded-xl bg-gradient-to-r ${grade.color} p-0.5 shadow-sm`}>
-              <div className="rounded-[10px] bg-card px-4 py-3 flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{grade.label}</p>
-                  <p className="text-sm font-semibold line-clamp-1">{latestEssay.theme_topic}</p>
-                </div>
-                <div className="shrink-0 text-right">
-                  <p className="text-3xl font-black leading-none text-primary">{latestEssay.score}</p>
-                  <p className="text-[10px] text-muted-foreground">/ 1000</p>
+        {/* Corpo com scroll */}
+        <div className="p-5 overflow-y-auto space-y-3 flex-1">
+          {/* Preview redação real */}
+          {postType === "essay_share" && latestEssay && (() => {
+            const grade = getScoreGrade(latestEssay.score);
+            return (
+              <div className={`rounded-xl bg-gradient-to-r ${grade.color} p-0.5 shadow-sm`}>
+                <div className="rounded-[10px] bg-card px-4 py-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{grade.label}</p>
+                    <p className="text-sm font-semibold line-clamp-1">{latestEssay.theme_topic}</p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="text-3xl font-black leading-none text-primary">{latestEssay.score}</p>
+                    <p className="text-[10px] text-muted-foreground">/ 1000</p>
+                  </div>
                 </div>
               </div>
+            );
+          })()}
+
+          {/* Conquista */}
+          {postType === "achievement" && (
+            <div className="space-y-2.5 p-3 rounded-xl border border-amber-500/25 bg-amber-500/5">
+              <input
+                type="text"
+                value={achievementTitle}
+                onChange={(e) => setAchievementTitle(e.target.value)}
+                placeholder="Nome da conquista (ex: Bati minha meta de 900+ pontos!)"
+                className="w-full rounded-xl border border-border/60 bg-card px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+              <div className="flex flex-wrap gap-1.5">
+                {ICONS.map((icon) => (
+                  <button key={icon} type="button" onClick={() => setAchievementIcon(icon)}
+                    className={`text-xl rounded-lg border p-1.5 transition-all cursor-pointer ${achievementIcon === icon ? "border-primary bg-primary/10 scale-110 shadow-xs" : "border-border/40 hover:border-primary/30"}`}
+                  >{icon}</button>
+                ))}
+              </div>
             </div>
-          );
-        })()}
+          )}
 
-        {postType === "essay_share" && !latestEssay && (
-          <div className="mx-5 mb-3 rounded-xl border border-dashed border-border/60 bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
-            Escreva sua primeira redação no Laboratório para poder compartilhar aqui!
-          </div>
-        )}
-
-        {/* Conquista */}
-        {postType === "achievement" && (
-          <div className="mx-5 mb-3 space-y-2.5">
-            <input
-              type="text"
-              value={achievementTitle}
-              onChange={(e) => setAchievementTitle(e.target.value)}
-              placeholder="Nome da conquista (ex: Bati minha meta de 900+ pontos!)"
-              className="w-full rounded-xl border border-border/60 bg-muted/30 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-            <div className="flex flex-wrap gap-2">
-              {ICONS.map((icon) => (
-                <button key={icon} type="button" onClick={() => setAchievementIcon(icon)}
-                  className={`text-2xl rounded-xl border p-2 transition-all cursor-pointer ${achievementIcon === icon ? "border-primary bg-primary/10 scale-110 shadow-sm" : "border-border/40 hover:border-primary/30 hover:scale-105"}`}
-                >{icon}</button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Texto */}
-        <div className="px-5 pb-4">
+          {/* Área de Texto Principal */}
           <textarea
             ref={textareaRef}
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            rows={5}
+            rows={4}
             placeholder={
-              postType === "text" ? "O que você quer compartilhar com a comunidade de redação hoje?"
+              postType === "text" ? "No que você está pensando? Compartilhe dicas, ideias ou fotos..."
               : postType === "essay_share" ? "Conte como foi escrever essa redação! Quais repertórios você usou?"
               : postType === "achievement" ? "Descreva sua conquista! Como foi sua evolução de estudos?"
               : "Qual a sua dúvida sobre redação? Descreva a competência ou parágrafo!"
             }
-            className="w-full resize-none bg-transparent text-base text-foreground placeholder:text-muted-foreground/60 focus:outline-none leading-relaxed"
+            className="w-full resize-none bg-transparent text-sm md:text-base text-foreground placeholder:text-muted-foreground/60 focus:outline-none leading-relaxed"
           />
-          <div className="flex items-center justify-between pt-3 border-t border-border/40">
-            <span className={`text-xs ${content.length > 580 ? "text-destructive" : "text-muted-foreground"}`}>{content.length}/600</span>
-            <button
-              type="button"
-              onClick={handlePublish}
-              disabled={!content.trim() || content.length > 600 || publishing}
-              className="flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md cursor-pointer"
-            >
-              {publishing ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-3.5" />}
-              Publicar
-            </button>
+
+          {/* Anexo de Imagem Ativo */}
+          {activeMedia === "image" && (
+            <div className="p-3 rounded-2xl border border-border/70 bg-muted/20 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <ImageIcon className="size-4 text-blue-500" /> Foto anexada
+                </span>
+                <button
+                  type="button"
+                  onClick={() => { setImageUrl(""); setActiveMedia("none"); }}
+                  className="text-muted-foreground hover:text-destructive text-xs flex items-center gap-1"
+                >
+                  <X className="size-3.5" /> Remover
+                </button>
+              </div>
+
+              {imageUrl ? (
+                <div className="relative rounded-xl overflow-hidden border border-border/60 max-h-56">
+                  <img src={imageUrl} alt="Prévia" className="w-full h-full object-cover max-h-56" />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                    placeholder="Cole o link da imagem (ou envie do seu dispositivo)..."
+                    className="w-full rounded-xl border border-border/60 bg-card px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="text-xs font-semibold text-primary hover:underline"
+                    >
+                      📁 Escolher foto do seu computador
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Anexo de Vídeo Ativo (YouTube / Shorts / Vimeo / MP4) */}
+          {activeMedia === "video" && (
+            <div className="p-3 rounded-2xl border border-border/70 bg-muted/20 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <Video className="size-4 text-emerald-500" /> Vídeo anexado
+                </span>
+                <button
+                  type="button"
+                  onClick={() => { setVideoUrl(""); setActiveMedia("none"); }}
+                  className="text-muted-foreground hover:text-destructive text-xs flex items-center gap-1"
+                >
+                  <X className="size-3.5" /> Remover
+                </button>
+              </div>
+
+              <input
+                type="text"
+                value={videoUrl}
+                onChange={(e) => setVideoUrl(e.target.value)}
+                placeholder="Cole o link do YouTube, Shorts, Vimeo ou link MP4..."
+                className="w-full rounded-xl border border-border/60 bg-card px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+
+              {ytEmbed && (
+                <div className="rounded-xl overflow-hidden aspect-video border border-border/60 bg-black">
+                  <iframe src={ytEmbed} title="Prévia do vídeo" className="w-full h-full border-0" />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Anexo de Documento / PDF Ativo */}
+          {activeMedia === "document" && (
+            <div className="p-3 rounded-2xl border border-border/70 bg-muted/20 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <FileText className="size-4 text-amber-500" /> Material / PDF de Estudo
+                </span>
+                <button
+                  type="button"
+                  onClick={() => { setDocumentTitle(""); setDocumentUrl(""); setActiveMedia("none"); }}
+                  className="text-muted-foreground hover:text-destructive text-xs flex items-center gap-1"
+                >
+                  <X className="size-3.5" /> Remover
+                </button>
+              </div>
+              <input
+                type="text"
+                value={documentTitle}
+                onChange={(e) => setDocumentTitle(e.target.value)}
+                placeholder="Título do material (ex: 50 Repertórios Coringas - Filosofia.pdf)"
+                className="w-full rounded-xl border border-border/60 bg-card px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+              <input
+                type="text"
+                value={documentUrl}
+                onChange={(e) => setDocumentUrl(e.target.value)}
+                placeholder="Link do material (Google Drive, Notion, PDF online)..."
+                className="w-full rounded-xl border border-border/60 bg-card px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
+          )}
+
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImageFile}
+            accept="image/png, image/jpeg, image/jpg, image/webp"
+            className="hidden"
+          />
+        </div>
+
+        {/* Rodapé Estilo LinkedIn: Barra de Ferramentas + Botão Publicar */}
+        <div className="px-5 py-3 border-t border-border/60 bg-muted/10 shrink-0 space-y-2.5">
+          <div className="flex items-center justify-between">
+            {/* Ícones de Mídia estilo LinkedIn */}
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  if (activeMedia === "image") {
+                    setActiveMedia("none");
+                  } else {
+                    setActiveMedia("image");
+                    if (!imageUrl) fileInputRef.current?.click();
+                  }
+                }}
+                className={`p-2 rounded-xl transition-all flex items-center gap-1.5 text-xs font-semibold cursor-pointer ${
+                  activeMedia === "image" ? "bg-blue-500/15 text-blue-600 dark:text-blue-400" : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                }`}
+                title="Adicionar Foto"
+              >
+                <ImageIcon className="size-4 text-blue-500" />
+                <span className="hidden sm:inline">Foto</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveMedia(activeMedia === "video" ? "none" : "video")}
+                className={`p-2 rounded-xl transition-all flex items-center gap-1.5 text-xs font-semibold cursor-pointer ${
+                  activeMedia === "video" ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                }`}
+                title="Adicionar Vídeo ou YouTube"
+              >
+                <Video className="size-4 text-emerald-500" />
+                <span className="hidden sm:inline">Vídeo</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveMedia(activeMedia === "document" ? "none" : "document")}
+                className={`p-2 rounded-xl transition-all flex items-center gap-1.5 text-xs font-semibold cursor-pointer ${
+                  activeMedia === "document" ? "bg-amber-500/15 text-amber-600 dark:text-amber-400" : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                }`}
+                title="Adicionar Material / PDF"
+              >
+                <FileText className="size-4 text-amber-500" />
+                <span className="hidden sm:inline">Material</span>
+              </button>
+
+              {latestEssay && (
+                <button
+                  type="button"
+                  onClick={() => setPostType(postType === "essay_share" ? "text" : "essay_share")}
+                  className={`p-2 rounded-xl transition-all flex items-center gap-1.5 text-xs font-semibold cursor-pointer ${
+                    postType === "essay_share" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                  }`}
+                  title="Compartilhar Redação Corrigida"
+                >
+                  <FileText className="size-4 text-primary" />
+                  <span className="hidden sm:inline">Redação</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setPostType(postType === "achievement" ? "text" : "achievement")}
+                className={`p-2 rounded-xl transition-all flex items-center gap-1.5 text-xs font-semibold cursor-pointer ${
+                  postType === "achievement" ? "bg-yellow-500/15 text-yellow-600 dark:text-yellow-400" : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                }`}
+                title="Conquista"
+              >
+                <Trophy className="size-4 text-amber-500" />
+                <span className="hidden sm:inline">Conquista</span>
+              </button>
+            </div>
+
+            {/* Contador + Publicar */}
+            <div className="flex items-center gap-3">
+              <span className={`text-[11px] ${content.length > 580 ? "text-destructive font-bold" : "text-muted-foreground"}`}>
+                {content.length}/600
+              </span>
+              <button
+                type="button"
+                onClick={handlePublish}
+                disabled={(!content.trim() && !imageUrl && !videoUrl && !documentTitle) || content.length > 600 || publishing}
+                className="flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md cursor-pointer"
+              >
+                {publishing ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-3.5" />}
+                Publicar
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -433,6 +693,7 @@ function PostCard({
   onDelete,
   onHashtagClick,
   onOpenProfile,
+  onViewImage,
 }: {
   post: FeedPost;
   currentUserId: string;
@@ -445,6 +706,7 @@ function PostCard({
   onDelete: (postId: string) => Promise<void>;
   onHashtagClick: (tag: string) => void;
   onOpenProfile?: () => void;
+  onViewImage?: (url: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [showReactions, setShowReactions] = useState(false);
@@ -629,6 +891,75 @@ function PostCard({
         )}
       </div>
 
+      {/* ── Mídia Anexada (Estilo LinkedIn: Fotos, Vídeos, Documentos) ── */}
+      {post.image_url && (
+        <div
+          className="mx-5 mb-4 rounded-2xl overflow-hidden border border-border/60 bg-muted/20 relative group cursor-pointer max-h-[460px]"
+          onClick={() => onViewImage ? onViewImage(post.image_url!) : window.open(post.image_url!, "_blank")}
+        >
+          <img
+            src={post.image_url}
+            alt="Imagem da publicação"
+            className="w-full h-full object-cover max-h-[460px] group-hover:scale-[1.01] transition-transform duration-300"
+          />
+          <div className="absolute bottom-2.5 right-2.5 rounded-lg bg-black/60 backdrop-blur-xs px-2.5 py-1 text-[11px] font-semibold text-white flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
+            <Maximize2 className="size-3" /> Ampliar foto
+          </div>
+        </div>
+      )}
+
+      {post.video_url && (() => {
+        const embed = getYouTubeEmbedUrl(post.video_url);
+        if (embed) {
+          return (
+            <div className="mx-5 mb-4 rounded-2xl overflow-hidden border border-border/60 bg-black aspect-video shadow-xs">
+              <iframe
+                src={embed}
+                title="Vídeo da publicação"
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          );
+        }
+        return (
+          <div className="mx-5 mb-4 rounded-2xl overflow-hidden border border-border/60 bg-black shadow-xs">
+            <video
+              src={post.video_url}
+              controls
+              className="w-full max-h-[460px] object-contain bg-black"
+              preload="metadata"
+            />
+          </div>
+        );
+      })()}
+
+      {post.document_title && (
+        <div className="mx-5 mb-4 rounded-2xl border border-border/70 bg-muted/20 p-4 flex items-center justify-between gap-3 hover:bg-muted/40 transition-colors">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="size-11 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 grid place-items-center shrink-0">
+              <FileText className="size-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-foreground truncate leading-tight">{post.document_title}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Material de Estudo • Documento</p>
+            </div>
+          </div>
+          {post.document_url && (
+            <a
+              href={post.document_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 rounded-xl bg-primary px-3.5 py-1.5 text-xs font-bold text-primary-foreground hover:bg-primary/90 flex items-center gap-1.5 transition-colors"
+            >
+              <span>Acessar</span>
+              <ExternalLink className="size-3" />
+            </a>
+          )}
+        </div>
+      )}
+
       {/* ── Métricas Sociais Reais ── */}
       {(post.likes_count > 0 || post.comments_count > 0) && (
         <div className="flex items-center justify-between px-5 pb-2 text-xs text-muted-foreground">
@@ -747,11 +1078,13 @@ function FeedSuggestionsCarousel({
   onToggleFollow,
   onDismiss,
   goTo,
+  onOpenProfile,
 }: {
   students: SuggestedStudent[];
   onToggleFollow: (id: string, currentStatus: boolean) => void;
   onDismiss: (id: string) => void;
   goTo?: (section: any) => void;
+  onOpenProfile?: (profile: any) => void;
 }) {
   const visible = students.filter((s) => !s.isFollowing);
   if (visible.length === 0) return null;
@@ -785,7 +1118,10 @@ function FeedSuggestionsCarousel({
               <X className="size-3.5" />
             </button>
 
-            <div className="relative my-1 cursor-pointer" onClick={() => goTo && goTo("perfil")}>
+            <div
+              className="relative my-1 cursor-pointer"
+              onClick={() => onOpenProfile ? onOpenProfile(student) : (goTo && goTo("perfil"))}
+            >
               <Avatar
                 name={student.name}
                 url={student.avatar}
@@ -804,7 +1140,7 @@ function FeedSuggestionsCarousel({
 
             <p
               className="mt-1.5 text-sm font-bold text-foreground truncate w-full hover:text-primary transition-colors cursor-pointer"
-              onClick={() => goTo && goTo("perfil")}
+              onClick={() => onOpenProfile ? onOpenProfile(student) : (goTo && goTo("perfil"))}
             >
               {student.name}
             </p>
@@ -862,6 +1198,7 @@ function RightSidebar({
   onRefreshSuggestions,
   refreshing,
   goTo,
+  onOpenProfile,
 }: {
   trendingTags: string[];
   onHashtagClick: (tag: string) => void;
@@ -870,6 +1207,7 @@ function RightSidebar({
   onRefreshSuggestions?: () => void;
   refreshing?: boolean;
   goTo?: (section: any) => void;
+  onOpenProfile?: (profile: any) => void;
 }) {
   return (
     <div className="space-y-4 sticky top-20">
@@ -927,7 +1265,10 @@ function RightSidebar({
           ) : (
             suggestedStudents.slice(0, 6).map((s) => (
               <li key={s.id} className="flex items-center gap-3">
-                <div className="relative cursor-pointer shrink-0" onClick={() => goTo && goTo("perfil")}>
+                <div
+                  className="relative cursor-pointer shrink-0"
+                  onClick={() => onOpenProfile ? onOpenProfile(s) : (goTo && goTo("perfil"))}
+                >
                   <Avatar
                     name={s.name}
                     url={s.avatar}
@@ -943,17 +1284,20 @@ function RightSidebar({
                     </div>
                   )}
                 </div>
-                <div className="flex-1 min-w-0 cursor-pointer" onClick={() => goTo && goTo("perfil")}>
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-sm font-bold truncate leading-tight hover:text-primary transition-colors">{s.name}</p>
-                    {s.followsYou && (
-                      <span className="shrink-0 text-[10px] font-semibold bg-primary/15 text-primary px-1.5 py-0.2 rounded-md">
-                        Segue você
-                      </span>
-                    )}
-                  </div>
+                <div
+                  className="flex-1 min-w-0 cursor-pointer"
+                  onClick={() => onOpenProfile ? onOpenProfile(s) : (goTo && goTo("perfil"))}
+                >
+                  <p className="text-sm font-bold truncate leading-tight hover:text-primary transition-colors">
+                    {s.name}
+                  </p>
                   <p className="text-xs text-muted-foreground truncate">{s.course}</p>
-                  {s.connectionReason && (
+                  {s.followsYou ? (
+                    <div className="mt-0.5 flex items-center gap-1 text-[11px] text-primary font-semibold truncate">
+                      <UserPlus className="size-3 shrink-0" />
+                      <span>Segue você</span>
+                    </div>
+                  ) : s.connectionReason ? (
                     <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground truncate">
                       {s.mutualFollows && s.mutualFollows.length > 0 ? (
                         <div className="flex items-center gap-1 text-primary font-medium truncate">
@@ -964,7 +1308,7 @@ function RightSidebar({
                         <span className="truncate text-muted-foreground/80">{s.connectionReason}</span>
                       )}
                     </div>
-                  )}
+                  ) : null}
                 </div>
                 <button
                   type="button"
@@ -1006,10 +1350,12 @@ export function SocialFeed({
   goTo,
   onOpenEssay,
   onStartChat,
+  onOpenProfile,
 }: {
   goTo?: (section: any) => void;
   onOpenEssay?: (essay: any) => void;
   onStartChat?: (profile: any) => void;
+  onOpenProfile?: (profile: any) => void;
 }) {
   const { user } = useAuth();
   const { preferences } = useUserPreferences();
@@ -1023,6 +1369,7 @@ export function SocialFeed({
   const [suggestedStudents, setSuggestedStudents] = useState<SuggestedStudent[]>([]);
   const [refreshingSuggestions, setRefreshingSuggestions] = useState(false);
   const [dismissedSuggestionIds, setDismissedSuggestionIds] = useState<Set<string>>(new Set());
+  const [viewingImageModal, setViewingImageModal] = useState<string | null>(null);
 
   const currentUserName = preferences?.full_name ?? user?.email?.split("@")[0] ?? "Estudante";
   const currentUserAvatar = preferences?.avatar_url ?? null;
@@ -1727,6 +2074,7 @@ export function SocialFeed({
                   onToggleFollow={handleToggleFollow}
                   onDismiss={(id) => setDismissedSuggestionIds((prev) => new Set([...prev, id]))}
                   goTo={goTo}
+                  onOpenProfile={onOpenProfile}
                 />
               )}
             </div>
@@ -1745,7 +2093,18 @@ export function SocialFeed({
                     onDeleteComment={handleDeleteComment}
                     onDelete={handleDeletePost}
                     onHashtagClick={(tag) => setSearchQuery(`#${tag}`)}
-                    onOpenProfile={() => goTo && goTo("perfil")}
+                    onOpenProfile={() =>
+                      onOpenProfile
+                        ? onOpenProfile({
+                            id: post.user_id,
+                            name: post.author_name,
+                            avatar: post.author_avatar,
+                            course: post.author_course,
+                            college: post.author_college,
+                          })
+                        : goTo && goTo("perfil")
+                    }
+                    onViewImage={(url) => setViewingImageModal(url)}
                   />
 
                   {/* Sugestões no Feed estilo Instagram (inserido organicamente após o 2º post) */}
@@ -1755,6 +2114,7 @@ export function SocialFeed({
                       onToggleFollow={handleToggleFollow}
                       onDismiss={(id) => setDismissedSuggestionIds((prev) => new Set([...prev, id]))}
                       goTo={goTo}
+                      onOpenProfile={onOpenProfile}
                     />
                   )}
                 </div>
@@ -1773,9 +2133,35 @@ export function SocialFeed({
             onRefreshSuggestions={() => loadSuggestedProfiles(true)}
             refreshing={refreshingSuggestions}
             goTo={goTo}
+            onOpenProfile={onOpenProfile}
           />
         </div>
       </div>
+
+      {/* Lightbox / Modal de Imagem Ampliada */}
+      {viewingImageModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in-0 duration-200"
+          onClick={() => setViewingImageModal(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] overflow-hidden rounded-2xl shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setViewingImageModal(null)}
+              className="absolute top-3 right-3 size-9 rounded-full bg-black/70 text-white grid place-items-center hover:bg-black transition-colors z-10 cursor-pointer"
+              title="Fechar"
+            >
+              <X className="size-5" />
+            </button>
+            <img
+              src={viewingImageModal}
+              alt="Imagem ampliada"
+              className="w-full h-auto max-h-[85vh] object-contain rounded-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
 
       <style>{`
         .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
