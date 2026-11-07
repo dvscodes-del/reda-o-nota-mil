@@ -49,13 +49,13 @@ function findLiteralExcerpt(text: string, rgx: RegExp): string | null {
 }
 
 // ─── COMPETÊNCIA 1: NORMA PADRÃO ─────────────────────────────────────────────
-// ENEM Real:
-// 200: Excelente estrutura sintática; no máximo 2 desvios gramaticais leves tolerados.
-// 160: Boa estrutura sintática; poucos desvios leves (3 a 5).
-// 120: Estrutura mediana; desvios moderados ou vocabulário simples.
-// 80: Domínio insuficiente; muitos desvios gramaticais.
-// 40: Domínio precário com desvios graves sistemáticos.
-// 0: Menos de 50 palavras ou texto incompreensível.
+// ENEM Real (INEP calibrado):
+// 200: Excelente estrutura sintática; no máximo 1 desvio leve tolerado.
+// 160: Boa estrutura; até 3 desvios leves OU 1 grave isolado.
+// 120: Desvios moderados (4+ leves ou 2 graves); vocabulário simples mas compreensível.
+// 80:  Domínio insuficiente; desvios frequentes que comprometem a compreensão parcial.
+// 40:  Domínio precário com desvios graves sistemáticos.
+// 0:   Menos de 50 palavras ou texto incompreensível.
 
 function avaliarC1(text: string, paragraphs: string[], wordCount: number): {
   score: number;
@@ -76,12 +76,24 @@ function avaliarC1(text: string, paragraphs: string[], wordCount: number): {
     { rgx: /\bpq\b|\bpqs\b/gi, fix: "porque", severity: "grave" },
     { rgx: /\ba nível de\b/gi, fix: "em nível de", severity: "grave" },
     { rgx: /\bpor conta de\b/gi, fix: "em virtude de / devido a", severity: "leve" },
+    { rgx: /\bmuito\s+bom\b/gi, fix: "extremamente positivo / notável", severity: "leve" },
+    { rgx: /\btipo\s+(assim|um)\b/gi, fix: "como / tal qual", severity: "grave" },
+    { rgx: /\bvários?\b/gi, fix: "diversos / inúmeros", severity: "leve" },
+    { rgx: /\bsó\s+que\b/gi, fix: "porém / contudo", severity: "grave" },
+    { rgx: /\bdaí\b/gi, fix: "desse modo / então", severity: "grave" },
+    { rgx: /\baí\b/gi, fix: "nesse contexto / então", severity: "grave" },
+    { rgx: /\bfalar\s+(sobre|de)\b/gi, fix: "discorrer sobre / abordar", severity: "leve" },
   ];
 
   const syntaxRules = [
     { rgx: /\b(onde)\s+(?!há|se|existe|vivem|estão|residem|moram|ficam)/gi, desc: "Uso de 'onde' para situações abstratas (prefira 'em que' ou 'no qual')", severity: "grave" },
-    { rgx: /\bchegar\s+em\b/gi, desc: "Regência do verbo chegar ('chegar ao' em vez de 'chegar no')", severity: "leve" },
+    { rgx: /\bchegar\s+em\b/gi, desc: "Regência do verbo chegar ('chegar ao' em vez de 'chegar em')", severity: "leve" },
     { rgx: /\bassistir\s+o\b/gi, desc: "Regência: 'assistir ao' no sentido de ver/presenciar", severity: "leve" },
+    { rgx: /\bvisar\s+[oa]\b/gi, desc: "Regência: 'visar ao' (no sentido de pretender) é a forma padrão", severity: "leve" },
+    { rgx: /\bimplicar\s+em\b/gi, desc: "Regência: 'implicar' é transitivo direto (sem 'em')", severity: "leve" },
+    { rgx: /\bpreferi[r]?\s+[^a]*?\s+do\s+que\b/gi, desc: "Regência: 'preferir X a Y' (sem 'do que')", severity: "leve" },
+    { rgx: /\bfazem\s+\d+\s+(anos?|meses|dias)/gi, desc: "Concordância: 'faz' (impessoal) no sentido de tempo decorrido", severity: "grave" },
+    { rgx: /\bhouveram\b/gi, desc: "Concordância: 'houve' (impessoal) não vai para o plural", severity: "grave" },
   ];
 
   const informalFound: { excerpt: string; fix: string; severity: string }[] = [];
@@ -89,31 +101,42 @@ function avaliarC1(text: string, paragraphs: string[], wordCount: number): {
 
   for (const rule of informalRules) {
     const matches = [...text.matchAll(new RegExp(rule.rgx.source, "gi"))];
-    if (matches.length > 0 && matches[0].index !== undefined) {
-      informalFound.push({
-        excerpt: excerptAround(text, matches[0].index, matches[0][0].length, 25),
-        fix: rule.fix,
-        severity: rule.severity,
-      });
+    for (const m of matches) {
+      if (m.index !== undefined) {
+        informalFound.push({
+          excerpt: excerptAround(text, m.index, m[0].length, 25),
+          fix: rule.fix,
+          severity: rule.severity,
+        });
+      }
     }
   }
 
   for (const rule of syntaxRules) {
     const matches = [...text.matchAll(new RegExp(rule.rgx.source, "gi"))];
-    if (matches.length > 0 && matches[0].index !== undefined) {
-      syntaxIssues.push({
-        excerpt: excerptAround(text, matches[0].index, matches[0][0].length, 35),
-        desc: rule.desc,
-        severity: rule.severity,
-      });
+    for (const m of matches) {
+      if (m.index !== undefined) {
+        syntaxIssues.push({
+          excerpt: excerptAround(text, m.index, m[0].length, 35),
+          desc: rule.desc,
+          severity: rule.severity,
+        });
+      }
     }
   }
 
+  // Frases excessivamente longas (>50 palavras sem pontuação) = problema de sintaxe
   const sentences = text.match(/[^.!?;]+[.!?;]+/g) || [];
-  const excessiveLong = sentences.filter(s => s.trim().split(/\s+/).length > 55).length;
+  const excessiveLong = sentences.filter(s => s.trim().split(/\s+/).length > 50).length;
+
+  // Repetição vocabular excessiva (mesma palavra 5+ vezes é sinal de vocabulário limitado)
+  const wordFreq = new Map<string, number>();
+  const words = text.toLowerCase().replace(/[^a-záàâãéêíóôõúç\s]/g, "").split(/\s+/).filter(w => w.length > 5);
+  for (const w of words) wordFreq.set(w, (wordFreq.get(w) || 0) + 1);
+  const repeatedWords = [...wordFreq.entries()].filter(([, c]) => c >= 5).length;
 
   const gravesCount = informalFound.filter(f => f.severity === "grave").length + syntaxIssues.filter(s => s.severity === "grave").length;
-  const levesCount = informalFound.filter(f => f.severity === "leve").length + syntaxIssues.filter(s => s.severity === "leve").length + excessiveLong;
+  const levesCount = informalFound.filter(f => f.severity === "leve").length + syntaxIssues.filter(s => s.severity === "leve").length + excessiveLong + repeatedWords;
 
   let score: number;
   let feedback: string;
@@ -121,15 +144,18 @@ function avaliarC1(text: string, paragraphs: string[], wordCount: number): {
   if (wordCount < 60) {
     score = 0;
     feedback = "Texto insuficiente em extensão (menos de 60 palavras) para avaliação do domínio da norma culta.";
-  } else if (gravesCount >= 4 || (gravesCount >= 2 && levesCount >= 5)) {
+  } else if (gravesCount >= 5 || (gravesCount >= 3 && levesCount >= 5)) {
+    score = 40;
+    feedback = "Domínio precário da norma culta: presença de desvios graves e recorrentes que comprometem significativamente a compreensão e adequação do texto à modalidade escrita formal.";
+  } else if (gravesCount >= 3 || (gravesCount >= 2 && levesCount >= 4)) {
     score = 80;
-    feedback = "Domínio insuficiente da norma culta formal: presença recorrente de marcas da oralidade e desvios de concordância/regência que demandam revisão.";
+    feedback = "Domínio insuficiente da norma culta formal: presença frequente de marcas da oralidade e desvios de concordância/regência que comprometem parcialmente a qualidade textual.";
   } else if (gravesCount >= 2 || levesCount >= 4) {
     score = 120;
     feedback = "Domínio mediano da modalidade escrita formal: a redação é compreensível, mas apresenta desvios gramaticais ou escolhas lexicais coloquiais que devem ser aprimoradas.";
   } else if (gravesCount === 1 || levesCount >= 2) {
     score = 160;
-    feedback = "Bom domínio da norma culta formal: estrutura sintática bem articulada, com apenas poucos desvios pontuais de pontuação ou registro que não comprometem o texto.";
+    feedback = "Bom domínio da norma culta formal: estrutura sintática bem articulada, com apenas poucos desvios pontuais que não comprometem o texto.";
   } else {
     score = 200;
     feedback = "Excelente domínio da modalidade escrita formal da Língua Portuguesa: sintaxe madura, vocabulário acadêmico preciso e respeito rigoroso às convenções da norma padrão.";
@@ -144,13 +170,13 @@ function avaliarC1(text: string, paragraphs: string[], wordCount: number): {
 }
 
 // ─── COMPETÊNCIA 2: REPERTÓRIO E TEMA ────────────────────────────────────────
-// ENEM Real:
-// 200: Compreende o tema, tipo dissertativo em 4 parágrafos e pelo menos 1 repertório legitimado produtivo.
-// 160: Repertório legitimado pertinente, mas de uso pouco produtivo, ou 2 bons repertórios em texto de 3 parágrafos.
-// 120: Aborda o tema com repertório baseado no senso comum ou textos motivadores.
-// 80: Tangencia o tema ou estrutura dissertativa frágil.
-// 40: Tangenciamento grave.
-// 0: Fuga total ao tema.
+// ENEM Real (Matriz de Referência do INEP):
+// 200: Aborda o tema integralmente, atende à tipologia (4 parágrafos equilibrados) e apresenta repertório sociocultural legitimado e produtivo (ao menos 2 áreas de conhecimento distintas ou 1 repertório denso e articulado à tese com texto maduro).
+// 160: Aborda o tema com repertório legitimado e pertinente, mas com uso pontual / pouco produtivo, OU apenas 1 repertório em texto de 4 parágrafos.
+// 120: Aborda o tema com argumentação presa ao senso comum (sem repertório legitimado externo) ou com base apenas nos textos motivadores, mantendo estrutura dissertativa.
+// 80:  Tangencia o tema ou apresenta estrutura dissertativa frágil (menos de 3 parágrafos ou redação muito embrionária).
+// 40:  Tangenciamento grave ou texto predominantemente narrativo/descritivo.
+// 0:   Fuga total ao tema ou menos de 60 palavras (menos de 7 linhas no ENEM).
 
 function avaliarC2(text: string, paragraphs: string[], wordCount: number): {
   score: number;
@@ -158,12 +184,12 @@ function avaliarC2(text: string, paragraphs: string[], wordCount: number): {
   repertoireFound: { label: string; excerpt: string }[];
 } {
   const repRules: { label: string; rgx: RegExp; weight: number }[] = [
-    { label: "Filósofo/Sociólogo", rgx: /\b(bauman|bourdieu|foucault|habermas|durkheim|marx|gramsci|weber|arendt|beauvoir|sartre|rousseau|locke|hobbes|kant|hegel|nietzsche|marilena\s*chauí|ailton\s*krenak|arist[óo]teles|plat[ãa]o)\b/gi, weight: 2 },
-    { label: "Literatura", rgx: /\b(machado\s*de\s*assis|clarice\s*lispector|graciliano|carolina\s*maria\s*de\s*jesus|drummond|guimarães\s*rosa|orwell|kafka|vidas\s*secas|quarto\s*de\s*despejo|segundo\s*sexo)\b/gi, weight: 2 },
-    { label: "Marco legal/Constitucional", rgx: /\b(constitui[çc][ãa]o\s*(federal)?\s*(de\s*1988)?|artigo\s*\d+|carta\s*magna|cidad[ãa]os?\s*de\s*papel|declaração\s*universal|direitos\s*humanos|lei\s*n[ºo°]?\s*\d+|estatuto|código)\b/gi, weight: 2 },
-    { label: "Dados e Autoridades", rgx: /\b(ibge|ipea|onu|oms|unicef|unesco|oxfam|fiocruz|inep|dados?\s*d[ao]|pesquisa|estudo|censo)\b/gi, weight: 2 },
-    { label: "Contexto Histórico", rgx: /\b(revolu[çc][ãa]o\s*(industrial|francesa)|iluminismo|ditadura|era\s*vargas|período\s*colonial|escravidão|república|s[ée]culo\s*(xxi|xx|xix|xviii))\b/gi, weight: 1 },
-    { label: "Conceito Científico/Teórico", rgx: /\b(violência\s*simbólica|habitus|capital\s*(cultural|social)|panóptico|necropolítica|interseccionalidade|liquidez|cidadania)\b/gi, weight: 2 },
+    { label: "Filósofo/Sociólogo", rgx: /\b(bauman|bourdieu|foucault|habermas|durkheim|marx|gramsci|weber|arendt|beauvoir|sartre|rousseau|locke|hobbes|kant|hegel|nietzsche|marilena\s*chauí|ailton\s*krenak|arist[óo]teles|plat[ãa]o|byung-chul\s*han)\b/gi, weight: 2 },
+    { label: "Literatura/Artes", rgx: /\b(machado\s*de\s*assis|clarice\s*lispector|graciliano|carolina\s*maria\s*de\s*jesus|drummond|guimarães\s*rosa|orwell|kafka|vidas\s*secas|quarto\s*de\s*despejo|segundo\s*sexo|capitães\s*da\s*areia|modernismo|romantismo)\b/gi, weight: 2 },
+    { label: "Marco Legal/Constitucional", rgx: /\b(constitui[çc][ãa]o\s*(federal)?\s*(de\s*1988)?|artigo\s*\d+|carta\s*magna|cidad[ãa]os?\s*de\s*papel|declaração\s*universal|direitos\s*humanos|lei\s*n[ºo°]?\s*\d+|estatuto|código\s*(penal|civil|de\s*defesa))\b/gi, weight: 2 },
+    { label: "Dados e Instituições", rgx: /\b(ibge|ipea|onu|oms|unicef|unesco|oxfam|fiocruz|inep|dados\s*d[ao]|pesquisa\s*d[ao]|censo\s*demogr[áa]fico|relatório\s*d[ao])\b/gi, weight: 2 },
+    { label: "Contexto Histórico", rgx: /\b(revolu[çc][ãa]o\s*(industrial|francesa)|iluminismo|ditadura\s*militar|era\s*vargas|período\s*colonial|escravidão|república\s*velha|guerra\s*fria|século\s*(xxi|xx|xix|xviii))\b/gi, weight: 1.5 },
+    { label: "Conceito Teórico", rgx: /\b(violência\s*simbólica|habitus|capital\s*(cultural|social)|panóptico|necropolítica|interseccionalidade|modernidade\s*líquida|cidadania\s*mutilada|banalidade\s*do\s*mal)\b/gi, weight: 2 },
   ];
 
   const found: { label: string; excerpt: string; weight: number }[] = [];
@@ -179,30 +205,41 @@ function avaliarC2(text: string, paragraphs: string[], wordCount: number): {
   }
 
   const uniqueCats = new Set(found.map(r => r.label)).size;
-  const hasParagraphStructure = paragraphs.length >= 3;
   const isCanonical4 = paragraphs.length === 4;
+  const hasParagraphStructure = paragraphs.length >= 3;
 
   let score: number;
   let feedback: string;
 
   if (wordCount < 60) {
     score = 0;
-    feedback = "Texto com extensão insuficiente para demonstrar compreensão do tema proposto.";
+    feedback = "Texto com extensão insuficiente (menos de 60 palavras) para avaliação do tema e da tipologia dissertativa.";
+  } else if (wordCount < 90 || (!hasParagraphStructure && uniqueCats === 0)) {
+    score = 40;
+    feedback = "Tangenciamento temático e estrutura embrionária: texto muito curto ou sem divisão parágrafica que não sustenta tese dissertativa.";
   } else if (uniqueCats === 0 && !hasParagraphStructure) {
     score = 80;
-    feedback = "Desenvolvimento temático elementar, sem repertório legitimado externo e com estrutura textual que demanda melhor organização em introdução, desenvolvimento e conclusão.";
+    feedback = "Desenvolvimento temático elementar, sem repertório legitimado externo e com estrutura que demanda divisão canônica em introdução, desenvolvimentos e proposta de intervenção.";
   } else if (uniqueCats === 0) {
     score = 120;
-    feedback = "Compreensão adequada da proposta e da estrutura dissertativa, porém a argumentação permanece presa ao senso comum. Para avançar, insira referências a pensadores, dados estatísticos ou marcos legais pertinentes.";
+    feedback = "Compreensão adequada da proposta e da estrutura dissertativa, porém a argumentação permanece presa ao senso comum. Para atingir faixas mais altas, inclua ao menos um repertório externo legitimado (filosofia, sociologia, história ou dados oficiais).";
   } else if (uniqueCats === 1 && !isCanonical4) {
     score = 160;
-    feedback = "Bom repertório sociocultural legitimado e pertinente à temática. Para alcançar os 200 pontos, garanta a divisão clássica em 4 parágrafos e amarre o repertório de forma ainda mais produtiva à sua tese.";
-  } else if (uniqueCats >= 1) {
+    feedback = "Bom repertório sociocultural legitimado. Para alcançar a nota máxima de 200, adote a estrutura padrão em 4 parágrafos e diversifique as áreas do conhecimento mobilizadas.";
+  } else if (uniqueCats === 1 && isCanonical4) {
+    if (wordCount >= 240 && (found[0]?.weight ?? 0) >= 2) {
+      score = 200;
+      feedback = `Excelente domínio temático e repertório sociocultural legitimado (${found[0]?.label}), articulado de forma produtiva na fundamentação da tese dissertativa.`;
+    } else {
+      score = 160;
+      feedback = `Bom uso de repertório sociocultural legitimado (${found[0]?.label}). Para atingir a nota 200 com segurança, introduza um segundo repertório de outra área do conhecimento (ex.: aliar dados/leis a um pensador clássico).`;
+    }
+  } else if (uniqueCats >= 2 && isCanonical4) {
     score = 200;
-    feedback = `Excelente domínio temático e repertório sociocultural legitimado (${found.map(f => f.label).slice(0, 2).join(", ")}). O repertório foi articulado de modo produtivo em defesa da tese.`;
+    feedback = `Excelente domínio temático e repertório sociocultural diversificado e legitimado (${found.map(f => f.label).slice(0, 2).join(", ")}), com articulação produtiva aos argumentos do texto.`;
   } else {
     score = 160;
-    feedback = "Boa abordagem da proposta dissertativa-argumentativa, demonstrando reflexão sólida sobre os desafios do tema.";
+    feedback = "Boa abordagem da proposta dissertativa-argumentativa, apresentando repertório sociocultural que dialoga com a temática central.";
   }
 
   return {
@@ -213,12 +250,13 @@ function avaliarC2(text: string, paragraphs: string[], wordCount: number): {
 }
 
 // ─── COMPETÊNCIA 3: PROJETO DE TEXTO E ARGUMENTAÇÃO ──────────────────────────
-// ENEM Real:
-// 200: Projeto de texto estratégico consistente, com progressão clara de ideias e defesa de tese.
-// 160: Projeto de texto com pequenos deslizes de aprofundamento, mas com boa relação lógica.
-// 120: Argumentação previsível ou prioritariamente expositiva.
-// 80: Argumentação desorganizada ou de projeto falho.
-// 40: Amontoado de argumentos sem coerência.
+// ENEM Real (Matriz de Referência do INEP):
+// 200: Projeto de texto estratégico e consistente, com progressão temática límpida, tese clara na introdução desdobrada nos desenvolvimentos e sem contradições.
+// 160: Projeto de texto evidente com poucos desvios ou pequenas falhas pontuais de aprofundamento.
+// 120: Projeto de texto com desenvolvimento previsível ou prioritariamente expositivo; argumentos com pouco desdobramento crítico.
+// 80:  Projeto de texto frágil; argumentos desorganizados, lacunares ou contraditórios.
+// 40:  Apenas aglomerado de ideias sem progressão ou defesa explícita de ponto de vista.
+// 0:   Texto desconexo ou sem relação de causa e efeito.
 
 function avaliarC3(text: string, paragraphs: string[], wordCount: number): {
   score: number;
@@ -230,51 +268,54 @@ function avaliarC3(text: string, paragraphs: string[], wordCount: number): {
     /\bdessa forma\b/i, /\bdesse modo\b/i, /\bnesse sentido\b/i,
     /\bcom efeito\b/i, /\bembora\b/i, /\bapesar de\b/i, /\bcontudo\b/i,
     /\btodavia\b/i, /\bno entanto\b/i, /\bportanto\b/i, /\blogo\b/i,
-    /\bassim\b/i, /\bconsequentemente\b/i,
+    /\bassim\b/i, /\bconsequentemente\b/i, /\bsob essa ótica\b/i,
+    /\bnesse cenário\b/i, /\bpor outro lado\b/i, /\bposto que\b/i,
+    /\bdiante disso\b/i, /\bnessa perspectiva\b/i,
   ];
 
   const opsCount = logicalOps.filter(r => r.test(text)).length;
-  const hasMultipleParagraphs = paragraphs.length >= 3;
+  const isCanonical4 = paragraphs.length === 4;
 
   let score: number;
   let feedback: string;
 
-  if (wordCount < 60 || paragraphs.length < 2) {
+  if (wordCount < 80 || paragraphs.length < 2) {
     score = 40;
-    feedback = "Argumentação incipiente, sem projeto de texto delimitado ou sustentação suficiente de um ponto de vista.";
-  } else if (opsCount < 2 || !hasMultipleParagraphs) {
+    feedback = "Argumentação incipiente, sem projeto de texto delimitado ou sustentação suficiente de um ponto de vista em defesa de uma tese.";
+  } else if (opsCount < 2 || paragraphs.length < 3) {
     score = 80;
-    feedback = "Projeto de texto com fragilidades: faltam operadores argumentativos para articular as causas e os efeitos do problema, resultando em raciocínio truncado.";
-  } else if (opsCount < 4 || paragraphs.length < 4) {
+    feedback = "Projeto de texto com fragilidades estruturais: faltam operadores argumentativos para articular as causas e os desdobramentos da problemática, resultando em raciocínio truncado.";
+  } else if (opsCount < 3 || !isCanonical4) {
     score = 120;
-    feedback = "Projeto de texto presente, mas a argumentação é prioritariamente expositiva. Procure aprofundar o porquê dos problemas apontados com maior criticidade e autoria.";
-  } else if (opsCount < 6) {
+    feedback = "Projeto de texto presente, porém com argumentação previsível ou predominantemente expositiva. Aprofunde o porquê dos problemas levantados com maior criticidade e defesa autoral.";
+  } else if (opsCount < 5 || wordCount < 200) {
     score = 160;
-    feedback = "Bom projeto de texto, com desenvolvimento coerente das ideias e defesa nítida da tese. Para nota 200, verticalize ainda mais o desdobramento entre causas e consequências nos parágrafos centrais.";
+    feedback = "Bom projeto de texto, com desenvolvimento coerente das ideias e defesa nítida da tese. Para alcançar os 200 pontos com os fiscais, verticalize o debate de causas e consequências nos desenvolvimentos D1 e D2.";
   } else {
     score = 200;
-    feedback = "Projeto de texto estratégico e consistente: há progressão temática bem delineada da introdução à conclusão, com defesa convincente e autoral do ponto de vista.";
+    feedback = "Projeto de texto estratégico e consistente: há progressão temática bem delineada da introdução à conclusão, com defesa convincente, autoral e crítica do ponto de vista.";
   }
 
   return { score, feedback };
 }
 
 // ─── COMPETÊNCIA 4: COESÃO TEXTUAL ───────────────────────────────────────────
-// ENEM Real:
-// 200: Presença expressiva de conectivos interparágrafos (ao menos 2) e variedade de conectivos intraparágrafos, com poucas repetições.
-// 160: Conectivos interparágrafos funcionais e coesão intraparágrafo satisfatória.
-// 120: Uso mediano de conectivos; repetições lexicais pontuais.
-// 80: Coesão precária com frases justapostas sem conectivos.
-// 40: Quase nenhuma articulação coesiva.
+// ENEM Real (Matriz de Referência do INEP):
+// 200: Presença de conectivos interparágrafos em ao menos 2 transições E ampla diversidade de conectivos intraparágrafos, com raras repetições.
+// 160: Conectivos interparágrafos presentes e coesão intraparágrafo satisfatória, com poucas inadequações.
+// 120: Uso mediano de conectivos; repetições lexicais perceptíveis ou períodos excessivamente justapostos.
+// 80:  Coesão insuficiente com carência de recursos conectivos.
+// 40:  Presença quase nula de articulação coesiva entre frases e parágrafos.
+// 0:   Texto com frases soltas e sem conexão gramatical.
 
 function avaliarC4(text: string, paragraphs: string[], wordCount: number): {
   score: number;
   feedback: string;
 } {
   const interParagraphConnectors = [
-    /^(em primeiro lugar|primeiramente|a princípio|de início|em uma primeira análise)/i,
-    /^(em segundo lugar|ademais|outrossim|além disso|por outro lado|paralelamente|somado a isso)/i,
-    /^(portanto|diante disso|diante do exposto|infere-se|conclui-se|logo|em suma|desse modo)/i,
+    /^(em primeiro lugar|primeiramente|a princípio|de início|em uma primeira análise|a priori|sob essa perspectiva)/i,
+    /^(em segundo lugar|ademais|outrossim|além disso|por outro lado|paralelamente|somado a isso|a posteriori|sob outro prisma)/i,
+    /^(portanto|diante disso|diante do exposto|infere-se|conclui-se|logo|em suma|desse modo|torna-se evidente)/i,
   ];
 
   let interMatches = 0;
@@ -285,49 +326,51 @@ function avaliarC4(text: string, paragraphs: string[], wordCount: number): {
     }
   }
 
-  const intraConnectors = [
-    /\b(além disso|no entanto|todavia|contudo|porém|entretanto|visto que|desse modo|nesse sentido|por conseguinte|dessa forma)\b/gi,
+  const intraConnectorsList = [
+    "além disso", "no entanto", "todavia", "contudo", "porém", "entretanto",
+    "visto que", "desse modo", "nesse sentido", "por conseguinte", "dessa forma",
+    "isto é", "vale ressaltar", "com efeito", "haja vista", "consequentemente",
+    "assim", "portanto", "logo", "embora", "apesar de", "posto que", "ainda que",
+    "de modo que", "com o intuito de", "a fim de", "por meio de", "sob essa ótica",
+    "nesse cenário", "nessa perspectiva", "diante disso", "em virtude de", "uma vez que",
+    "haja vista que", "nesse contexto"
   ];
-  const intraCount = (text.match(intraConnectors[0]) || []).length;
+  const intraRgx = new RegExp(`\\b(${intraConnectorsList.join("|")})\\b`, "gi");
+  const intraCount = (text.match(intraRgx) || []).length;
 
   let score: number;
   let feedback: string;
 
-  if (wordCount < 60) {
+  if (wordCount < 80) {
     score = 40;
-    feedback = "Texto curto demais para demonstrar repertório de recursos coesivos.";
+    feedback = "Texto com extensão reduzida para demonstrar repertório variado de recursos coesivos.";
   } else if (interMatches === 0 && intraCount < 2) {
     score = 80;
-    feedback = "Recursos coesivos muito escassos: as ideias aparecem desconectadas. Inicie os parágrafos de desenvolvimento e conclusão com conectivos lógicos.";
-  } else if (interMatches === 1 || intraCount < 3) {
+    feedback = "Recursos coesivos muito escassos: as ideias aparecem desconectadas. Inicie os parágrafos de desenvolvimento e conclusão com conectivos lógicos e variados.";
+  } else if (interMatches === 0 || intraCount < 3) {
     score = 120;
-    feedback = "Coesão mediana: o texto utiliza conectivos básicos, mas falta variedade na transição interparágrafos para garantir fluidez perfeita.";
-  } else if (interMatches >= 2 && intraCount >= 3 && paragraphs.length >= 4) {
+    feedback = "Coesão mediana: o texto utiliza conectivos pontuais, mas carece de conectivos interparágrafos ou diversificação interna para garantir ritmo fluido à leitura.";
+  } else if (interMatches >= 2 && intraCount >= 4 && paragraphs.length === 4) {
     score = 200;
-    feedback = "Excelente domínio dos mecanismos linguísticos de coesão: conectivos interparágrafos canônicos, ampla articulação interna e leitura fluida.";
+    feedback = "Excelente domínio dos mecanismos coesivos: presença de conectivos interparágrafos canônicos, diversidade de enlaces no interior dos períodos e leitura fluida.";
   } else {
     score = 160;
-    feedback = "Boa articulação textual, com conectivos bem posicionados e transições adequadas entre as partes do texto.";
+    feedback = "Boa articulação textual, com conectivos bem posicionados e transições adequadas entre as partes do texto. Amplie a variedade de operadores intraparágrafos para nota máxima.";
   }
 
   return { score, feedback };
 }
 
 // ─── COMPETÊNCIA 5: PROPOSTA DE INTERVENÇÃO ──────────────────────────────────
-// ENEM Real (Matriz Oficial):
-// 5 elementos = 40 pontos cada:
-// 1. Agente (quem faz)
-// 2. Ação (o que fazer)
-// 3. Meio/Modo (como fazer - "por meio de", "mediante", "através de", oficinas, etc.)
-// 4. Finalidade (para que fazer - "a fim de", "com o intuito de", "para que", etc.)
-// 5. Detalhamento (especificação de qualquer elemento - aposto, explicação, parceiros)
+// ENEM Real (Matriz de Referência Oficial do INEP):
+// Cada um dos 5 elementos pontua exatamente 40 pontos na régua oficial:
+// 1. Agente (quem executa a ação)
+// 2. Ação (o que deve ser feito)
+// 3. Meio / Modo (como a ação será realizada - instrumentos, parcerias, projetos)
+// 4. Efeito / Finalidade (para que a ação é feita - objetivo social)
+// 5. Detalhamento (explicação, exemplificação ou justificativa de um dos 4 elementos anteriores)
 //
-// 5 elementos = 200
-// 4 elementos = 160
-// 3 elementos = 120
-// 2 elementos = 80
-// 1 elemento = 40
-// 0 elementos = 0
+// 5 elementos = 200 | 4 elementos = 160 | 3 elementos = 120 | 2 elementos = 80 | 1 elemento = 40 | 0 = 0
 
 function avaliarC5(text: string, paragraphs: string[]): {
   score: number;
@@ -337,18 +380,24 @@ function avaliarC5(text: string, paragraphs: string[]): {
   const lastParagraph = paragraphs[paragraphs.length - 1] || text;
   const conclusionText = paragraphs.length >= 2 ? lastParagraph : text;
 
-  const hasAgent = /\b(governo|minist[ée]rio|secretaria|poder\s*p[úu]blico|estado|escola|universidade|ong|fam[íi]lia|m[íi]dia|sociedade|cabe\s*(ao|à)|compete\s*(ao|à))\b/i.test(conclusionText);
-  const hasAction = /\b(deve[m]?\s+(criar|elaborar|implementar|promover|garantir|assegurar|fiscalizar|combater|fomentar|investir)|cabe\s+(ao|à|aos|às).*?(criar|implementar|promover|agir)|é\s*(necessário|fundamental|urgente)|precisa|urge)\b/i.test(conclusionText);
-  const hasMeans = /\b(por\s*meio\s*de|mediante|atrav[ée]s\s*de|em\s*parceria\s*com|em\s*conjunto\s*com|por\s*interm[ée]dio\s*de|campanhas?|programas?|oficinas?|palestras?|legislação|projeto\s*de\s*lei|com\s*o\s*auxílio)\b/i.test(conclusionText);
-  const hasEffect = /\b(a\s*fim\s*de|com\s*o\s*(intuito|objetivo|propósito)\s*de|visando\s*a|para\s*(que\s*)?(se\s*)?(garanta|assegure|combata|mitigue|reduza|elimine|melhore)|de\s*modo\s*a)\b/i.test(conclusionText);
-  const hasDetailing = /\b(especificamente|em\s*especial|voltad[ao]s?\s*(a|ao|para)|destinad[ao]s?\s*(a|ao|para)|–[^-]+–|,\s*(?:órgão|responsável|com\s*o\s*foco|por\s*exemplo))/i.test(conclusionText) || conclusionText.split(/\s+/).filter(Boolean).length > 65;
+  const hasAgent = /\b(governo|minist[ée]rio|secretaria|poder\s*p[úu]blico|estado|escola|universidade|ong|fam[íi]lia|m[íi]dia|sociedade|cabe\s*(ao|à|aos|às)|compete\s*(ao|à|aos|às)|instituiç[õo]es|tribunal)\b/i.test(conclusionText);
+  const hasAction = /\b(deve[m]?\s+(criar|elaborar|implementar|promover|garantir|assegurar|fiscalizar|combater|fomentar|investir|articular|desenvolver)|cabe\s+(ao|à|aos|às).*?(criar|implementar|promover|agir|viabilizar)|é\s*(necessário|fundamental|urgente|preciso)|precisa|urge)\b/i.test(conclusionText);
+  const hasMeans = /\b(por\s*meio\s*de|mediante|atrav[ée]s\s*de|em\s*parceria\s*com|em\s*conjunto\s*com|por\s*interm[ée]dio\s*de|campanhas?|programas?|oficinas?|palestras?|legislação|projeto\s*de\s*lei|com\s*o\s*auxílio|a\s*partir\s*de)\b/i.test(conclusionText);
+  const hasEffect = /\b(a\s*fim\s*de|com\s*o\s*(intuito|objetivo|propósito)\s*de|visando\s*a|para\s*(que\s*)?(se\s*)?(garanta|assegure|combata|mitigue|reduza|elimine|melhore)|de\s*modo\s*a|com\s*vistas\s*a)\b/i.test(conclusionText);
+  
+  // Detalhamento rigoroso segundo o INEP:
+  // Exige aposto explicativo entre vírgulas/travessões (ex: "órgão responsável por..."),
+  // exemplificação explícita ("como...", "a exemplo de...", "em especial...", "tais como..."),
+  // ou especificação qualificada do meio/agente.
+  const hasDetailing = /\b(especificamente|em\s*especial|voltad[ao]s?\s*(a|ao|para)|destinad[ao]s?\s*(a|ao|para)|–[^-]+–|,\s*(?:órgão|entidade|responsável|instituição|com\s*o\s*foco|por\s*exemplo|a\s*exemplo\s*de|tais\s*como)[^,.]+,?)/i.test(conclusionText) ||
+    /(\bpor\s*meio\s*de\b[^.!?]{25,}\b(com|contando|aliando|envolvendo)\b[^.!?]{15,})/i.test(conclusionText);
 
   const elements = [
     { name: "Agente", found: hasAgent, detail: "quem executará a intervenção (ex: Ministério da Educação, Governo Federal)" },
     { name: "Ação", found: hasAction, detail: "o que será feito concretamente (ex: 'deve implementar', 'cabe fiscalizar')" },
     { name: "Meio/Modo", found: hasMeans, detail: "como a ação será realizada (ex: 'por meio de oficinas escolares', 'mediante parcerias')" },
-    { name: "Finalidade/Efeito", found: hasEffect, detail: "qual o objetivo ou impacto esperado (ex: 'a fim de garantir a igualdade de oportunidades')" },
-    { name: "Detalhamento", found: hasDetailing, detail: "especificação de um dos elementos (ex: explicando o agente ou especificando as oficinas)" },
+    { name: "Finalidade/Efeito", found: hasEffect, detail: "qual o objetivo ou impacto social esperado (ex: 'a fim de combater a exclusão')" },
+    { name: "Detalhamento", found: hasDetailing, detail: "especificação de um dos elementos (ex: explicando o agente ou especificando como as ações ocorrerão)" },
   ];
 
   const foundCount = elements.filter(e => e.found).length;
@@ -362,22 +411,22 @@ function avaliarC5(text: string, paragraphs: string[]): {
   let feedback: string;
   if (foundCount === 5) {
     score = 200;
-    feedback = "Proposta de intervenção completa e exemplar (5/5 elementos): agente, ação, meio/modo, finalidade e detalhamento estão claramente contemplados e articulados à discussão.";
+    feedback = "Proposta de intervenção completa e exemplar (5/5 elementos): agente, ação, meio/modo, finalidade e detalhamento estão contemplados e articulados de forma viável à discussão.";
   } else if (foundCount === 4) {
     score = 160;
-    feedback = `Proposta de intervenção muito bem estruturada (4/5 elementos). Para alcançar a nota máxima de 200, adicione explicitamente o elemento ausente: ${missingElements[0]?.name} (${missingElements[0]?.detail}).`;
+    feedback = `Proposta de intervenção bem estruturada (4/5 elementos presentes). Para alcançar os 200 pontos com a banca, adicione o elemento ausente: ${missingElements[0]?.name} (${missingElements[0]?.detail}).`;
   } else if (foundCount === 3) {
     score = 120;
-    feedback = `Proposta de intervenção satisfatória (3/5 elementos presentes). Faltam: ${missingElements.map(e => e.name).join(" e ")}. Encorpore a proposta com mais detalhes sobre a execução.`;
+    feedback = `Proposta de intervenção satisfatória (3/5 elementos identificados). Elementos em falta: ${missingElements.map(e => e.name).join(" e ")}. Encorpore a proposta especificando a forma de realização e o objetivo social claro.`;
   } else if (foundCount === 2) {
     score = 80;
-    feedback = `Proposta de intervenção incompleta (2/5 elementos). Desenvolva melhor a solução indicando quem fará, por qual meio e com qual finalidade específica.`;
+    feedback = "Proposta de intervenção incompleta (2/5 elementos). Desenvolva melhor a solução indicando expressamente quem fará, o que fará, por qual meio e com qual finalidade.";
   } else if (foundCount === 1) {
     score = 40;
-    feedback = "Proposta de intervenção incipiente: apenas um elemento identificado. Aponte ações e meios concretos para solucionar o problema.";
+    feedback = "Proposta de intervenção incipiente: apenas um elemento identificado. Formule uma proposta articulada com agente e ação concreta.";
   } else {
     score = 0;
-    feedback = "Ausência de proposta de intervenção social. O último parágrafo deve apresentar soluções práticas para o tema abordado.";
+    feedback = "Ausência de proposta de intervenção social. O parágrafo conclusivo do texto dissertativo do ENEM deve apresentar proposta para o problema abordado.";
   }
 
   return { score, feedback, elements };
