@@ -27,7 +27,7 @@ import {
   PenLine,
   Play,
   Quote,
-  Settings,
+
   Sparkles,
   Target,
   TrendingUp,
@@ -52,14 +52,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
 import { correctEssay } from "@/lib/essay.functions";
 import constituicaoImage from "@/assets/repertorio-constituicao.jpg";
 import geografiaImage from "@/assets/repertorio-geografia.jpg";
@@ -70,7 +63,6 @@ type Correction = Awaited<ReturnType<typeof correctEssay>>;
 
 const navItems = [
   { id: "dashboard" as const, label: "Visão geral", icon: LayoutDashboard },
-  { id: "perfil" as const, label: "Meu Perfil", icon: User },
   { id: "mensagens" as const, label: "Mensagens", icon: MessageCircle },
   { id: "curso" as const, label: "Seu Curso", icon: TrendingUp },
   { id: "mural" as const, label: "Mural nota mil", icon: Award },
@@ -387,28 +379,11 @@ export function EssayApp() {
               <strong className="block text-sm">{user?.email?.split('@')[0] || 'Estudante'}</strong>
               <small className="text-muted-foreground">Nível 8 · 1.240 XP</small>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
-                  <div className="grid h-full w-full place-items-center rounded-full bg-accent font-bold text-accent-foreground ring-2 ring-transparent transition-all hover:ring-primary">
-                    {user?.email?.[0]?.toUpperCase() || 'ES'}
-                  </div>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 rounded-xl">
-                <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate({ to: '/onboarding' })} className="cursor-pointer gap-2">
-                  <Settings className="size-4" />
-                  Editar Metas
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={async () => { await signOut(); navigate({ to: '/login' }); }} className="cursor-pointer gap-2 text-destructive focus:bg-destructive/10 focus:text-destructive">
-                  <LogOut className="size-4" />
-                  Sair
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0" onClick={() => goTo("perfil")} aria-label="Ir para meu perfil">
+              <div className="grid h-full w-full place-items-center rounded-full bg-accent font-bold text-accent-foreground ring-2 ring-transparent transition-all hover:ring-primary">
+                {user?.email?.[0]?.toUpperCase() || 'ES'}
+              </div>
+            </Button>
           </div>
         </header>
 
