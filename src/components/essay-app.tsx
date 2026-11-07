@@ -1,4 +1,4 @@
-import { StudentProfile } from "./StudentProfile";
+﻿import { StudentProfile } from "./StudentProfile";
 import { Messages } from "./Messages";
 import { useMemo, useRef, useState, useEffect } from "react";
 import type { LucideIcon } from "lucide-react";
@@ -517,7 +517,7 @@ function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
     <section className="mt-6 grid gap-4 sm:grid-cols-3">{dashboardStats.map(([value,label,Icon]) => <div key={label} className="rounded-xl border border-border bg-card p-5 shadow-sm"><div className="mb-5 flex items-center justify-between"><span className="grid size-10 place-items-center rounded-lg bg-accent text-primary"><Icon className="size-5" /></span><span className="text-xs font-semibold text-success">este mês</span></div><strong className="text-3xl">{value}</strong><p className="mt-1 text-sm text-muted-foreground">{label}</p></div>)}</section>
     <section className="mt-8">
       <h3 className="font-bold text-lg mb-4">Acesso Rápido</h3>
-      <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
         <Button variant="outline" onClick={() => goTo("laboratorio")} className="h-auto flex-col gap-3 p-4 rounded-xl border-border bg-card hover:bg-accent hover:border-primary">
           <span className="grid size-12 place-items-center rounded-full bg-primary/10 text-primary"><PenLine className="size-5" /></span>
           <span className="font-semibold">Escrever Redação</span>
@@ -533,6 +533,10 @@ function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
         <Button variant="outline" onClick={() => goTo("mural")} className="h-auto flex-col gap-3 p-4 rounded-xl border-border bg-card hover:bg-accent hover:border-primary">
           <span className="grid size-12 place-items-center rounded-full bg-primary/10 text-primary"><Award className="size-5" /></span>
           <span className="font-semibold">Mural Nota 1000</span>
+        </Button>
+        <Button variant="outline" onClick={() => goTo("estudo")} className="h-auto flex-col gap-3 p-4 rounded-xl border-border bg-card hover:bg-accent hover:border-primary">
+          <span className="grid size-12 place-items-center rounded-full bg-primary/10 text-primary"><GraduationCap className="size-5" /></span>
+          <span className="font-semibold text-center">Estudo Nota 900+</span>
         </Button>
       </div>
     </section>
