@@ -5,7 +5,7 @@ import {
   Loader2, Sparkles, BookOpen, PenLine, Target, Zap, Search,
   Laugh, ThumbsUp, Lightbulb, UserPlus, TrendingUp, Hash,
   Globe, Lock, Users, ChevronRight, Bookmark, Bell, Award,
-  Medal, Eye, Repeat2, Check, CheckCircle2,
+  Medal, Eye, Repeat2, Check,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -44,7 +44,6 @@ export interface FeedPost {
   comments?: FeedComment[];
   comments_loaded?: boolean;
   show_comments?: boolean;
-  is_community_seed?: boolean;
 }
 
 export interface FeedComment {
@@ -64,127 +63,6 @@ export interface SuggestedStudent {
   avatar: string | null;
   isFollowing: boolean;
 }
-
-// ─────────────────────────────────────────────
-// Posts reais da Comunidade ENEM (Fallback rico)
-// ─────────────────────────────────────────────
-const REAL_COMMUNITY_POSTS: FeedPost[] = [
-  {
-    id: "community-1",
-    user_id: "seed-user-1",
-    author_name: "Beatriz Vasconcelos",
-    author_course: "Medicina",
-    author_college: "USP",
-    author_avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-    type: "essay_share",
-    essay_score: 960,
-    essay_topic: "Desafios para o enfrentamento da insegurança alimentar no Brasil contemporâneo",
-    content: "Acabei de receber a correção da IA no Laboratório com nota 960! 🎯\n\nConsegui gabaritar a C2 e C3 usando o conceito de 'Cidadãos de Papel' do Gilberto Dimenstein associado à obra 'Quarto de Despejo' de Carolina Maria de Jesus. A chave foi não apenas citar o livro, mas interpretar como a invisibilidade da fome perpetua a desigualdade social.\n\nPróxima meta: lapidar a C1 para alcançar o 1000 cravado! Quem mais está treinando esse tema hoje? #RedaçãoENEM #Nota900 #RepertórioNota1000 #Vestibular",
-    likes_count: 42,
-    comments_count: 8,
-    created_at: new Date(Date.now() - 1000 * 60 * 35).toISOString(),
-    is_liked: false,
-    comments_loaded: true,
-    show_comments: false,
-    is_community_seed: true,
-    comments: [
-      {
-        id: "c-1-1",
-        post_id: "community-1",
-        user_id: "seed-user-2",
-        author_name: "Lucas Ferreira",
-        author_avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
-        content: "Parabéns Bia! Você colocou Carolina Maria de Jesus logo na introdução ou guardou pro D1?",
-        created_at: new Date(Date.now() - 1000 * 60 * 20).toISOString(),
-      },
-      {
-        id: "c-1-2",
-        post_id: "community-1",
-        user_id: "seed-user-1",
-        author_name: "Beatriz Vasconcelos",
-        author_avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-        content: "Coloquei no D1, Lucas! Na introdução usei o Artigo 6º da CF/88 (Direito à Alimentação). Fica super encadeado!",
-        created_at: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
-      }
-    ]
-  },
-  {
-    id: "community-2",
-    user_id: "seed-user-2",
-    author_name: "Lucas Ferreira",
-    author_course: "Direito",
-    author_college: "UFMG",
-    author_avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80",
-    type: "achievement",
-    achievement_title: "Primeira nota 920 no simulado do Escreva+",
-    achievement_icon: "🏆",
-    content: "Depois de 2 meses travado na faixa dos 760 pontos, finalmente bati os 900+! 🔥\n\nO que destravou minha pontuação:\n1. Estrutura rígida na proposta de intervenção: Agente + Ação + Meio/Modo + Efeito + Detalhamento explicativo.\n2. Eliminar repetições de pronomes na C4 usando sinônimos e conectivos diversificados ('Ademais', 'Outrossim', 'Nesse viés').\n\nConstância vence talento todo dia. Bora pra cima! 💪 #Conquista #Nota900 #ENEM2026 #FocoTotal",
-    likes_count: 58,
-    comments_count: 14,
-    created_at: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-    is_liked: false,
-    comments_loaded: true,
-    show_comments: false,
-    is_community_seed: true,
-    comments: [
-      {
-        id: "c-2-1",
-        post_id: "community-2",
-        user_id: "seed-user-3",
-        author_name: "Camila Rocha",
-        author_avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80",
-        content: "Sensacional Lucas! O detalhamento do meio/modo era exatamente onde eu mais perdia ponto na C5.",
-        created_at: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
-      }
-    ]
-  },
-  {
-    id: "community-3",
-    user_id: "seed-user-4",
-    author_name: "Prof. Gabriel Mendes",
-    author_course: "Mentor de Redação",
-    author_college: "Nota 1000 ENEM",
-    author_avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
-    type: "text",
-    content: "💡 3 ERROS FATAIS QUE CUSTAM 80 PONTOS NA SUA PROPOSTA DE INTERVENÇÃO (C5):\n\n❌ 1. Proposta vaga sem agente explícito ('O governo deve fazer algo').\n❌ 2. Detalhamento genérico ('com muita eficiência') não é pontuado.\n❌ 3. Esquecer o efeito prático: toda ação precisa ter a finalidade explícita ('a fim de garantir que...').\n\nSalve este post para revisar antes de submeter sua próxima redação! 📌 #DicasDeRedação #Competência5 #PropostadeIntervenção",
-    likes_count: 94,
-    comments_count: 22,
-    created_at: new Date(Date.now() - 1000 * 60 * 240).toISOString(),
-    is_liked: false,
-    comments_loaded: true,
-    show_comments: false,
-    is_community_seed: true,
-    comments: []
-  },
-  {
-    id: "community-4",
-    user_id: "seed-user-3",
-    author_name: "Camila Rocha",
-    author_course: "Psicologia",
-    author_college: "UFRJ",
-    author_avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80",
-    type: "question",
-    content: "Pessoal, dúvida técnica sobre C1: No parágrafo de introdução, a expressão 'ao invés de' no sentido de 'em vez de' ainda é penalizada como desvio gramatical pela banca? \n\nTenho o costume de usar 'ao invés de' para qualquer oposição, mas o corretor da IA apontou como inadequação semântica. Como vocês fazem para não errar isso? 🤔 #Dúvida #Competência1 #Gramática",
-    likes_count: 26,
-    comments_count: 7,
-    created_at: new Date(Date.now() - 1000 * 60 * 360).toISOString(),
-    is_liked: false,
-    comments_loaded: true,
-    show_comments: false,
-    is_community_seed: true,
-    comments: [
-      {
-        id: "c-4-1",
-        post_id: "community-4",
-        user_id: "seed-user-4",
-        author_name: "Prof. Gabriel Mendes",
-        author_avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
-        content: "Oi Camila! Sim, 'ao invés de' só deve ser usado para ideias estritamente opostas (subir/descer, dia/noite). Para simples substituição ('em vez de estudar, jogou bola'), use sempre 'em vez de'. A banca do ENEM é muito rígida com isso!",
-        created_at: new Date(Date.now() - 1000 * 60 * 300).toISOString(),
-      }
-    ]
-  }
-];
 
 // ─────────────────────────────────────────────
 // Helpers
@@ -253,7 +131,7 @@ function PostSkeleton() {
 }
 
 // ─────────────────────────────────────────────
-// Stories Bar (Instagram-style)
+// Stories Bar (Categorias de Publicação)
 // ─────────────────────────────────────────────
 function StoriesBar({ currentUserName, currentUserAvatar, onWritePost, onSelectTheme }: {
   currentUserName: string | null;
@@ -262,11 +140,11 @@ function StoriesBar({ currentUserName, currentUserAvatar, onWritePost, onSelectT
   onSelectTheme: (tag: string) => void;
 }) {
   const themes = [
-    { label: "Redação do dia", emoji: "📝", color: "from-primary to-purple-600", tag: "RedaçãoENEM" },
-    { label: "Nota acima de 900", emoji: "🏆", color: "from-amber-400 to-orange-500", tag: "Nota900" },
-    { label: "Repertório", emoji: "📚", color: "from-emerald-400 to-teal-600", tag: "RepertórioNota1000" },
-    { label: "Competência 5", emoji: "🎯", color: "from-red-400 to-pink-600", tag: "Competência5" },
+    { label: "Redações", emoji: "📝", color: "from-primary to-purple-600", tag: "Redação" },
+    { label: "Conquistas", emoji: "🏆", color: "from-amber-400 to-orange-500", tag: "Conquista" },
+    { label: "Repertório", emoji: "📚", color: "from-emerald-400 to-teal-600", tag: "Repertório" },
     { label: "Dúvidas", emoji: "💡", color: "from-sky-400 to-blue-600", tag: "Dúvida" },
+    { label: "Dicas C5", emoji: "🎯", color: "from-red-400 to-pink-600", tag: "C5" },
   ];
 
   return (
@@ -294,14 +172,14 @@ function StoriesBar({ currentUserName, currentUserAvatar, onWritePost, onSelectT
         </span>
       </button>
 
-      {/* Stories temáticos */}
+      {/* Categorias rápidas */}
       {themes.map((t) => (
         <button
           key={t.label}
           type="button"
           onClick={() => onSelectTheme(t.tag)}
           className="flex shrink-0 flex-col items-center gap-2 group cursor-pointer"
-          title={`Ver posts sobre #${t.tag}`}
+          title={`Filtrar por #${t.tag}`}
         >
           <div className={`size-16 rounded-full bg-gradient-to-br ${t.color} p-0.5 shadow-xs group-hover:shadow-md group-hover:scale-105 transition-all`}>
             <div className="size-full rounded-full bg-background grid place-items-center">
@@ -318,7 +196,7 @@ function StoriesBar({ currentUserName, currentUserAvatar, onWritePost, onSelectT
 }
 
 // ─────────────────────────────────────────────
-// Caixa de Criação de Post (LinkedIn Modal)
+// Modal de Criação de Post
 // ─────────────────────────────────────────────
 function CreatePostModal({
   open,
@@ -387,7 +265,7 @@ function CreatePostModal({
               </div>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="size-8 rounded-full grid place-items-center text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors">
+          <button type="button" onClick={onClose} className="size-8 rounded-full grid place-items-center text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors cursor-pointer">
             <X className="size-4" />
           </button>
         </div>
@@ -399,7 +277,7 @@ function CreatePostModal({
               key={type}
               type="button"
               onClick={() => setPostType(type)}
-              className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all ${postType === type ? "border-primary bg-primary/10 text-primary" : "border-border/60 text-muted-foreground hover:border-primary/30 hover:text-foreground"}`}
+              className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${postType === type ? "border-primary bg-primary/10 text-primary" : "border-border/60 text-muted-foreground hover:border-primary/30 hover:text-foreground"}`}
             >
               <Icon className="size-3.5" />
               {label}
@@ -407,7 +285,7 @@ function CreatePostModal({
           ))}
         </div>
 
-        {/* Preview redação */}
+        {/* Preview redação real */}
         {postType === "essay_share" && latestEssay && (() => {
           const grade = getScoreGrade(latestEssay.score);
           return (
@@ -428,7 +306,7 @@ function CreatePostModal({
 
         {postType === "essay_share" && !latestEssay && (
           <div className="mx-5 mb-3 rounded-xl border border-dashed border-border/60 bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
-            Escreva uma redação no Laboratório para poder compartilhar sua nota e evolução!
+            Escreva sua primeira redação no Laboratório para poder compartilhar aqui!
           </div>
         )}
 
@@ -439,13 +317,13 @@ function CreatePostModal({
               type="text"
               value={achievementTitle}
               onChange={(e) => setAchievementTitle(e.target.value)}
-              placeholder="Nome da conquista (ex: Primeira nota acima de 900!)"
+              placeholder="Nome da conquista (ex: Bati minha meta de 900+ pontos!)"
               className="w-full rounded-xl border border-border/60 bg-muted/30 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
             <div className="flex flex-wrap gap-2">
               {ICONS.map((icon) => (
                 <button key={icon} type="button" onClick={() => setAchievementIcon(icon)}
-                  className={`text-2xl rounded-xl border p-2 transition-all ${achievementIcon === icon ? "border-primary bg-primary/10 scale-110 shadow-sm" : "border-border/40 hover:border-primary/30 hover:scale-105"}`}
+                  className={`text-2xl rounded-xl border p-2 transition-all cursor-pointer ${achievementIcon === icon ? "border-primary bg-primary/10 scale-110 shadow-sm" : "border-border/40 hover:border-primary/30 hover:scale-105"}`}
                 >{icon}</button>
               ))}
             </div>
@@ -461,9 +339,9 @@ function CreatePostModal({
             rows={5}
             placeholder={
               postType === "text" ? "O que você quer compartilhar com a comunidade de redação hoje?"
-              : postType === "essay_share" ? "Conta como foi escrever esse texto! Quais repertórios você usou?"
-              : postType === "achievement" ? "Descreva sua conquista! Como foi sua rotina de estudos até aqui?"
-              : "Qual a sua dúvida? Descreva o parágrafo ou competência para a turma ajudar!"
+              : postType === "essay_share" ? "Conte como foi escrever essa redação! Quais repertórios você usou?"
+              : postType === "achievement" ? "Descreva sua conquista! Como foi sua evolução de estudos?"
+              : "Qual a sua dúvida sobre redação? Descreva a competência ou parágrafo!"
             }
             className="w-full resize-none bg-transparent text-base text-foreground placeholder:text-muted-foreground/60 focus:outline-none leading-relaxed"
           />
@@ -674,8 +552,8 @@ function PostCard({
         <div className={`mx-5 mb-4 rounded-2xl bg-gradient-to-br ${grade.color} p-0.5 shadow-sm`}>
           <div className="flex items-stretch rounded-[14px] bg-card overflow-hidden">
             <div className="flex-1 p-4">
-              <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Redação Corrigida pela IA</p>
-              <p className="mt-1 text-sm font-semibold text-foreground leading-snug line-clamp-2">{post.essay_topic ?? "Tema do ENEM"}</p>
+              <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Redação Corrigida</p>
+              <p className="mt-1 text-sm font-semibold text-foreground leading-snug line-clamp-2">{post.essay_topic ?? "Tema da Redação"}</p>
               <div className="mt-3 flex items-center gap-1.5">
                 {[1,2,3,4,5].map(i => (
                   <div key={i} className={`h-1.5 flex-1 rounded-full ${i <= Math.round(post.essay_score! / 200) ? `bg-gradient-to-r ${grade.color}` : "bg-muted"}`} />
@@ -712,17 +590,13 @@ function PostCard({
         )}
       </div>
 
-      {/* ── Métricas Sociais ── */}
+      {/* ── Métricas Sociais Reais ── */}
       {(post.likes_count > 0 || post.comments_count > 0) && (
         <div className="flex items-center justify-between px-5 pb-2 text-xs text-muted-foreground">
           {post.likes_count > 0 && (
             <div className="flex items-center gap-1.5">
-              <div className="flex -space-x-1">
-                <span className="text-sm leading-none">👍</span>
-                <span className="text-sm leading-none">❤️</span>
-                <span className="text-sm leading-none">🎉</span>
-              </div>
-              <span>{post.likes_count} {post.likes_count === 1 ? "reação" : "reações"}</span>
+              <span className="text-sm leading-none">👍</span>
+              <span>{post.likes_count} {post.likes_count === 1 ? "curtida" : "curtidas"}</span>
             </div>
           )}
           {post.comments_count > 0 && (
@@ -735,9 +609,8 @@ function PostCard({
         </div>
       )}
 
-      {/* ── Barra de Ações (LinkedIn Style) ── */}
+      {/* ── Barra de Ações ── */}
       <div className="flex border-t border-border/50 mx-3 py-1">
-        {/* Curtir com hover de reações */}
         <div
           className="relative flex-1"
           onMouseEnter={handleLikeEnter}
@@ -778,7 +651,6 @@ function PostCard({
       {/* ── Comentários ── */}
       {post.show_comments && (
         <div className="border-t border-border/50 bg-muted/20 px-5 pb-4 pt-4 space-y-4">
-          {/* Input de Comentário */}
           <div className="flex gap-3 items-start">
             <Avatar name={currentUserName} url={currentUserAvatar} size={9} ring />
             <div className="flex-1 relative">
@@ -798,7 +670,6 @@ function PostCard({
             </div>
           </div>
 
-          {/* Lista de Comentários */}
           {post.comments && post.comments.length > 0 && (
             <ul className="space-y-3 pt-1">
               {post.comments.map(c => (
@@ -829,53 +700,47 @@ function PostCard({
 }
 
 // ─────────────────────────────────────────────
-// Sidebar Direita (LinkedIn-style com dados reais)
+// Sidebar Direita (100% Real - Sem contadores falsos)
 // ─────────────────────────────────────────────
 function RightSidebar({
+  trendingTags,
   onHashtagClick,
   suggestedStudents,
   onToggleFollow,
   goTo,
 }: {
+  trendingTags: string[];
   onHashtagClick: (tag: string) => void;
   suggestedStudents: SuggestedStudent[];
   onToggleFollow: (id: string, isFollowing: boolean) => void;
   goTo?: (section: any) => void;
 }) {
-  const trending = [
-    { tag: "RedaçãoENEM", count: "1.2k discussões" },
-    { tag: "PropostadeIntervenção", count: "870 discussões" },
-    { tag: "Nota900", count: "654 estudantes" },
-    { tag: "RepertórioNota1000", count: "421 citações" },
-    { tag: "Competência5", count: "398 dicas" },
-  ];
-
   return (
     <div className="space-y-4">
-      {/* Em Alta (#Trending) */}
-      <div className="rounded-2xl border border-border/60 bg-card shadow-sm p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-bold text-sm">Em alta na Redação</h3>
-          <TrendingUp className="size-4 text-primary" />
+      {/* Assuntos da Redação */}
+      {trendingTags.length > 0 && (
+        <div className="rounded-2xl border border-border/60 bg-card shadow-sm p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-sm">Assuntos do Feed</h3>
+            <TrendingUp className="size-4 text-primary" />
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {trendingTags.map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => onHashtagClick(tag)}
+                className="flex items-center gap-1 rounded-full border border-border/70 bg-muted/30 px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:border-primary/40 hover:text-primary hover:bg-primary/10 transition-all cursor-pointer"
+              >
+                <Hash className="size-3" />
+                <span>{tag}</span>
+              </button>
+            ))}
+          </div>
         </div>
-        <ul className="space-y-2.5">
-          {trending.map((t, i) => (
-            <li
-              key={t.tag}
-              onClick={() => onHashtagClick(t.tag)}
-              className="flex items-start gap-2.5 group cursor-pointer p-1.5 -mx-1.5 rounded-xl hover:bg-muted/50 transition-colors"
-            >
-              <span className="text-xs font-black text-muted-foreground/50 w-4 shrink-0 mt-0.5">{i + 1}</span>
-              <div className="min-w-0">
-                <p className="text-sm font-bold leading-tight group-hover:text-primary transition-colors truncate">#{t.tag}</p>
-                <p className="text-xs text-muted-foreground">{t.count}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
+      )}
 
-      {/* Pessoas para Seguir (Dados Reais do Banco) */}
+      {/* Pessoas para Seguir (Dados Estritamente Reais do Banco) */}
       <div className="rounded-2xl border border-border/60 bg-card shadow-sm p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-bold text-sm">Estudantes para seguir</h3>
@@ -883,7 +748,12 @@ function RightSidebar({
         </div>
         <ul className="space-y-3">
           {suggestedStudents.length === 0 ? (
-            <p className="text-xs text-muted-foreground">Nenhum outro estudante encontrado ainda.</p>
+            <div className="rounded-xl border border-dashed border-border/60 bg-muted/20 p-4 text-center">
+              <Users className="size-5 text-muted-foreground mx-auto mb-1.5 opacity-60" />
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Nenhum outro estudante cadastrado ainda. Convide colegas para trocar experiências!
+              </p>
+            </div>
           ) : (
             suggestedStudents.map((s) => (
               <li key={s.id} className="flex items-center gap-3">
@@ -911,25 +781,6 @@ function RightSidebar({
             ))
           )}
         </ul>
-      </div>
-
-      {/* Painel da Comunidade */}
-      <div className="rounded-2xl border border-border/60 bg-card shadow-sm p-4">
-        <h3 className="font-bold text-sm mb-3">Comunidade Escreva+</h3>
-        <div className="grid grid-cols-2 gap-2.5">
-          {[
-            { label: "Estudantes", value: "2.8k", icon: Users },
-            { label: "Redações", value: "19.4k", icon: FileText },
-            { label: "Conquistas", value: "982", icon: Trophy },
-            { label: "Notas 1000", value: "31", icon: Award },
-          ].map(({ label, value, icon: Icon }) => (
-            <div key={label} className="rounded-xl bg-muted/40 p-2.5 text-center">
-              <Icon className="size-4 text-primary mx-auto mb-1" />
-              <p className="text-base font-black leading-none">{value}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">{label}</p>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );
@@ -961,12 +812,12 @@ export function SocialFeed({
   const currentUserName = preferences?.full_name ?? user?.email?.split("@")[0] ?? "Estudante";
   const currentUserAvatar = preferences?.avatar_url ?? null;
 
-  // Última redação concluída
+  // Última redação concluída real
   const latestEssay = essays.length > 0
     ? { id: essays[0].id, score: essays[0].score, theme_topic: essays[0].theme_topic }
     : null;
 
-  // Carregar perfis reais de estudantes para sugestão
+  // Carregar perfis estritamente reais de outros estudantes
   const loadSuggestedProfiles = useCallback(async () => {
     if (!user) return;
     try {
@@ -987,26 +838,21 @@ export function SocialFeed({
         setSuggestedStudents(
           profiles.map((p: any) => ({
             id: p.id,
-            name: p.full_name || "Estudante ENEM",
+            name: p.full_name || "Estudante",
             course: [p.course, p.college].filter(Boolean).join(" • ") || "Vestibulando",
             avatar: p.avatar_url,
             isFollowing: followingSet.has(p.id),
           }))
         );
       } else {
-        // Fallback de estudantes de exemplo se não houver outros perfis no banco
-        setSuggestedStudents([
-          { id: "seed-user-1", name: "Beatriz Vasconcelos", course: "Medicina • USP", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80", isFollowing: false },
-          { id: "seed-user-2", name: "Lucas Ferreira", course: "Direito • UFMG", avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80", isFollowing: false },
-          { id: "seed-user-3", name: "Camila Rocha", course: "Psicologia • UFRJ", avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80", isFollowing: false },
-        ]);
+        setSuggestedStudents([]);
       }
     } catch {
-      // ignore
+      setSuggestedStudents([]);
     }
   }, [user]);
 
-  // Carregar posts do banco
+  // Carregar posts reais do Supabase
   const loadPosts = useCallback(async () => {
     if (!user) return;
     setLoading(true);
@@ -1018,7 +864,6 @@ export function SocialFeed({
         .order("created_at", { ascending: false });
 
       if (error) {
-        // Se a tabela ainda não existir ou falhar, fallback gracioso
         setDbPosts([]);
       } else if (rawPosts && rawPosts.length > 0) {
         const userIds = [...new Set(rawPosts.map((p: any) => p.user_id))];
@@ -1070,7 +915,7 @@ export function SocialFeed({
     loadSuggestedProfiles();
   }, [loadPosts, loadSuggestedProfiles]);
 
-  // Realtime updates
+  // Realtime
   useEffect(() => {
     if (!user) return;
     const channel = supabase
@@ -1104,15 +949,24 @@ export function SocialFeed({
     };
   }, [user, currentUserName, currentUserAvatar]);
 
-  // Combinar posts do banco com posts da comunidade
-  const allPosts = useMemo(() => {
-    // Se o usuário já criou posts, coloca os dele no topo e os da comunidade em seguida
-    return [...dbPosts, ...REAL_COMMUNITY_POSTS];
+  // Extrair hashtags reais a partir das postagens existentes
+  const trendingTags = useMemo(() => {
+    const tagsSet = new Set<string>();
+    dbPosts.forEach((post) => {
+      const matches = post.content.match(/#(\w+)/g);
+      if (matches) {
+        matches.forEach((m) => tagsSet.add(m.slice(1)));
+      }
+    });
+    if (tagsSet.size === 0) {
+      return ["Redação", "Conquistas", "Repertório", "ENEM", "Dúvidas"];
+    }
+    return Array.from(tagsSet).slice(0, 6);
   }, [dbPosts]);
 
-  // Filtrar posts por tipo e busca/hashtag
+  // Filtrar posts
   const filteredPosts = useMemo(() => {
-    return allPosts.filter((p) => {
+    return dbPosts.filter((p) => {
       if (filterType !== "all" && p.type !== filterType) return false;
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();
@@ -1124,58 +978,35 @@ export function SocialFeed({
       }
       return true;
     });
-  }, [allPosts, filterType, searchQuery]);
+  }, [dbPosts, filterType, searchQuery]);
 
-  // Publicar post
+  // Publicar post no Supabase
   const handlePublish = async (data: any) => {
     if (!user) return;
     try {
-      const { data: inserted, error } = await supabase
+      const { error } = await supabase
         .from("posts")
-        .insert({ user_id: user.id, ...data })
-        .select()
-        .single();
+        .insert({ user_id: user.id, ...data });
 
       if (error) {
-        // Fallback local se a tabela ainda não tiver sido criada
-        const localPost: FeedPost = {
-          id: `local-${Date.now()}`,
-          user_id: user.id,
-          ...data,
-          likes_count: 0,
-          comments_count: 0,
-          created_at: new Date().toISOString(),
-          author_name: currentUserName,
-          author_avatar: currentUserAvatar,
-          author_course: preferences?.course || "Vestibulando",
-          author_college: preferences?.college || "",
-          is_liked: false,
-          comments: [],
-          comments_loaded: true,
-          show_comments: false,
-        };
-        setDbPosts((prev) => [localPost, ...prev]);
-        toast.success("Publicado no seu feed! 🎉");
+        toast.error("Não foi possível publicar no banco de dados.");
       } else {
-        toast.success("Publicado com sucesso! 🎉");
+        toast.success("Publicado com sucesso no feed! 🎉");
         loadPosts();
       }
     } catch {
-      toast.success("Publicado no feed!");
+      toast.error("Erro ao conectar com o banco de dados.");
     }
   };
 
   // Curtir post
   const handleLike = async (postId: string, isLiked: boolean, reaction?: Reaction) => {
     if (!user) return;
-    const isLocal = postId.startsWith("community-") || postId.startsWith("local-");
 
-    if (!isLocal) {
-      if (isLiked) {
-        await supabase.from("post_likes").delete().eq("post_id", postId).eq("user_id", user.id);
-      } else {
-        await supabase.from("post_likes").insert({ post_id: postId, user_id: user.id });
-      }
+    if (isLiked) {
+      await supabase.from("post_likes").delete().eq("post_id", postId).eq("user_id", user.id);
+    } else {
+      await supabase.from("post_likes").insert({ post_id: postId, user_id: user.id });
     }
 
     setDbPosts((prev) =>
@@ -1194,7 +1025,7 @@ export function SocialFeed({
 
   // Abrir comentários
   const handleToggleComments = async (postId: string) => {
-    const post = allPosts.find((p) => p.id === postId);
+    const post = dbPosts.find((p) => p.id === postId);
     if (!post) return;
 
     if (post.show_comments) {
@@ -1202,7 +1033,7 @@ export function SocialFeed({
       return;
     }
 
-    if (!post.comments_loaded && !post.is_community_seed) {
+    if (!post.comments_loaded) {
       try {
         const { data: rawComments } = await supabase
           .from("post_comments")
@@ -1238,40 +1069,45 @@ export function SocialFeed({
   // Adicionar comentário
   const handleAddComment = async (postId: string, content: string) => {
     if (!user) return;
-    const isLocal = postId.startsWith("community-") || postId.startsWith("local-");
+    try {
+      const { data, error } = await supabase
+        .from("post_comments")
+        .insert({ post_id: postId, user_id: user.id, content })
+        .select()
+        .single();
 
-    if (!isLocal) {
-      try {
-        await supabase.from("post_comments").insert({ post_id: postId, user_id: user.id, content });
-      } catch {
-        // ignore
+      if (error) {
+        toast.error("Erro ao enviar comentário.");
+        return;
       }
+
+      const newComment: FeedComment = {
+        id: data.id,
+        post_id: postId,
+        user_id: user.id,
+        content,
+        created_at: data.created_at,
+        author_name: currentUserName,
+        author_avatar: currentUserAvatar,
+      };
+
+      setDbPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId
+            ? {
+                ...p,
+                comments: [...(p.comments ?? []), newComment],
+                comments_count: p.comments_count + 1,
+                show_comments: true,
+                comments_loaded: true,
+              }
+            : p
+        )
+      );
+      toast.success("Comentário publicado!");
+    } catch {
+      toast.error("Não foi possível comentar.");
     }
-
-    const newComment: FeedComment = {
-      id: `c-${Date.now()}`,
-      post_id: postId,
-      user_id: user.id,
-      content,
-      created_at: new Date().toISOString(),
-      author_name: currentUserName,
-      author_avatar: currentUserAvatar,
-    };
-
-    setDbPosts((prev) =>
-      prev.map((p) =>
-        p.id === postId
-          ? {
-              ...p,
-              comments: [...(p.comments ?? []), newComment],
-              comments_count: p.comments_count + 1,
-              show_comments: true,
-              comments_loaded: true,
-            }
-          : p
-      )
-    );
-    toast.success("Comentário publicado!");
   };
 
   // Excluir comentário
@@ -1316,10 +1152,10 @@ export function SocialFeed({
         toast.success("Deixou de seguir");
       } else {
         await supabase.from("follows").insert({ follower_id: user.id, following_id: targetId });
-        toast.success("Agora você está seguindo este estudante! 🎓");
+        toast.success("Seguindo estudante!");
       }
     } catch {
-      toast.success(currentStatus ? "Deixou de seguir" : "Seguindo com sucesso!");
+      toast.success(currentStatus ? "Deixou de seguir" : "Seguindo estudante!");
     }
     setSuggestedStudents((prev) =>
       prev.map((s) => (s.id === targetId ? { ...s, isFollowing: !currentStatus } : s))
@@ -1327,7 +1163,7 @@ export function SocialFeed({
   };
 
   const FILTERS: { key: PostType | "all"; label: string; emoji: string }[] = [
-    { key: "all", label: "Para você", emoji: "✨" },
+    { key: "all", label: "Tudo", emoji: "✨" },
     { key: "essay_share", label: "Redações", emoji: "📝" },
     { key: "achievement", label: "Conquistas", emoji: "🏆" },
     { key: "question", label: "Dúvidas", emoji: "💡" },
@@ -1336,7 +1172,7 @@ export function SocialFeed({
 
   return (
     <>
-      {/* Modal LinkedIn para criar publicação */}
+      {/* Modal para criar publicação */}
       <CreatePostModal
         open={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
@@ -1349,7 +1185,7 @@ export function SocialFeed({
       <div className="flex gap-6 items-start max-w-6xl mx-auto">
         {/* ─── Coluna Principal do Feed ─── */}
         <div className="flex-1 min-w-0 space-y-4">
-          {/* Stories Estilo Instagram */}
+          {/* Stories / Categorias */}
           <div className="rounded-2xl border border-border/60 bg-card shadow-sm p-4">
             <StoriesBar
               currentUserName={currentUserName}
@@ -1359,7 +1195,7 @@ export function SocialFeed({
             />
           </div>
 
-          {/* Caixa de Criação Rápida (LinkedIn style) */}
+          {/* Caixa de Criação Rápida */}
           <div className="rounded-2xl border border-border/60 bg-card shadow-sm p-4">
             <div className="flex items-center gap-3 mb-3">
               <Avatar name={currentUserName} url={currentUserAvatar} size={11} ring onClick={() => goTo && goTo("perfil")} />
@@ -1368,7 +1204,7 @@ export function SocialFeed({
                 onClick={() => setCreateModalOpen(true)}
                 className="flex-1 text-left rounded-full border border-border/80 bg-muted/40 px-4 py-2.5 text-sm text-muted-foreground hover:bg-muted/70 hover:border-primary/40 transition-all cursor-pointer"
               >
-                O que você quer compartilhar hoje, {currentUserName?.split(" ")[0]}?
+                O que você quer compartilhar, {currentUserName?.split(" ")[0]}?
               </button>
             </div>
             <div className="flex items-center gap-1 pt-1 border-t border-border/40">
@@ -1407,14 +1243,14 @@ export function SocialFeed({
             </div>
           </div>
 
-          {/* Barra de Pesquisa de Hashtags e Assuntos */}
+          {/* Barra de Pesquisa */}
           <div className="relative">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Pesquisar por assunto, hashtag (#RedaçãoENEM, #C5) ou estudante..."
+              placeholder="Pesquisar por assunto ou estudante..."
               className="w-full rounded-2xl border border-border/70 bg-card pl-10 pr-10 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 shadow-xs transition-all"
             />
             {searchQuery && (
@@ -1429,14 +1265,14 @@ export function SocialFeed({
             )}
           </div>
 
-          {/* Filtro Ativo / Hashtag Aviso */}
+          {/* Filtro Ativo */}
           {searchQuery && (
             <div className="flex items-center justify-between rounded-xl bg-primary/10 border border-primary/20 px-3.5 py-2 text-xs font-semibold text-primary">
               <span className="flex items-center gap-1.5">
                 <Hash className="size-3.5" /> Filtrando por: <strong>"{searchQuery}"</strong> ({filteredPosts.length} resultados)
               </span>
               <button type="button" onClick={() => setSearchQuery("")} className="hover:underline cursor-pointer">
-                Ver todos
+                Limpar filtro
               </button>
             </div>
           )}
@@ -1460,7 +1296,7 @@ export function SocialFeed({
             ))}
           </div>
 
-          {/* Lista de Posts */}
+          {/* Lista de Posts 100% Reais */}
           {loading ? (
             <div className="space-y-4">
               <PostSkeleton />
@@ -1469,18 +1305,20 @@ export function SocialFeed({
           ) : filteredPosts.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border/60 bg-card py-16 text-center shadow-sm">
               <div className="mx-auto size-14 rounded-full bg-muted/50 grid place-items-center mb-3">
-                <Sparkles className="size-7 text-primary/40" />
+                <PenLine className="size-6 text-primary/50" />
               </div>
-              <p className="font-bold text-base">Nenhuma publicação encontrada</p>
+              <p className="font-bold text-base text-foreground">Nenhuma publicação ainda</p>
               <p className="mt-1 text-sm text-muted-foreground max-w-xs mx-auto">
-                {searchQuery ? `Não encontramos nada com "${searchQuery}".` : "Seja o primeiro a compartilhar nesta categoria!"}
+                {searchQuery
+                  ? `Nenhuma publicação encontrada para "${searchQuery}".`
+                  : "Seja o primeiro a compartilhar uma redação, conquista ou pensamento com a turma!"}
               </p>
               <button
                 type="button"
                 onClick={() => { setSearchQuery(""); setCreateModalOpen(true); }}
                 className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-all shadow-sm cursor-pointer"
               >
-                <PenLine className="size-4" /> Criar publicação
+                <PenLine className="size-4" /> Criar primeira publicação
               </button>
             </div>
           ) : (
@@ -1505,9 +1343,10 @@ export function SocialFeed({
           )}
         </div>
 
-        {/* ─── Sidebar Direita (LinkedIn Style) ─── */}
+        {/* ─── Sidebar Direita (Sem dados falsos) ─── */}
         <div className="hidden lg:block w-72 xl:w-80 shrink-0">
           <RightSidebar
+            trendingTags={trendingTags}
             onHashtagClick={(tag) => setSearchQuery(`#${tag}`)}
             suggestedStudents={suggestedStudents}
             onToggleFollow={handleToggleFollow}
