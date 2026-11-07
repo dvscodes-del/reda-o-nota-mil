@@ -146,3 +146,4 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trigger_sync_comments_count
   AFTER INSERT OR DELETE ON public.post_comments
   FOR EACH ROW EXECUTE FUNCTION sync_post_comments_count();
+
