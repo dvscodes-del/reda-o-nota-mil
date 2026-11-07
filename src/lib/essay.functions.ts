@@ -4,7 +4,7 @@ import { generateObject } from "ai";
 import { z } from "zod";
 
 const EssayInput = z.object({
-  essay: z.string().min(120),
+  essay: z.string().min(30, "Escreva pelo menos 30 caracteres para a avaliação."),
   targetScore: z.string().optional(),
   college: z.string().optional(),
   course: z.string().optional(),
@@ -540,6 +540,177 @@ function avaliarC5(text: string, paragraphs: string[]): {
 
   return { score, feedback, elements };
 }
+
+// ─── EXERCÍCIO DE COMPETÊNCIA INDIVIDUAL ─────────────────────────────────────
+
+const CompetencyExerciseInput = z.object({
+  competencyCode: z.enum(["C1", "C2", "C3", "C4", "C5"]),
+  sectionId: z.enum(["intro", "des1", "des2", "conc"]),
+  topic: z.string(),
+  exerciseText: z.string().min(15, "Escreva pelo menos 15 caracteres para avaliação."),
+});
+
+const CompetencyExerciseResultSchema = z.object({
+  score: z.number(),
+  status: z.enum(["excelente", "bom", "regular", "insuficiente"]),
+  feedback: z.string(),
+  strengths: z.array(z.string()),
+  tips: z.array(z.string()),
+});
+
+export type CompetencyExerciseResult = z.infer<typeof CompetencyExerciseResultSchema>;
+
+export function evaluateCompetencyHeuristically(
+  comp: "C1" | "C2" | "C3" | "C4" | "C5",
+  section: "intro" | "des1" | "des2" | "conc",
+  topic: string,
+  text: string,
+): CompetencyExerciseResult {
+  const words = text.trim().split(/\s+/).filter(Boolean).length;
+
+  if (words < 8) {
+    return {
+      score: 40,
+      status: "insuficiente",
+      feedback: "Trecho muito curto para demonstrar a competência exigida. Desenvolva sua resposta com pelo menos duas ou três orações completas.",
+      strengths: ["Iniciativa de resposta."],
+      tips: ["Escreva um parágrafo mais elaborado articulando suas ideias ao tema."],
+    };
+  }
+
+  if (comp === "C1") {
+    const r1 = avaliarC1(text, [text], words);
+    const score = Math.max(40, r1.score);
+    const status = score >= 160 ? "excelente" : score >= 120 ? "bom" : "regular";
+    const strengths: string[] = [];
+    const tips: string[] = [];
+
+    if (r1.informalFound.length === 0) {
+      strengths.push("Bom registro formal, sem marcas evidentes de oralidade.");
+    }
+    if (r1.syntaxIssues.length === 0) {
+      strengths.push("Estrutura sintática adequada, respeitando a regência e concordância padrão.");
+    }
+    if (r1.informalFound.length > 0) {
+      tips.push(`Evite termos coloquiais: substitua "${r1.informalFound[0].excerpt}" por termos mais formais.`);
+    }
+    if (tips.length === 0) {
+      tips.push("Mantenha o foco na pontuação precisa entre orações subordinadas e uso da crase.");
+    }
+
+    return {
+      score,
+      status,
+      feedback: r1.feedback,
+      strengths: strengths.length > 0 ? strengths : ["Texto compreensível."],
+      tips,
+    };
+  }
+
+  if (comp === "C2") {
+    const r2 = avaliarC2(text, [text], words);
+    const hasNominal = r2.repertoireFound.length > 0;
+    const score = hasNominal ? 200 : words >= 35 ? 160 : 120;
+    const status = score >= 160 ? "excelente" : score >= 120 ? "bom" : "regular";
+    const strengths: string[] = [];
+    const tips: string[] = [];
+
+    if (hasNominal) {
+      strengths.push(`Repertório legitimado identificado com sucesso: ${r2.repertoireFound[0].label}.`);
+      strengths.push("Boa aplicação do repertório em diálogo com a proposta.");
+      tips.push("Lembre-se sempre de interpretar o repertório, amarrando-o diretamente à sua tese.");
+    } else {
+      strengths.push("Desenvolvimento coerente da ideia em relação ao tema.");
+      tips.push("Para nota máxima em C2, mencione explicitamente uma lei (Constituição de 1988), pensador (filósofo/sociólogo) ou autoridade estatística (IBGE).");
+    }
+
+    return {
+      score,
+      status,
+      feedback: hasNominal
+        ? `Excelente aplicação de repertório sociocultural legitimado (${r2.repertoireFound[0].label}) voltado ao tema!`
+        : "Bom desenvolvimento da ideia, porém o repertório ainda permanece restrito ao senso comum. Adicione uma autoridade externa.",
+      strengths,
+      tips,
+    };
+  }
+
+  if (comp === "C3") {
+    const r3 = avaliarC3(text, [text], words);
+    const score = words >= 40 && r3.score >= 120 ? 160 : words >= 25 ? 120 : 80;
+    const status = score >= 160 ? "excelente" : score >= 120 ? "bom" : "regular";
+    const strengths: string[] = [];
+    const tips: string[] = [];
+
+    if (/\b(tese|porque|visto que|desse modo|haja vista|portanto|além disso)\b/i.test(text)) {
+      strengths.push("Presença de conectivos que evidenciam relação de causa e consequência.");
+    }
+    strengths.push("Ponto de vista direcionado à problemática proposta.");
+    tips.push("Verticalize os argumentos: mostre claramente o PORQUÊ do problema e qual seu impacto na sociedade.");
+
+    return {
+      score,
+      status,
+      feedback: score >= 160
+        ? "Excelente direcionamento argumentativo com defesa nítida de ponto de vista e causalidade!"
+        : "Argumentação compreensível, mas com potencial de maior criticidade e aprofundamento das causas.",
+      strengths,
+      tips,
+    };
+  }
+
+  if (comp === "C4") {
+    const r4 = avaliarC4(text, [text], words);
+    const hasConns = /\b(portanto|ademais|além disso|nesse sentido|sob essa ótica|visto que|contudo|entretanto|desse modo|diante disso)\b/i.test(text);
+    const score = hasConns && words >= 25 ? 200 : hasConns ? 160 : words >= 20 ? 120 : 80;
+    const status = score >= 160 ? "excelente" : score >= 120 ? "bom" : "regular";
+
+    return {
+      score,
+      status,
+      feedback: hasConns
+        ? "Ótimo emprego de operadores coesivos para articular os períodos com fluidez e elegância!"
+        : "O texto necessita de operadores coesivos explícitos (ex.: 'Nesse contexto', 'Ademais', 'Por conseguinte') para conectar as orações.",
+      strengths: hasConns
+        ? ["Emprego funcional de conectivos interperíodos.", "Boa transição de ideias."]
+        : ["Estrutura frasal compreensível."],
+      tips: hasConns
+        ? ["Continue variando os conectivos para não repeti-los ao longo de toda a redação."]
+        : ["Inicie seus períodos com conectivos variados como 'Sob essa perspectiva' ou 'Ademais'."],
+    };
+  }
+
+  // C5 (Intervenção)
+  const r5 = avaliarC5(text, [text]);
+  const foundCount = r5.elements.filter(e => e.found).length;
+  const score = Math.max(40, foundCount * 40);
+  const status = score >= 160 ? "excelente" : score >= 120 ? "bom" : "regular";
+  const missing = r5.elements.filter(e => !e.found).map(e => e.name);
+
+  return {
+    score,
+    status,
+    feedback: foundCount >= 4
+      ? `Proposta de intervenção de alto nível (${foundCount}/5 elementos contemplados)!`
+      : `Proposta identificou ${foundCount}/5 elementos. Elementos faltantes: ${missing.join(", ")}.`,
+    strengths: r5.elements.filter(e => e.found).map(e => `Elemento identificado com sucesso: ${e.name}.`),
+    tips: missing.length > 0
+      ? [`Adicione explicitamente: ${missing.join(", ")} para alcançar a nota 200 na C5.`]
+      : ["Proposta completa! Garanta que ela esteja sempre articulada aos argumentos levantados no desenvolvimento."],
+  };
+}
+
+export const evaluateCompetencyExercise = createServerFn({ method: "POST" })
+  .validator((input: unknown) => CompetencyExerciseInput.parse(input))
+  .handler(async ({ data }) => {
+    return evaluateCompetencyHeuristically(
+      data.competencyCode,
+      data.sectionId,
+      data.topic,
+      data.exerciseText,
+    );
+  });
+
 
 // ─── MOTOR PRINCIPAL ENCORAJADOR E JUSTO ──────────────────────────────────────
 

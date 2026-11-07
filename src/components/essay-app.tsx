@@ -54,6 +54,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -62,7 +63,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import { correctEssay } from "@/lib/essay.functions";
+import {
+  correctEssay,
+  evaluateCompetencyExercise,
+  evaluateEssayHeuristically,
+  evaluateCompetencyHeuristically,
+  type CompetencyExerciseResult,
+} from "@/lib/essay.functions";
 import constituicaoImage from "@/assets/repertorio-constituicao.jpg";
 import geografiaImage from "@/assets/repertorio-geografia.jpg";
 import cinemaImage from "@/assets/repertorio-cinema.jpg";
@@ -384,39 +391,64 @@ export function EssayApp() {
   }
 
   async function handleCorrection() {
-    if (text.trim().length < 120) {
-      setError("Escreva pelo menos um parágrafo completo antes de solicitar a correção.");
+    const trimmed = text.trim();
+    if (trimmed.length < 30) {
+      const msg = "Escreva pelo menos algumas frases (mínimo de 30 caracteres) antes de solicitar a correção.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
     setCorrecting(true);
     setError("");
     try {
-      const correction = await runCorrection({ 
-        data: { 
-          essay: text,
+      let correction: Correction;
+      try {
+        // Tenta enviar para o servidor de correção
+        correction = await runCorrection({ 
+          data: { 
+            essay: trimmed,
+            targetScore: preferences?.targetScore,
+            college: preferences?.college,
+            course: preferences?.course
+          } 
+        });
+      } catch (networkOrServerErr) {
+        console.warn("[handleCorrection] Fallback local ativado para mobile/offline:", networkOrServerErr);
+        // Fallback imediato: roda a avaliação oficial diretamente no navegador sem depender de rede!
+        correction = evaluateEssayHeuristically(trimmed, {
           targetScore: preferences?.targetScore,
           college: preferences?.college,
-          course: preferences?.course
-        } 
-      });
+          course: preferences?.course,
+        });
+      }
+
       setResult(correction);
+      // Rola a tela para o topo para que o resultado apareça de imediato no celular
+      window.scrollTo({ top: 0, behavior: "smooth" });
 
       const currentThemeItem = dailyThemes[selectedDay];
       if (currentThemeItem) {
-        await saveEssay({
-          theme_day: currentThemeItem.day,
-          theme_topic: currentThemeItem.topic,
-          essay_text: text,
-          score: correction.score,
-          competencies: correction.competencies,
-          strengths: correction.strengths,
-          improvements: correction.improvements,
-          annotations: correction.annotations,
-        });
-        await refreshNotifications();
+        try {
+          await saveEssay({
+            theme_day: currentThemeItem.day,
+            theme_topic: currentThemeItem.topic,
+            essay_text: trimmed,
+            score: correction.score,
+            competencies: correction.competencies,
+            strengths: correction.strengths,
+            improvements: correction.improvements,
+            annotations: correction.annotations,
+          });
+          await refreshNotifications();
+        } catch (saveErr) {
+          console.warn("[handleCorrection] Erro ao salvar no histórico:", saveErr);
+        }
       }
+      toast.success("Redação corrigida com sucesso!");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Não foi possível corrigir agora. Tente novamente em instantes.");
+      const msg = caught instanceof Error ? caught.message : "Não foi possível corrigir agora. Tente novamente em instantes.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setCorrecting(false);
     }
@@ -906,12 +938,51 @@ function Competencies({ active, setActive, currentTheme }: {
 }) {
   const [activeSection, setActiveSection] = useState<Record<number, string>>({});
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [evaluating, setEvaluating] = useState<Record<string, boolean>>({});
+  const [evalResults, setEvalResults] = useState<Record<string, CompetencyExerciseResult>>({});
 
   const sectionLabels: Record<string, { short: string; color: string }> = {
     intro: { short: "Introdução", color: "bg-blue-500/10 text-blue-600 border-blue-500/30" },
     des1:  { short: "Dev. 1",     color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30" },
     des2:  { short: "Dev. 2",     color: "bg-amber-500/10 text-amber-600 border-amber-500/30" },
     conc:  { short: "Conclusão",  color: "bg-purple-500/10 text-purple-600 border-purple-500/30" },
+  };
+
+  const handleVerifyExercise = async (
+    compCode: "C1" | "C2" | "C3" | "C4" | "C5",
+    sectionId: "intro" | "des1" | "des2" | "conc",
+    key: string,
+  ) => {
+    const text = (answers[key] ?? "").trim();
+    if (text.length < 15) {
+      toast.error("Escreva pelo menos uma frase completa (15+ caracteres) antes de verificar.");
+      return;
+    }
+
+    setEvaluating(prev => ({ ...prev, [key]: true }));
+    try {
+      let res: CompetencyExerciseResult;
+      try {
+        res = await evaluateCompetencyExercise({
+          data: {
+            competencyCode: compCode,
+            sectionId,
+            topic: currentTheme.topic,
+            exerciseText: text,
+          },
+        });
+      } catch (networkErr) {
+        console.warn("[handleVerifyExercise] Usando motor local no mobile/offline:", networkErr);
+        res = evaluateCompetencyHeuristically(compCode, sectionId, currentTheme.topic, text);
+      }
+      setEvalResults(prev => ({ ...prev, [key]: res }));
+      toast.success("Exercício avaliado!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Não foi possível verificar agora. Tente novamente.");
+    } finally {
+      setEvaluating(prev => ({ ...prev, [key]: false }));
+    }
   };
 
   return <><PageTitle eyebrow="Teoria em prática" title="Domine as competências" description="Para cada competência, pratique especificamente em cada parte da redação: Introdução, Desenvolvimento 1 e 2, e Conclusão." />
@@ -929,9 +1000,12 @@ function Competencies({ active, setActive, currentTheme }: {
   </div>
   <div className="space-y-4">
     {competencyTraining.map((comp, i) => {
-      const currentSection = activeSection[i] ?? 'intro';
+      const currentSection = (activeSection[i] ?? 'intro') as "intro" | "des1" | "des2" | "conc";
       const currentSectionData = comp.sections.find(s => s.id === currentSection)!;
       const answerKey = `${i}-${currentSection}`;
+      const isEvaluatingThis = !!evaluating[answerKey];
+      const currentEval = evalResults[answerKey];
+
       return (
         <div key={comp.code} className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
           {/* Header */}
@@ -990,10 +1064,64 @@ function Competencies({ active, setActive, currentTheme }: {
                   />
                   <div className="mt-3 flex items-center justify-between gap-3">
                     <span className="text-xs text-muted-foreground">{(answers[answerKey] ?? '').length} caracteres</span>
-                    <Button size="sm" className="rounded-lg gap-1.5">
-                      <Sparkles className="size-3.5" /> Verificar com IA
+                    <Button
+                      size="sm"
+                      className="rounded-lg gap-1.5"
+                      disabled={isEvaluatingThis}
+                      onClick={() => handleVerifyExercise(comp.code as "C1" | "C2" | "C3" | "C4" | "C5", currentSection, answerKey)}
+                    >
+                      <Sparkles className="size-3.5" />
+                      {isEvaluatingThis ? "Avaliando..." : "Verificar com IA"}
                     </Button>
                   </div>
+
+                  {/* Feedback da IA para o Exercício */}
+                  {currentEval && (
+                    <div className="mt-4 rounded-xl border border-border bg-card p-4 text-xs sm:text-sm space-y-3 shadow-sm animate-in fade-in-50 duration-200">
+                      <div className="flex items-center justify-between border-b border-border/60 pb-2.5">
+                        <span className="font-bold text-foreground flex items-center gap-2">
+                          <CheckCircle2 className="size-4 text-primary" /> Avaliação da Competência
+                        </span>
+                        <span className={`px-2.5 py-0.5 rounded-full font-extrabold text-xs ${
+                          currentEval.score >= 160 ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/30" :
+                          currentEval.score >= 120 ? "bg-blue-500/10 text-blue-600 border border-blue-500/30" :
+                          "bg-amber-500/10 text-amber-600 border border-amber-500/30"
+                        }`}>
+                          {currentEval.score} / 200 pts
+                        </span>
+                      </div>
+
+                      <p className="text-foreground leading-relaxed font-medium">
+                        {currentEval.feedback}
+                      </p>
+
+                      {currentEval.strengths.length > 0 && (
+                        <div className="space-y-1">
+                          <strong className="block text-[11px] uppercase tracking-wide text-success font-bold">Acertos:</strong>
+                          <ul className="space-y-1">
+                            {currentEval.strengths.map((s, idx) => (
+                              <li key={idx} className="text-muted-foreground flex items-start gap-1.5">
+                                <span className="text-success font-bold">✓</span> {s}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {currentEval.tips.length > 0 && (
+                        <div className="space-y-1">
+                          <strong className="block text-[11px] uppercase tracking-wide text-primary font-bold">Dica para os 200 pontos:</strong>
+                          <ul className="space-y-1">
+                            {currentEval.tips.map((t, idx) => (
+                              <li key={idx} className="text-muted-foreground flex items-start gap-1.5">
+                                <span className="text-primary font-bold">💡</span> {t}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1273,10 +1401,10 @@ function Feedback({ result, text, onBack }: { result: Correction; text: string; 
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        {/* Lado Esquerdo: Texto Grifado */}
-        <div className="rounded-xl border border-border bg-card p-6 shadow-sm h-fit sticky top-24">
+        {/* Lado Esquerdo: Texto Grifado (no mobile fica abaixo da nota para ver a nota primeiro) */}
+        <div className="order-2 xl:order-1 rounded-xl border border-border bg-card p-4 sm:p-6 shadow-sm h-fit xl:sticky xl:top-24">
           <h2 className="text-xl font-bold mb-4">Sua Redação</h2>
-          <div className="text-base text-foreground/90 bg-accent/30 p-5 rounded-lg border border-border/50 max-h-[70vh] overflow-y-auto">
+          <div className="text-base text-foreground/90 bg-accent/30 p-4 sm:p-5 rounded-lg border border-border/50 max-h-[55vh] sm:max-h-[70vh] overflow-y-auto">
             <HighlightedText text={text} annotations={result.annotations} />
           </div>
           <div className="mt-6 flex flex-wrap gap-4 text-sm font-semibold">
@@ -1285,8 +1413,8 @@ function Feedback({ result, text, onBack }: { result: Correction; text: string; 
           </div>
         </div>
 
-        {/* Lado Direito: Feedback */}
-        <div className="space-y-6">
+        {/* Lado Direito: Feedback e Nota (no mobile aparece primeiro no topo) */}
+        <div className="order-1 xl:order-2 space-y-6">
           <div className="grid gap-6 sm:grid-cols-[1fr_1.5fr]">
             <div className="rounded-xl border border-border bg-card p-7 text-center shadow-sm flex flex-col items-center justify-center">
               <div className="mx-auto grid size-32 sm:size-40 place-items-center rounded-full border-[10px] sm:border-[14px] border-primary bg-accent">
