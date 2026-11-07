@@ -715,7 +715,7 @@ export function EssayApp() {
 
         <div className="mx-auto max-w-7xl p-4 md:p-8 lg:p-10">
           {section === "dashboard" && <Dashboard goTo={goTo} />}
-          {section === "feed" && <SocialFeed />}
+          {section === "feed" && <SocialFeed goTo={goTo} onOpenEssay={setSelectedEssay} onStartChat={(profile) => { setChatTarget(profile); goTo("mensagens"); }} />}
           {section === "perfil" && <StudentProfile onOpen={setSelectedEssay} goTo={(s: string) => goTo(s as Section)} onStartChat={(profile) => { setChatTarget(profile); goTo("mensagens"); }} />}
           {section === "notificacoes" && <Notifications goTo={goTo} onStartChat={(profile) => { setChatTarget(profile); goTo("mensagens"); }} onOpenEssay={(essay) => setSelectedEssay(essay)} />}
           {section === "mensagens" && <Messages initialUser={chatTarget} onClearInitial={() => setChatTarget(null)} />}
