@@ -62,7 +62,7 @@ import constituicaoImage from "@/assets/repertorio-constituicao.jpg";
 import geografiaImage from "@/assets/repertorio-geografia.jpg";
 import cinemaImage from "@/assets/repertorio-cinema.jpg";
 
-type Section = "dashboard" | "mural" | "competencias" | "repertorio" | "laboratorio" | "curso" | "perfil" | "mensagens" | "treinamento";
+type Section = "dashboard" | "mural" | "competencias" | "repertorio" | "laboratorio" | "curso" | "perfil" | "mensagens" | "estudo";
 type Correction = Awaited<ReturnType<typeof correctEssay>>;
 
 const navItems = [
@@ -72,7 +72,7 @@ const navItems = [
   { id: "mural" as const, label: "Mural nota mil", icon: Award },
   { id: "competencias" as const, label: "Competências", icon: Target },
   { id: "repertorio" as const, label: "Repertório", icon: BookOpen },
-  { id: "treinamento" as const, label: "Treinamento", icon: FileText },
+  { id: "estudo" as const, label: "Estudo", icon: GraduationCap },
   { id: "laboratorio" as const, label: "Laboratório", icon: PenLine },
 ];
 
@@ -401,7 +401,7 @@ export function EssayApp() {
           {section === "mural" && <Mural onOpen={setSelectedEssay} currentTheme={activeTheme} />}
           {section === "competencias" && <Competencies active={activeCompetency} setActive={setActiveCompetency} currentTheme={activeTheme} />}
           {section === "repertorio" && <Repertory filter={filter} setFilter={setFilter} currentTheme={activeTheme} />}
-          {section === "treinamento" && <Training goTo={goTo} />}
+          {section === "estudo" && <StudySection goTo={goTo} />}
           {section === "laboratorio" && <Laboratory tab={labTab} setTab={setLabTab} text={text} setText={setText} stats={stats} timer={timer} setTimer={setTimer} preview={preview} fileRef={fileRef} setPreview={setPreview} correcting={correcting} error={error} handleCorrection={handleCorrection} result={result} setResult={setResult} selectedDay={selectedDay} setSelectedDay={setSelectedDay} />}
         </div>
       </main>
@@ -997,7 +997,7 @@ function Feedback({ result, text, onBack }: { result: Correction; text: string; 
 }
 
 
-function Training({ goTo }: { goTo: (section: Section) => void }) {
+function StudySection({ goTo }: { goTo: (section: Section) => void }) {
   const [selectedYear, setSelectedYear] = useState<number | "all">("all");
   const [openEssay, setOpenEssay] = useState<TrainingEssay | null>(null);
 
@@ -1022,7 +1022,7 @@ function Training({ goTo }: { goTo: (section: Section) => void }) {
       <>
         <div className="mb-6">
           <button type="button" onClick={() => setOpenEssay(null)} className="flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
-            <ArrowRight className="size-4 rotate-180" /> Voltar ao Treinamento
+            <ArrowRight className="size-4 rotate-180" /> Voltar ao Estudo
           </button>
         </div>
 
@@ -1093,7 +1093,7 @@ function Training({ goTo }: { goTo: (section: Section) => void }) {
 
   return (
     <>
-      <PageTitle eyebrow="Estude com os melhores" title="Treinamento" description="Leia redações nota 900+ de ENEMs anteriores. Estude a estrutura, o repertório e a argumentação para escrever a sua própria." />
+      <PageTitle eyebrow="Estude com os melhores" title="Estudo" description="Leia redações nota 900+ de temas reais de ENEMs anteriores. Analise a estrutura, os repertórios legítimos e a proposta de intervenção para se inspirar e escrever as suas próprias redações." />
 
       {/* Filtro por ano */}
       <div className="mb-6 flex flex-wrap items-center gap-2">
