@@ -42,6 +42,10 @@ import {
   UserPlus,
   MessageCircle,
   Send,
+  GraduationCap,
+  Eye,
+  Star,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -58,7 +62,7 @@ import constituicaoImage from "@/assets/repertorio-constituicao.jpg";
 import geografiaImage from "@/assets/repertorio-geografia.jpg";
 import cinemaImage from "@/assets/repertorio-cinema.jpg";
 
-type Section = "dashboard" | "mural" | "competencias" | "repertorio" | "laboratorio" | "curso" | "perfil" | "mensagens";
+type Section = "dashboard" | "mural" | "competencias" | "repertorio" | "laboratorio" | "curso" | "perfil" | "mensagens" | "treinamento";
 type Correction = Awaited<ReturnType<typeof correctEssay>>;
 
 const navItems = [
@@ -68,10 +72,12 @@ const navItems = [
   { id: "mural" as const, label: "Mural nota mil", icon: Award },
   { id: "competencias" as const, label: "Competências", icon: Target },
   { id: "repertorio" as const, label: "Repertório", icon: BookOpen },
+  { id: "treinamento" as const, label: "Treinamento", icon: FileText },
   { id: "laboratorio" as const, label: "Laboratório", icon: PenLine },
 ];
 
 import { dailyThemes } from "../data/themes";
+import { trainingEssays, type TrainingEssay } from "../data/training-essays";
 
 const competencyTraining: Array<{
   code: string;
@@ -395,6 +401,7 @@ export function EssayApp() {
           {section === "mural" && <Mural onOpen={setSelectedEssay} currentTheme={activeTheme} />}
           {section === "competencias" && <Competencies active={activeCompetency} setActive={setActiveCompetency} currentTheme={activeTheme} />}
           {section === "repertorio" && <Repertory filter={filter} setFilter={setFilter} currentTheme={activeTheme} />}
+          {section === "treinamento" && <Training goTo={goTo} />}
           {section === "laboratorio" && <Laboratory tab={labTab} setTab={setLabTab} text={text} setText={setText} stats={stats} timer={timer} setTimer={setTimer} preview={preview} fileRef={fileRef} setPreview={setPreview} correcting={correcting} error={error} handleCorrection={handleCorrection} result={result} setResult={setResult} selectedDay={selectedDay} setSelectedDay={setSelectedDay} />}
         </div>
       </main>
@@ -985,6 +992,196 @@ function Feedback({ result, text, onBack }: { result: Correction; text: string; 
           )}
         </div>
       </div>
+    </>
+  );
+}
+
+
+function Training({ goTo }: { goTo: (section: Section) => void }) {
+  const [selectedYear, setSelectedYear] = useState<number | "all">("all");
+  const [openEssay, setOpenEssay] = useState<TrainingEssay | null>(null);
+
+  const years = [...new Set(trainingEssays.map(e => e.year))].sort((a, b) => b - a);
+  const filtered = selectedYear === "all" ? trainingEssays : trainingEssays.filter(e => e.year === selectedYear);
+
+  const scoreColor = (score: number) => {
+    if (score >= 960) return "text-emerald-600 bg-emerald-500/10 border-emerald-500/30";
+    if (score >= 940) return "text-blue-600 bg-blue-500/10 border-blue-500/30";
+    return "text-amber-600 bg-amber-500/10 border-amber-500/30";
+  };
+
+  const paragraphColors = [
+    { bg: "bg-blue-50 dark:bg-blue-950/30", border: "border-blue-200 dark:border-blue-800", badge: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300", label: "Introdução" },
+    { bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-200 dark:border-emerald-800", badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300", label: "Desenvolvimento 1" },
+    { bg: "bg-amber-50 dark:bg-amber-950/30", border: "border-amber-200 dark:border-amber-800", badge: "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300", label: "Desenvolvimento 2" },
+    { bg: "bg-purple-50 dark:bg-purple-950/30", border: "border-purple-200 dark:border-purple-800", badge: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300", label: "Conclusão" },
+  ];
+
+  if (openEssay) {
+    return (
+      <>
+        <div className="mb-6">
+          <button type="button" onClick={() => setOpenEssay(null)} className="flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
+            <ArrowRight className="size-4 rotate-180" /> Voltar ao Treinamento
+          </button>
+        </div>
+
+        {/* Header da redação */}
+        <div className="mb-8 rounded-2xl border border-border bg-card p-6 shadow-sm md:p-8">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">ENEM {openEssay.year}</span>
+                <span className={`rounded-full border px-3 py-1 text-xs font-bold ${scoreColor(openEssay.score)}`}>
+                  <Star className="mr-1 inline size-3" /> {openEssay.score} pontos
+                </span>
+              </div>
+              <h1 className="text-2xl font-bold md:text-3xl">{openEssay.title}</h1>
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{openEssay.theme}</p>
+            </div>
+          </div>
+
+          {/* Competências */}
+          <div className="mt-6 grid grid-cols-5 gap-3">
+            {Object.entries(openEssay.competencies).map(([key, value]) => (
+              <div key={key} className="rounded-xl bg-accent p-3 text-center">
+                <span className="block text-xs font-bold uppercase text-muted-foreground">{key.toUpperCase()}</span>
+                <span className="block text-lg font-black text-primary">{value}</span>
+                <Progress value={value / 2} className="mt-1 h-1.5" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Parágrafos da redação */}
+        <div className="space-y-5">
+          {openEssay.paragraphs.map((paragraph, i) => {
+            const color = paragraphColors[i] ?? paragraphColors[0]!;
+            const highlight = openEssay.highlights.find(h => h.paragraph === i);
+            return (
+              <div key={i} className={`rounded-xl border ${color.border} ${color.bg} p-5 md:p-6 shadow-sm`}>
+                <span className={`mb-3 inline-block rounded-full px-3 py-1 text-xs font-bold ${color.badge}`}>
+                  {color.label}
+                </span>
+                <p className="text-base leading-8 text-foreground">{paragraph}</p>
+                {highlight && (
+                  <div className="mt-4 flex items-start gap-2 rounded-lg border border-border bg-background/60 p-3">
+                    <Lightbulb className="mt-0.5 size-4 shrink-0 text-primary" />
+                    <div>
+                      <span className="text-xs font-bold text-primary">{highlight.label}</span>
+                      <p className="mt-0.5 text-sm text-muted-foreground">{highlight.tip}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* CTA para escrever */}
+        <div className="mt-8 rounded-xl border border-primary/20 bg-primary/5 p-6 text-center">
+          <GraduationCap className="mx-auto mb-3 size-10 text-primary" />
+          <h3 className="text-lg font-bold">Agora é sua vez!</h3>
+          <p className="mt-1 text-sm text-muted-foreground">Inspirou-se nesta redação? Vá ao Laboratório e escreva a sua sobre o mesmo tema ou outro de sua preferência.</p>
+          <Button onClick={() => goTo("laboratorio")} className="mt-4 rounded-xl">
+            Escrever minha redação <ArrowRight className="ml-2 size-4" />
+          </Button>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <PageTitle eyebrow="Estude com os melhores" title="Treinamento" description="Leia redações nota 900+ de ENEMs anteriores. Estude a estrutura, o repertório e a argumentação para escrever a sua própria." />
+
+      {/* Filtro por ano */}
+      <div className="mb-6 flex flex-wrap items-center gap-2">
+        <span className="text-sm font-semibold text-muted-foreground mr-2">Filtrar por ano:</span>
+        <Button
+          variant={selectedYear === "all" ? "default" : "outline"}
+          size="sm"
+          className="rounded-full"
+          onClick={() => setSelectedYear("all")}
+        >
+          Todos
+        </Button>
+        {years.map(year => (
+          <Button
+            key={year}
+            variant={selectedYear === year ? "default" : "outline"}
+            size="sm"
+            className="rounded-full"
+            onClick={() => setSelectedYear(year)}
+          >
+            {year}
+          </Button>
+        ))}
+      </div>
+
+      {/* Estatísticas */}
+      <div className="mb-8 grid gap-4 sm:grid-cols-3">
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <div className="mb-3 flex items-center gap-2">
+            <span className="grid size-10 place-items-center rounded-lg bg-primary/10 text-primary"><FileText className="size-5" /></span>
+          </div>
+          <strong className="text-2xl">{filtered.length}</strong>
+          <p className="mt-1 text-sm text-muted-foreground">Redações disponíveis</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <div className="mb-3 flex items-center gap-2">
+            <span className="grid size-10 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600"><Star className="size-5" /></span>
+          </div>
+          <strong className="text-2xl">{Math.round(filtered.reduce((s, e) => s + e.score, 0) / (filtered.length || 1))}</strong>
+          <p className="mt-1 text-sm text-muted-foreground">Média de pontuação</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <div className="mb-3 flex items-center gap-2">
+            <span className="grid size-10 place-items-center rounded-lg bg-amber-500/10 text-amber-600"><GraduationCap className="size-5" /></span>
+          </div>
+          <strong className="text-2xl">{years.length}</strong>
+          <p className="mt-1 text-sm text-muted-foreground">Anos de ENEM cobertos</p>
+        </div>
+      </div>
+
+      {/* Lista de redações */}
+      <div className="grid gap-5 md:grid-cols-2">
+        {filtered.map((essay) => (
+          <article
+            key={essay.id}
+            onClick={() => setOpenEssay(essay)}
+            className="group cursor-pointer rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md hover:border-primary/30"
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">ENEM {essay.year}</span>
+              <span className={`rounded-full border px-3 py-1 text-xs font-bold ${scoreColor(essay.score)}`}>
+                {essay.score} pts
+              </span>
+            </div>
+            <h2 className="text-lg font-bold leading-snug group-hover:text-primary transition-colors">{essay.title}</h2>
+            <p className="mt-2 text-xs text-muted-foreground line-clamp-2">{essay.theme}</p>
+
+            <div className="mt-4 flex items-center gap-3">
+              {Object.entries(essay.competencies).map(([key, value]) => (
+                <span key={key} className="text-xs font-semibold text-muted-foreground">
+                  <span className="uppercase">{key}</span>: <span className={value >= 200 ? "text-emerald-600" : value >= 180 ? "text-blue-600" : "text-amber-600"}>{value}</span>
+                </span>
+              ))}
+            </div>
+
+            <div className="mt-5 flex items-center gap-2 text-sm font-bold text-primary">
+              <Eye className="size-4" /> Ler e estudar <ChevronRight className="size-4" />
+            </div>
+          </article>
+        ))}
+      </div>
+
+      {filtered.length === 0 && (
+        <div className="mt-12 text-center">
+          <FileText className="mx-auto size-12 text-muted-foreground/30" />
+          <p className="mt-3 text-muted-foreground">Nenhuma redação encontrada para o ano selecionado.</p>
+        </div>
+      )}
     </>
   );
 }
