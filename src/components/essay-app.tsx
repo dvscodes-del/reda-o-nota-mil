@@ -1,6 +1,7 @@
-﻿import { StudentProfile } from "./StudentProfile";
+import { StudentProfile } from "./StudentProfile";
 import { Messages } from "./Messages";
 import { Notifications } from "./Notifications";
+import { SocialFeed } from "./SocialFeed";
 import { useMemo, useRef, useState, useEffect } from "react";
 import type { LucideIcon } from "lucide-react";
 import { useUserPreferences } from "@/context/UserPreferencesContext";
@@ -66,19 +67,20 @@ import constituicaoImage from "@/assets/repertorio-constituicao.jpg";
 import geografiaImage from "@/assets/repertorio-geografia.jpg";
 import cinemaImage from "@/assets/repertorio-cinema.jpg";
 
-type Section = "dashboard" | "mural" | "competencias" | "repertorio" | "laboratorio" | "curso" | "perfil" | "mensagens" | "notificacoes" | "treinamento";
+type Section = "dashboard" | "feed" | "mural" | "competencias" | "repertorio" | "laboratorio" | "curso" | "perfil" | "mensagens" | "notificacoes" | "treinamento";
 type Correction = Awaited<ReturnType<typeof correctEssay>>;
 
-const navItems = [
+const mainNavItems = [
   { id: "dashboard" as const, label: "Visão geral", icon: LayoutDashboard },
-  { id: "notificacoes" as const, label: "Notificações", icon: Bell },
-  { id: "mensagens" as const, label: "Mensagens", icon: MessageCircle },
-  { id: "curso" as const, label: "Seu Curso", icon: TrendingUp },
+  { id: "feed" as const, label: "Feed da Turma", icon: Sparkles },
+  { id: "curso" as const, label: "Seu Curso & Meta", icon: TrendingUp },
+];
+
+const studyNavItems = [
+  { id: "treinamento" as const, label: "Treinamento 900+", icon: GraduationCap },
   { id: "mural" as const, label: "Mural nota mil", icon: Award },
-  { id: "competencias" as const, label: "Competências", icon: Target },
   { id: "repertorio" as const, label: "Repertório", icon: BookOpen },
-  { id: "treinamento" as const, label: "Treinamento", icon: GraduationCap },
-  { id: "laboratorio" as const, label: "Laboratório", icon: PenLine },
+  { id: "competencias" as const, label: "Competências", icon: Target },
 ];
 
 import { dailyThemes } from "../data/themes";
@@ -319,8 +321,45 @@ export function EssayApp() {
   const { user, signOut, isLoading } = useAuth();
   const navigate = useNavigate();
   const { preferences, isLoading: isPrefsLoading } = useUserPreferences();
-  const { saveEssay } = useEssays();
-  const { unreadCount, refreshNotifications } = useNotifications();
+  const { saveEssay, essays } = useEssays();
+  const { unreadCount, refreshNotifications, notifications } = useNotifications();
+
+  const unreadMessagesCount = useMemo(() => {
+    return notifications?.filter((n) => n.type === "message" && !n.isRead).length || 0;
+  }, [notifications]);
+
+  const unreadNotifsCount = useMemo(() => {
+    return notifications?.filter((n) => n.type !== "message" && !n.isRead).length || 0;
+  }, [notifications]);
+
+  const streakDays = useMemo(() => {
+    if (!essays || essays.length === 0) return 0;
+    const dates = new Set(
+      essays.map((e) => new Date(e.created_at).toISOString().split("T")[0])
+    );
+    let streak = 0;
+    const checkDate = new Date();
+    const todayStr = checkDate.toISOString().split("T")[0];
+
+    if (!dates.has(todayStr)) {
+      checkDate.setDate(checkDate.getDate() - 1);
+      const yesterdayStr = checkDate.toISOString().split("T")[0];
+      if (!dates.has(yesterdayStr)) {
+        return 0;
+      }
+    }
+
+    while (true) {
+      const dStr = checkDate.toISOString().split("T")[0];
+      if (dates.has(dStr)) {
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+    return streak;
+  }, [essays]);
 
   useEffect(() => {
     if (isLoading || (user && isPrefsLoading)) return;
@@ -385,57 +424,210 @@ export function EssayApp() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {mobileOpen && <button type="button" aria-label="Fechar menu" onClick={() => setMobileOpen(false)} className="fixed inset-0 z-30 bg-foreground/20 lg:hidden" />}
-      <aside className={`fixed inset-y-0 left-0 z-40 w-72 border-r border-border bg-sidebar p-5 transition-transform lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside className={`fixed inset-y-0 left-0 z-40 w-72 border-r border-border/80 bg-sidebar/95 backdrop-blur-md p-4 lg:p-5 transition-transform duration-300 lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex h-full flex-col">
-          <div className="mb-10 flex items-center justify-between">
-            <button type="button" onClick={() => goTo("dashboard")} className="flex items-center gap-3" aria-label="Ir para o início">
-              <span className="grid size-10 place-items-center rounded-xl bg-primary text-primary-foreground"><PenLine className="size-5" /></span>
-              <span className="text-left"><strong className="block text-lg leading-none">Escreva+</strong><small className="text-muted-foreground">Seu treino ENEM</small></span>
+          {/* Logo & Marca */}
+          <div className="mb-5 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => goTo("dashboard")}
+              className="group flex items-center gap-3 text-left transition-opacity hover:opacity-90"
+              aria-label="Ir para o início"
+            >
+              <span className="grid size-10 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm shadow-primary/25 transition-transform duration-200 group-hover:scale-105">
+                <PenLine className="size-5" />
+              </span>
+              <div>
+                <strong className="block text-lg font-bold leading-tight tracking-tight">Escreva<span className="text-primary">+</span></strong>
+                <small className="text-xs font-medium text-muted-foreground">Plataforma Nota 1000</small>
+              </div>
             </button>
-            <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMobileOpen(false)} aria-label="Fechar menu"><X /></Button>
+            <Button variant="ghost" size="icon" className="lg:hidden rounded-lg" onClick={() => setMobileOpen(false)} aria-label="Fechar menu">
+              <X className="size-5" />
+            </Button>
           </div>
-          <nav className="space-y-1.5 flex-1" aria-label="Navegação principal">
-            {navItems.map((item) => {
-              const isNotifs = item.id === "notificacoes";
-              const hasUnread = isNotifs && unreadCount > 0;
-              return (
-                <Button
-                  key={item.id}
-                  variant="ghost"
-                  onClick={() => goTo(item.id)}
-                  className={`h-11 w-full justify-between rounded-xl px-3 ${
-                    section === item.id
-                      ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  <span className="flex items-center">
-                    <item.icon className="mr-2 size-4" />
-                    {item.label}
-                  </span>
-                  {hasUnread && (
-                    <span
-                      className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${
-                        section === item.id
-                          ? "bg-primary-foreground text-primary"
-                          : "bg-primary text-primary-foreground animate-pulse"
+
+          {/* Destaque Principal: Laboratório */}
+          <div className="mb-4">
+            <button
+              type="button"
+              onClick={() => goTo("laboratorio")}
+              className={`group flex w-full items-center justify-between rounded-xl px-3.5 py-3 text-sm font-semibold transition-all duration-200 shadow-sm ${
+                section === "laboratorio"
+                  ? "bg-primary text-primary-foreground shadow-md shadow-primary/30 ring-2 ring-primary/40"
+                  : "bg-primary/10 text-primary border border-primary/25 hover:bg-primary/15 hover:border-primary/45 hover:shadow-xs"
+              }`}
+            >
+              <span className="flex items-center gap-2.5">
+                <span className={`grid size-7 place-items-center rounded-lg transition-transform group-hover:scale-110 ${
+                  section === "laboratorio" ? "bg-primary-foreground/20 text-primary-foreground" : "bg-primary text-primary-foreground"
+                }`}>
+                  <PenLine className="size-3.5" />
+                </span>
+                <span className="font-bold">Laboratório</span>
+              </span>
+              <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                section === "laboratorio"
+                  ? "bg-primary-foreground/20 text-primary-foreground"
+                  : "bg-primary/20 text-primary"
+              }`}>
+                Escrever
+              </span>
+            </button>
+          </div>
+
+          {/* Navegação Principal em Categorias */}
+          <div className="flex-1 space-y-4 overflow-y-auto pr-1 -mr-1">
+            {/* Seção Principal */}
+            <div>
+              <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
+                Principal
+              </p>
+              <nav className="space-y-1" aria-label="Navegação principal">
+                {mainNavItems.map((item) => {
+                  const isActive = section === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => goTo(item.id)}
+                      className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                        isActive
+                          ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+                          : "text-muted-foreground hover:bg-accent/60 hover:text-foreground hover:translate-x-0.5"
                       }`}
                     >
-                      {unreadCount > 99 ? "99+" : unreadCount}
+                      <item.icon className={`size-4 transition-transform group-hover:scale-110 ${
+                        isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground"
+                      }`} />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+
+            {/* Seção de Estudo & Prática */}
+            <div>
+              <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
+                Estudo & Prática
+              </p>
+              <nav className="space-y-1" aria-label="Navegação de estudos">
+                {studyNavItems.map((item) => {
+                  const isActive = section === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => goTo(item.id)}
+                      className={`group flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                        isActive
+                          ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+                          : "text-muted-foreground hover:bg-accent/60 hover:text-foreground hover:translate-x-0.5"
+                      }`}
+                    >
+                      <span className="flex items-center gap-3">
+                        <item.icon className={`size-4 transition-transform group-hover:scale-110 ${
+                          isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground"
+                        }`} />
+                        <span>{item.label}</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+
+            {/* Atalhos Rápidos Compactos (Chat e Notificações) */}
+            <div className="rounded-xl border border-border/70 bg-card/60 p-2.5">
+              <div className="mb-2 flex items-center justify-between px-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+                  Atalhos Rápidos
+                </span>
+                <span className="text-[10px] text-muted-foreground">Social</span>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => goTo("mensagens")}
+                  className={`flex items-center justify-between gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-all ${
+                    section === "mensagens"
+                      ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+                      : "bg-background text-muted-foreground hover:text-foreground hover:bg-accent border border-border/50"
+                  }`}
+                  title="Abrir Mensagens"
+                >
+                  <span className="flex items-center gap-1.5 truncate">
+                    <MessageCircle className="size-3.5 shrink-0" />
+                    <span>Chat</span>
+                  </span>
+                  {unreadMessagesCount > 0 && (
+                    <span className={`flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold ${
+                      section === "mensagens"
+                        ? "bg-primary-foreground text-primary"
+                        : "bg-primary text-primary-foreground"
+                    }`}>
+                      {unreadMessagesCount > 9 ? "9+" : unreadMessagesCount}
                     </span>
                   )}
-                </Button>
-              );
-            })}
-          </nav>
-          <div className="mt-auto space-y-4">
-            <div className="rounded-xl bg-sidebar-accent p-4">
-              <div className="mb-2 flex items-center gap-2 text-sm font-semibold"><Flame className="text-highlight opacity-50" /> 0 dias de sequência</div>
-              <Progress value={0} className="bg-background" />
-              <p className="mt-2 text-xs text-muted-foreground">Escreva hoje para começar sua sequência.</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => goTo("notificacoes")}
+                  className={`flex items-center justify-between gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-all ${
+                    section === "notificacoes"
+                      ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+                      : "bg-background text-muted-foreground hover:text-foreground hover:bg-accent border border-border/50"
+                  }`}
+                  title="Abrir Notificações"
+                >
+                  <span className="flex items-center gap-1.5 truncate">
+                    <Bell className="size-3.5 shrink-0" />
+                    <span>Avisos</span>
+                  </span>
+                  {unreadNotifsCount > 0 && (
+                    <span className={`flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold ${
+                      section === "notificacoes"
+                        ? "bg-primary-foreground text-primary"
+                        : "bg-primary text-primary-foreground"
+                    }`}>
+                      {unreadNotifsCount > 9 ? "9+" : unreadNotifsCount}
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
-            <Button variant="ghost" onClick={async () => { await signOut(); navigate({ to: '/login' }); }} className="w-full justify-start rounded-xl px-3 text-destructive hover:bg-destructive/10 hover:text-destructive">
-              <LogOut className="mr-2 size-4" /> Sair do Perfil
+          </div>
+
+          {/* Rodapé: Sequência & Logout */}
+          <div className="mt-4 pt-3 border-t border-border/60 space-y-3">
+            <div className="rounded-xl border border-border/60 bg-sidebar-accent/40 p-3 shadow-2xs">
+              <div className="mb-1.5 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-bold text-foreground">
+                  <span className="grid size-6 place-items-center rounded-md bg-amber-500/15 text-amber-500">
+                    <Flame className="size-3.5" />
+                  </span>
+                  <span>{streakDays} {streakDays === 1 ? 'dia' : 'dias'} de sequência</span>
+                </div>
+                {streakDays > 0 && (
+                  <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">Ativo</span>
+                )}
+              </div>
+              <Progress value={streakDays > 0 ? Math.min(100, streakDays * 20) : 0} className="h-1.5 bg-background" />
+              <p className="mt-2 text-[11px] leading-tight text-muted-foreground">
+                {streakDays > 0
+                  ? "Excelente ritmo! Continue escrevendo para não perder a sequência."
+                  : "Escreva hoje no laboratório para iniciar sua sequência de estudos."}
+              </p>
+            </div>
+
+            <Button
+              variant="ghost"
+              onClick={async () => { await signOut(); navigate({ to: '/login' }); }}
+              className="w-full justify-start rounded-xl px-3 py-2 text-xs text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+            >
+              <LogOut className="mr-2 size-3.5" /> Sair do Perfil
             </Button>
           </div>
         </div>
@@ -443,29 +635,73 @@ export function EssayApp() {
 
       <main className="lg:ml-72">
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border/80 bg-background/90 px-4 backdrop-blur md:px-8">
-          <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMobileOpen(true)} aria-label="Abrir menu"><Menu /></Button>
-          <div className="hidden text-sm text-muted-foreground sm:block">Foco no seu objetivo!</div>
           <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMobileOpen(true)} aria-label="Abrir menu">
+              <Menu className="size-5" />
+            </Button>
+            <div className="hidden text-sm font-medium text-muted-foreground sm:flex sm:items-center sm:gap-2">
+              <span className="inline-block size-2 rounded-full bg-emerald-500" />
+              <span>Foco no seu objetivo ENEM</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Atalho Desktop: Escrever Redação */}
+            <Button
+              onClick={() => goTo("laboratorio")}
+              size="sm"
+              className="hidden md:inline-flex items-center gap-2 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-xs h-9 px-3.5"
+            >
+              <PenLine className="size-3.5" />
+              <span>Escrever Redação</span>
+            </Button>
+
+            {/* Atalho Rápido: Mensagens */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => goTo("mensagens")}
+              className={`relative size-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors ${
+                section === "mensagens" ? "bg-accent text-primary ring-2 ring-primary/20" : ""
+              }`}
+              title="Mensagens"
+              aria-label="Abrir mensagens"
+            >
+              <MessageCircle className="size-4" />
+              {unreadMessagesCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground shadow-sm animate-pulse">
+                  {unreadMessagesCount > 9 ? "9+" : unreadMessagesCount}
+                </span>
+              )}
+            </Button>
+
+            {/* Atalho Rápido: Notificações */}
             <Button
               variant="ghost"
               size="icon"
               onClick={() => goTo("notificacoes")}
-              className={`relative rounded-full text-muted-foreground hover:text-foreground ${section === "notificacoes" ? "bg-accent text-primary" : ""}`}
+              className={`relative size-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors ${
+                section === "notificacoes" ? "bg-accent text-primary ring-2 ring-primary/20" : ""
+              }`}
+              title="Notificações"
               aria-label="Abrir notificações"
             >
-              <Bell className="size-5" />
-              {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 flex size-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                  <span className="relative inline-flex rounded-full size-2.5 bg-primary"></span>
+              <Bell className="size-4" />
+              {unreadNotifsCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground shadow-sm">
+                  {unreadNotifsCount > 9 ? "9+" : unreadNotifsCount}
                 </span>
               )}
             </Button>
+
+            <div className="h-4 w-px bg-border/80 mx-1 hidden sm:block" />
+
+            {/* Dados do usuário e Avatar */}
             <div className="hidden text-right sm:block">
-              <strong className="block text-sm">{user?.email?.split('@')[0] || 'Estudante'}</strong>
-              <small className="text-muted-foreground">Nível 8 · 1.240 XP</small>
+              <strong className="block text-sm font-semibold leading-tight">{preferences?.full_name || user?.email?.split('@')[0] || 'Estudante'}</strong>
+              <small className="text-xs text-muted-foreground">Meta: {preferences?.targetScore ? `${preferences.targetScore} pts` : '900+ pts'}</small>
             </div>
-            <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0" onClick={() => goTo("perfil")} aria-label="Ir para meu perfil">
+            <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0" onClick={() => goTo("perfil")} aria-label="Ir para meu perfil" title="Meu perfil">
               <div className="grid h-full w-full place-items-center rounded-full bg-accent font-bold text-accent-foreground ring-2 ring-transparent transition-all hover:ring-primary overflow-hidden">
                 {preferences?.avatar_url ? (
                   <img src={preferences.avatar_url} alt="Foto de perfil" className="w-full h-full object-cover" />
@@ -479,6 +715,7 @@ export function EssayApp() {
 
         <div className="mx-auto max-w-7xl p-4 md:p-8 lg:p-10">
           {section === "dashboard" && <Dashboard goTo={goTo} />}
+          {section === "feed" && <SocialFeed goTo={goTo} onOpenEssay={setSelectedEssay} onStartChat={(profile) => { setChatTarget(profile); goTo("mensagens"); }} />}
           {section === "perfil" && <StudentProfile onOpen={setSelectedEssay} goTo={(s: string) => goTo(s as Section)} onStartChat={(profile) => { setChatTarget(profile); goTo("mensagens"); }} />}
           {section === "notificacoes" && <Notifications goTo={goTo} onStartChat={(profile) => { setChatTarget(profile); goTo("mensagens"); }} onOpenEssay={(essay) => setSelectedEssay(essay)} />}
           {section === "mensagens" && <Messages initialUser={chatTarget} onClearInitial={() => setChatTarget(null)} />}
