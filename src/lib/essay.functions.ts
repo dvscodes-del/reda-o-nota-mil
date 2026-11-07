@@ -47,7 +47,7 @@ export const INEP_MATRIX: Record<
   { shortName: string; fullName: string; levels: Record<number, string> }
 > = {
   C1: {
-    shortName: "Norma Padrão da Língua Portuguesa",
+    shortName: "Domínio da norma culta",
     fullName: "Demonstrar domínio da modalidade escrita formal da língua portuguesa",
     levels: {
       200: "Demonstra excelente domínio da modalidade escrita formal da língua portuguesa e de escolha de registro, com no máximo dois desvios gramaticais leves isolados.",
@@ -59,7 +59,7 @@ export const INEP_MATRIX: Record<
     },
   },
   C2: {
-    shortName: "Compreensão da Proposta e Repertório",
+    shortName: "Compreensão e repertório",
     fullName: "Compreender a proposta de redação e aplicar conceitos das várias áreas de conhecimento para desenvolver o tema, dentro dos limites estruturais do texto dissertativo-argumentativo em prosa",
     levels: {
       200: "Desenvolve o tema por meio de argumentação consistente, a partir de um repertório sociocultural produtivo e apresenta excelente domínio do texto dissertativo-argumentativo em 4 parágrafos.",
@@ -71,7 +71,7 @@ export const INEP_MATRIX: Record<
     },
   },
   C3: {
-    shortName: "Projeto de Texto e Argumentação",
+    shortName: "Projeto de texto e argumentação",
     fullName: "Selecionar, relacionar, organizar e interpretar informações, fatos, opiniões e argumentos em defesa de um ponto de vista",
     levels: {
       200: "Apresenta informações, fatos e opiniões relacionados ao tema proposto, de forma consistente e organizada, configurando autoria crítica, em defesa de um ponto de vista.",
@@ -83,7 +83,7 @@ export const INEP_MATRIX: Record<
     },
   },
   C4: {
-    shortName: "Coesão e Mecanismos Linguísticos",
+    shortName: "Coesão e conectivos",
     fullName: "Demonstrar conhecimento dos mecanismos linguísticos necessários para a construção da argumentação",
     levels: {
       200: "Articula bem as partes do texto e apresenta repertório diversificado de recursos coesivos, com conectivos inter e intraparágrafos canônicos e sem repetições mecânicas.",
@@ -95,7 +95,7 @@ export const INEP_MATRIX: Record<
     },
   },
   C5: {
-    shortName: "Proposta de Intervenção Social",
+    shortName: "Proposta de intervenção",
     fullName: "Elaborar proposta de intervenção para o problema abordado, respeitando os direitos humanos",
     levels: {
       200: "Elabora muito bem proposta de intervenção completa (5 elementos: Agente, Ação, Meio/Modo, Efeito e Detalhamento), articulada à discussão do texto.",
