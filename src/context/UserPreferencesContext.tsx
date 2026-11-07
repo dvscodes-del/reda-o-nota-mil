@@ -9,6 +9,7 @@ export interface UserPreferences {
   college: string;
   course: string;
   age?: number | undefined;
+  gender?: string | undefined;
   full_name?: string | undefined;
   avatar_url?: string | undefined;
   hasCompletedOnboarding: boolean;
@@ -17,6 +18,7 @@ export interface UserPreferences {
 interface UserPreferencesContextType {
   preferences: UserPreferences | null;
   savePreferences: (prefs: Omit<UserPreferences, 'hasCompletedOnboarding' | 'avatar_url'>) => Promise<void>;
+  updateAvatar: (avatarUrl: string) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -77,6 +79,8 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
         }
 
         const profileData = data as any;
+        const localAvatar = typeof window !== 'undefined' ? localStorage.getItem(`user_avatar_${user.id}`) : null;
+        const localGender = typeof window !== 'undefined' ? localStorage.getItem(`user_gender_${user.id}`) : null;
         if (profileData) {
           setPreferences({
             targetScore: profileData.target_score || '900',
@@ -84,8 +88,9 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
             college: profileData.college || '',
             course: profileData.course || '',
             age: profileData.age || undefined,
+            gender: profileData.gender || (user.user_metadata?.['gender'] as string | undefined) || localGender || '',
             full_name: profileData.full_name || '',
-            avatar_url: profileData.avatar_url || '',
+            avatar_url: profileData.avatar_url || localAvatar || '',
             hasCompletedOnboarding: profileData.has_completed_onboarding || localStorage.getItem(`onboarding_${user.id}`) === 'true',
           });
         } else {
@@ -95,8 +100,9 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
             state: '',
             college: '',
             course: '',
+            gender: (user.user_metadata?.['gender'] as string | undefined) || localGender || '',
             full_name: (user.user_metadata?.['full_name'] as string | undefined) || '',
-            avatar_url: (user.user_metadata?.['avatar_url'] as string | undefined) || '',
+            avatar_url: (user.user_metadata?.['avatar_url'] as string | undefined) || localAvatar || '',
             hasCompletedOnboarding: localStorage.getItem(`onboarding_${user.id}`) === 'true',
           });
         }
@@ -128,13 +134,20 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
     }
 
     try {
-      const updates = {
+      if (prefs.gender) {
+        localStorage.setItem(`user_gender_${user.id}`, prefs.gender);
+      }
+    } catch {}
+
+    try {
+      const updates: any = {
         id: user.id,
         target_score: prefs.targetScore,
         state: prefs.state,
         college: prefs.college,
         course: prefs.course,
         age: prefs.age,
+        gender: prefs.gender || null,
         full_name: prefs.full_name,
         has_completed_onboarding: true,
         updated_at: new Date().toISOString(),
@@ -143,10 +156,24 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
       const { error } = await supabase.from('profiles').upsert(updates as any);
 
       if (error) {
-        console.error('Error saving profile to Supabase (falling back to local):', error);
+        // Se der erro caso a coluna gender não exista ainda na tabela profiles, remove e tenta novamente sem ela
+        if (error.message?.includes('gender') || error.code === '42703' || error.message?.includes('column')) {
+          delete updates.gender;
+          await supabase.from('profiles').upsert(updates as any);
+        } else {
+          console.error('Error saving profile to Supabase (falling back to local):', error);
+        }
       } else {
         toast.success('Perfil atualizado com sucesso!');
       }
+
+      await supabase.auth.updateUser({
+        data: {
+          full_name: prefs.full_name,
+          gender: prefs.gender,
+          age: prefs.age,
+        }
+      }).catch(() => {});
 
       // Save locally as a robust fallback
       localStorage.setItem(`onboarding_${user.id}`, 'true');
@@ -164,8 +191,59 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
     }
   };
 
+  const updateAvatar = async (avatarUrl: string) => {
+    if (!user) return;
+
+    // Atualiza estado local de imediato
+    setPreferences((prev) => (prev ? { ...prev, avatar_url: avatarUrl } : null));
+
+    try {
+      if (avatarUrl) {
+        localStorage.setItem(`user_avatar_${user.id}`, avatarUrl);
+      } else {
+        localStorage.removeItem(`user_avatar_${user.id}`);
+      }
+    } catch (e) {
+      console.warn('Storage warning:', e);
+    }
+
+    if (isLocalEnvironment() && user.id === LOCAL_DEV_USER.id) {
+      try {
+        const stored = localStorage.getItem('local_dev_preferences');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          parsed.avatar_url = avatarUrl;
+          localStorage.setItem('local_dev_preferences', JSON.stringify(parsed));
+        }
+      } catch {}
+      toast.success(avatarUrl ? 'Foto de perfil atualizada!' : 'Foto de perfil removida!');
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from('profiles').upsert({
+        id: user.id,
+        avatar_url: avatarUrl,
+        updated_at: new Date().toISOString(),
+      } as any);
+
+      if (error) {
+        console.warn('Aviso ao sincronizar avatar com Supabase:', error);
+      }
+
+      await supabase.auth.updateUser({
+        data: { avatar_url: avatarUrl },
+      }).catch(() => {});
+
+      toast.success(avatarUrl ? 'Foto de perfil atualizada com sucesso!' : 'Foto de perfil removida!');
+    } catch (err) {
+      console.error('Falha ao atualizar foto:', err);
+      toast.success(avatarUrl ? 'Foto de perfil atualizada!' : 'Foto removida!');
+    }
+  };
+
   return (
-    <UserPreferencesContext.Provider value={{ preferences, savePreferences, isLoading }}>
+    <UserPreferencesContext.Provider value={{ preferences, savePreferences, updateAvatar, isLoading }}>
       {children}
     </UserPreferencesContext.Provider>
   );

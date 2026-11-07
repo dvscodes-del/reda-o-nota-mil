@@ -1,16 +1,19 @@
 ﻿import { StudentProfile } from "./StudentProfile";
 import { Messages } from "./Messages";
+import { Notifications } from "./Notifications";
 import { useMemo, useRef, useState, useEffect } from "react";
 import type { LucideIcon } from "lucide-react";
 import { useUserPreferences } from "@/context/UserPreferencesContext";
 import { useAuth } from "@/context/AuthContext";
 import { useEssays } from "@/context/EssaysContext";
+import { useNotifications } from "@/context/NotificationsContext";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
 import {
   AlertCircle,
   ArrowRight,
   Award,
+  Bell,
   BookOpen,
   BrainCircuit,
   Camera,
@@ -46,6 +49,7 @@ import {
   Eye,
   Star,
   ChevronRight,
+  Pause,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -62,11 +66,12 @@ import constituicaoImage from "@/assets/repertorio-constituicao.jpg";
 import geografiaImage from "@/assets/repertorio-geografia.jpg";
 import cinemaImage from "@/assets/repertorio-cinema.jpg";
 
-type Section = "dashboard" | "mural" | "competencias" | "repertorio" | "laboratorio" | "curso" | "perfil" | "mensagens" | "treinamento";
+type Section = "dashboard" | "mural" | "competencias" | "repertorio" | "laboratorio" | "curso" | "perfil" | "mensagens" | "notificacoes" | "treinamento";
 type Correction = Awaited<ReturnType<typeof correctEssay>>;
 
 const navItems = [
   { id: "dashboard" as const, label: "Visão geral", icon: LayoutDashboard },
+  { id: "notificacoes" as const, label: "Notificações", icon: Bell },
   { id: "mensagens" as const, label: "Mensagens", icon: MessageCircle },
   { id: "curso" as const, label: "Seu Curso", icon: TrendingUp },
   { id: "mural" as const, label: "Mural nota mil", icon: Award },
@@ -273,6 +278,33 @@ export function EssayApp() {
   const [correcting, setCorrecting] = useState(false);
   const [error, setError] = useState("");
   const [timer, setTimer] = useState(false);
+  const [timerSeconds, setTimerSeconds] = useState(5400); // 1h30min
+  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (timer) {
+      timerIntervalRef.current = setInterval(() => {
+        setTimerSeconds((prev) => {
+          if (prev <= 1) {
+            setTimer(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+    }
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+    };
+  }, [timer]);
   const [chatTarget, setChatTarget] = useState<any>(null);
   const getTodayThemeIndex = () => {
     const day = new Date().getDay(); // 0 = Domingo, 1 = Segunda...
@@ -288,6 +320,7 @@ export function EssayApp() {
   const navigate = useNavigate();
   const { preferences, isLoading: isPrefsLoading } = useUserPreferences();
   const { saveEssay } = useEssays();
+  const { unreadCount, refreshNotifications } = useNotifications();
 
   useEffect(() => {
     if (isLoading || (user && isPrefsLoading)) return;
@@ -340,6 +373,7 @@ export function EssayApp() {
           improvements: correction.improvements,
           annotations: correction.annotations,
         });
+        await refreshNotifications();
       }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível corrigir agora. Tente novamente em instantes.");
@@ -361,7 +395,38 @@ export function EssayApp() {
             <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMobileOpen(false)} aria-label="Fechar menu"><X /></Button>
           </div>
           <nav className="space-y-1.5 flex-1" aria-label="Navegação principal">
-            {navItems.map((item) => <Button key={item.id} variant="ghost" onClick={() => goTo(item.id)} className={`h-11 w-full justify-start rounded-xl px-3 ${section === item.id ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : "text-muted-foreground"}`}><item.icon className="mr-2" />{item.label}</Button>)}
+            {navItems.map((item) => {
+              const isNotifs = item.id === "notificacoes";
+              const hasUnread = isNotifs && unreadCount > 0;
+              return (
+                <Button
+                  key={item.id}
+                  variant="ghost"
+                  onClick={() => goTo(item.id)}
+                  className={`h-11 w-full justify-between rounded-xl px-3 ${
+                    section === item.id
+                      ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  <span className="flex items-center">
+                    <item.icon className="mr-2 size-4" />
+                    {item.label}
+                  </span>
+                  {hasUnread && (
+                    <span
+                      className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${
+                        section === item.id
+                          ? "bg-primary-foreground text-primary"
+                          : "bg-primary text-primary-foreground animate-pulse"
+                      }`}
+                    >
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
+                </Button>
+              );
+            })}
           </nav>
           <div className="mt-auto space-y-4">
             <div className="rounded-xl bg-sidebar-accent p-4">
@@ -381,13 +446,32 @@ export function EssayApp() {
           <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMobileOpen(true)} aria-label="Abrir menu"><Menu /></Button>
           <div className="hidden text-sm text-muted-foreground sm:block">Foco no seu objetivo!</div>
           <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => goTo("notificacoes")}
+              className={`relative rounded-full text-muted-foreground hover:text-foreground ${section === "notificacoes" ? "bg-accent text-primary" : ""}`}
+              aria-label="Abrir notificações"
+            >
+              <Bell className="size-5" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 flex size-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                  <span className="relative inline-flex rounded-full size-2.5 bg-primary"></span>
+                </span>
+              )}
+            </Button>
             <div className="hidden text-right sm:block">
               <strong className="block text-sm">{user?.email?.split('@')[0] || 'Estudante'}</strong>
               <small className="text-muted-foreground">Nível 8 · 1.240 XP</small>
             </div>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0" onClick={() => goTo("perfil")} aria-label="Ir para meu perfil">
-              <div className="grid h-full w-full place-items-center rounded-full bg-accent font-bold text-accent-foreground ring-2 ring-transparent transition-all hover:ring-primary">
-                {user?.email?.[0]?.toUpperCase() || 'ES'}
+              <div className="grid h-full w-full place-items-center rounded-full bg-accent font-bold text-accent-foreground ring-2 ring-transparent transition-all hover:ring-primary overflow-hidden">
+                {preferences?.avatar_url ? (
+                  <img src={preferences.avatar_url} alt="Foto de perfil" className="w-full h-full object-cover" />
+                ) : (
+                  user?.email?.[0]?.toUpperCase() || 'ES'
+                )}
               </div>
             </Button>
           </div>
@@ -396,13 +480,14 @@ export function EssayApp() {
         <div className="mx-auto max-w-7xl p-4 md:p-8 lg:p-10">
           {section === "dashboard" && <Dashboard goTo={goTo} />}
           {section === "perfil" && <StudentProfile onOpen={setSelectedEssay} goTo={(s: string) => goTo(s as Section)} onStartChat={(profile) => { setChatTarget(profile); goTo("mensagens"); }} />}
+          {section === "notificacoes" && <Notifications goTo={goTo} onStartChat={(profile) => { setChatTarget(profile); goTo("mensagens"); }} onOpenEssay={(essay) => setSelectedEssay(essay)} />}
           {section === "mensagens" && <Messages initialUser={chatTarget} onClearInitial={() => setChatTarget(null)} />}
           {section === "curso" && <CourseTarget goTo={goTo} />}
           {section === "mural" && <Mural onOpen={setSelectedEssay} currentTheme={activeTheme} />}
           {section === "competencias" && <Competencies active={activeCompetency} setActive={setActiveCompetency} currentTheme={activeTheme} />}
           {section === "repertorio" && <Repertory filter={filter} setFilter={setFilter} currentTheme={activeTheme} />}
           {section === "treinamento" && <TrainingSection goTo={goTo} />}
-          {section === "laboratorio" && <Laboratory tab={labTab} setTab={setLabTab} text={text} setText={setText} stats={stats} timer={timer} setTimer={setTimer} preview={preview} fileRef={fileRef} setPreview={setPreview} correcting={correcting} error={error} handleCorrection={handleCorrection} result={result} setResult={setResult} selectedDay={selectedDay} setSelectedDay={setSelectedDay} />}
+          {section === "laboratorio" && <Laboratory tab={labTab} setTab={setLabTab} text={text} setText={setText} stats={stats} timer={timer} setTimer={setTimer} timerSeconds={timerSeconds} setTimerSeconds={setTimerSeconds} preview={preview} fileRef={fileRef} setPreview={setPreview} correcting={correcting} error={error} handleCorrection={handleCorrection} result={result} setResult={setResult} selectedDay={selectedDay} setSelectedDay={setSelectedDay} />}
         </div>
       </main>
 
@@ -707,7 +792,7 @@ function Repertory({ filter, setFilter, currentTheme }: { filter: string; setFil
   );
 }
 
-function Laboratory(props: { tab: "digital"|"photo"; setTab: (v:"digital"|"photo")=>void; text:string; setText:(v:string)=>void; stats:{words:number;chars:number;lines:number}; timer:boolean; setTimer:(v:boolean)=>void; preview:string|null; fileRef:React.RefObject<HTMLInputElement|null>; setPreview:(v:string|null)=>void; correcting:boolean; error:string; handleCorrection:()=>void; result:Correction|null; setResult:(v:Correction|null)=>void; selectedDay: number; setSelectedDay: (v: number) => void }) {
+function Laboratory(props: { tab: "digital"|"photo"; setTab: (v:"digital"|"photo")=>void; text:string; setText:(v:string)=>void; stats:{words:number;chars:number;lines:number}; timer:boolean; setTimer:(v:boolean)=>void; timerSeconds:number; setTimerSeconds:(v:number)=>void; preview:string|null; fileRef:React.RefObject<HTMLInputElement|null>; setPreview:(v:string|null)=>void; correcting:boolean; error:string; handleCorrection:()=>void; result:Correction|null; setResult:(v:Correction|null)=>void; selectedDay: number; setSelectedDay: (v: number) => void }) {
   const { preferences } = useUserPreferences();
   const { getEssayForTheme, essays } = useEssays();
   const currentTheme = dailyThemes[props.selectedDay] ?? dailyThemes[0]!;
@@ -863,7 +948,7 @@ function Laboratory(props: { tab: "digital"|"photo"; setTab: (v:"digital"|"photo
       <Button variant={props.tab === "digital" ? "default" : "ghost"} onClick={() => props.setTab("digital")} className="rounded-lg"><PenLine /> Redação digital</Button>
       <Button variant={props.tab === "photo" ? "default" : "ghost"} onClick={() => props.setTab("photo")} className="rounded-lg"><Camera /> Redação escrita</Button>
     </div>
-    {props.tab === "digital" ? <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4"><div className="flex items-center gap-4 text-xs font-semibold text-muted-foreground"><span>{props.stats.words} palavras</span><span>{props.stats.chars} caracteres</span><span>{props.stats.lines}/30 linhas</span></div><Button variant="outline" size="sm" onClick={() => props.setTimer(!props.timer)} className="rounded-lg"><Clock3 /> {props.timer ? "01:29:42" : "Ativar temporizador"}</Button></div><textarea value={props.text} onChange={(e) => props.setText(e.target.value)} placeholder={`Tema: "${currentTheme.topic}"
+    {props.tab === "digital" ? <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4"><div className="flex items-center gap-4 text-xs font-semibold text-muted-foreground"><span>{props.stats.words} palavras</span><span>{props.stats.chars} caracteres</span><span>{props.stats.lines}/30 linhas</span></div><div className="flex items-center gap-2">{(props.timer || props.timerSeconds < 5400) && <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); props.setTimer(false); props.setTimerSeconds(5400); }} className="rounded-lg text-xs px-2 text-destructive hover:text-destructive hover:bg-destructive/10">Resetar</Button>}{(props.timer || props.timerSeconds < 5400) && <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); props.setTimer(!props.timer); }} className="rounded-lg text-xs px-2 text-primary hover:text-primary hover:bg-primary/10">{props.timer ? <><Pause className="size-3.5 mr-1" />Pausar</> : <><Play className="size-3.5 mr-1" />Retomar</>}</Button>}<Button variant="outline" size="sm" onClick={() => { if (!props.timer && props.timerSeconds === 0) props.setTimerSeconds(5400); props.setTimer(!props.timer); }} className={`rounded-lg ${props.timer ? "border-primary text-primary" : props.timerSeconds < 5400 ? (props.timerSeconds === 0 ? "border-destructive text-destructive" : "border-orange-500 text-orange-600") : ""}`}><Clock3 /> {props.timer || props.timerSeconds < 5400 ? (() => { const h = Math.floor(props.timerSeconds / 3600); const m = Math.floor((props.timerSeconds % 3600) / 60); const s = props.timerSeconds % 60; return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`; })() : "Ativar temporizador"}</Button></div></div><textarea value={props.text} onChange={(e) => props.setText(e.target.value)} placeholder={`Tema: "${currentTheme.topic}"
 
 Comece pela sua tese. O que você defende sobre este tema?`} className="min-h-[480px] w-full resize-none bg-card p-6 text-base leading-8 outline-none md:p-10" style={{ backgroundImage: "linear-gradient(to bottom, transparent 31px, var(--line) 32px)", backgroundSize: "100% 32px" }} /><div className="flex flex-col items-end gap-2 border-t border-border p-4"><Button size="lg" onClick={props.handleCorrection} disabled={props.correcting} className="h-12 rounded-xl px-6"><Sparkles /> {props.correcting ? "Analisando com rigor adaptado..." : "Corrigir com Inteligência Artificial"}</Button>{props.error && <p className="text-sm text-destructive">{props.error}</p>}</div></div> : <div className="rounded-xl border-2 border-dashed border-border bg-card p-8 text-center shadow-sm md:p-16"><input ref={props.fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => { const file=e.target.files?.[0]; if(file) props.setPreview(URL.createObjectURL(file)); }} />{props.preview ? <img src={props.preview} alt="Prévia da redação" className="mx-auto max-h-[520px] rounded-xl object-contain shadow-sm" /> : <><span className="mx-auto grid size-16 place-items-center rounded-full bg-accent text-primary"><UploadCloud className="size-7" /></span><h2 className="mt-5 text-xl font-bold">Envie uma foto nítida da sua redação</h2><p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">Posicione a folha inteira, evite sombras e confira se o texto está legível.</p></>}<div className="mt-6 flex flex-wrap justify-center gap-2"><Button className="rounded-xl" onClick={() => props.fileRef.current?.click()}><ImagePlus /> Escolher imagem</Button><Button variant="outline" className="rounded-xl" onClick={() => props.fileRef.current?.click()}><Camera /> Usar câmera</Button></div></div>}
   </>;
