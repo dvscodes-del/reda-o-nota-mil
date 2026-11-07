@@ -62,7 +62,7 @@ import constituicaoImage from "@/assets/repertorio-constituicao.jpg";
 import geografiaImage from "@/assets/repertorio-geografia.jpg";
 import cinemaImage from "@/assets/repertorio-cinema.jpg";
 
-type Section = "dashboard" | "mural" | "competencias" | "repertorio" | "laboratorio" | "curso" | "perfil" | "mensagens" | "estudo";
+type Section = "dashboard" | "mural" | "competencias" | "repertorio" | "laboratorio" | "curso" | "perfil" | "mensagens" | "treinamento";
 type Correction = Awaited<ReturnType<typeof correctEssay>>;
 
 const navItems = [
@@ -72,7 +72,7 @@ const navItems = [
   { id: "mural" as const, label: "Mural nota mil", icon: Award },
   { id: "competencias" as const, label: "Competências", icon: Target },
   { id: "repertorio" as const, label: "Repertório", icon: BookOpen },
-  { id: "estudo" as const, label: "Estudo", icon: GraduationCap },
+  { id: "treinamento" as const, label: "Treinamento", icon: GraduationCap },
   { id: "laboratorio" as const, label: "Laboratório", icon: PenLine },
 ];
 
@@ -401,7 +401,7 @@ export function EssayApp() {
           {section === "mural" && <Mural onOpen={setSelectedEssay} currentTheme={activeTheme} />}
           {section === "competencias" && <Competencies active={activeCompetency} setActive={setActiveCompetency} currentTheme={activeTheme} />}
           {section === "repertorio" && <Repertory filter={filter} setFilter={setFilter} currentTheme={activeTheme} />}
-          {section === "estudo" && <StudySection goTo={goTo} />}
+          {section === "treinamento" && <TrainingSection goTo={goTo} />}
           {section === "laboratorio" && <Laboratory tab={labTab} setTab={setLabTab} text={text} setText={setText} stats={stats} timer={timer} setTimer={setTimer} preview={preview} fileRef={fileRef} setPreview={setPreview} correcting={correcting} error={error} handleCorrection={handleCorrection} result={result} setResult={setResult} selectedDay={selectedDay} setSelectedDay={setSelectedDay} />}
         </div>
       </main>
@@ -534,9 +534,9 @@ function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
           <span className="grid size-12 place-items-center rounded-full bg-primary/10 text-primary"><Award className="size-5" /></span>
           <span className="font-semibold">Mural Nota 1000</span>
         </Button>
-        <Button variant="outline" onClick={() => goTo("estudo")} className="h-auto flex-col gap-3 p-4 rounded-xl border-border bg-card hover:bg-accent hover:border-primary">
+        <Button variant="outline" onClick={() => goTo("treinamento")} className="h-auto flex-col gap-3 p-4 rounded-xl border-border bg-card hover:bg-accent hover:border-primary">
           <span className="grid size-12 place-items-center rounded-full bg-primary/10 text-primary"><GraduationCap className="size-5" /></span>
-          <span className="font-semibold text-center">Estudo Nota 900+</span>
+          <span className="font-semibold text-center">Treinamento Nota 900+</span>
         </Button>
       </div>
     </section>
@@ -1001,7 +1001,7 @@ function Feedback({ result, text, onBack }: { result: Correction; text: string; 
 }
 
 
-function StudySection({ goTo }: { goTo: (section: Section) => void }) {
+function TrainingSection({ goTo }: { goTo: (section: Section) => void }) {
   const [selectedYear, setSelectedYear] = useState<number | "all">("all");
   const [openEssay, setOpenEssay] = useState<TrainingEssay | null>(null);
 
@@ -1026,7 +1026,7 @@ function StudySection({ goTo }: { goTo: (section: Section) => void }) {
       <>
         <div className="mb-6">
           <button type="button" onClick={() => setOpenEssay(null)} className="flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
-            <ArrowRight className="size-4 rotate-180" /> Voltar ao Estudo
+            <ArrowRight className="size-4 rotate-180" /> Voltar ao Treinamento
           </button>
         </div>
 
@@ -1097,7 +1097,7 @@ function StudySection({ goTo }: { goTo: (section: Section) => void }) {
 
   return (
     <>
-      <PageTitle eyebrow="Estude com os melhores" title="Estudo" description="Leia redações nota 900+ de temas reais de ENEMs anteriores. Analise a estrutura, os repertórios legítimos e a proposta de intervenção para se inspirar e escrever as suas próprias redações." />
+      <PageTitle eyebrow="Estude com os melhores" title="Treinamento" description="Leia redações nota 900+ de temas reais de ENEMs anteriores. Analise a estrutura, os repertórios legítimos e a proposta de intervenção para se inspirar e escrever as suas próprias redações." />
 
       {/* Filtro por ano */}
       <div className="mb-6 flex flex-wrap items-center gap-2">
