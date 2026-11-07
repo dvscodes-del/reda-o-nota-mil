@@ -5,7 +5,7 @@ import {
   Loader2, Sparkles, BookOpen, PenLine, Target, Zap, Search,
   Laugh, ThumbsUp, Lightbulb, UserPlus, TrendingUp, Hash,
   Globe, Lock, Users, ChevronRight, Bookmark, Bell, Award,
-  Medal, Eye, Repeat2, Check,
+  Medal, Eye, Repeat2, Check, RotateCw, GraduationCap, MapPin,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -60,13 +60,47 @@ export interface SuggestedStudent {
   id: string;
   name: string;
   course: string;
+  college?: string | null;
+  state?: string | null;
   avatar: string | null;
   isFollowing: boolean;
-  mutualFollows?: {
+  followsYou: boolean;
+  mutualFollows: {
     name: string;
     avatar: string | null;
   }[];
-  connectionReason?: string;
+  connectionReason: string;
+  affinityScore: number;
+  badge?: {
+    label: string;
+    type: "follows_you" | "mutual" | "top_essay" | "course" | "college" | "state";
+  };
+  highestEssayScore?: number;
+}
+
+// ─────────────────────────────────────────────
+// Stack de Mini Avatares (Amigos em Comum Estilo Instagram)
+// ─────────────────────────────────────────────
+function MutualAvatarStack({ mutuals }: { mutuals: { name: string; avatar: string | null }[] }) {
+  if (!mutuals || mutuals.length === 0) return null;
+  const shown = mutuals.slice(0, 2);
+  return (
+    <div className="flex -space-x-1 shrink-0 items-center mr-0.5">
+      {shown.map((m, idx) => (
+        <div
+          key={idx}
+          className="size-3.5 rounded-full overflow-hidden border border-background bg-primary/20 text-[7px] font-bold text-primary grid place-items-center ring-1 ring-border shrink-0"
+          title={m.name}
+        >
+          {m.avatar ? (
+            <img src={m.avatar} alt={m.name} className="w-full h-full object-cover" />
+          ) : (
+            (m.name[0] || "?").toUpperCase()
+          )}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 // ─────────────────────────────────────────────
@@ -704,30 +738,147 @@ function PostCard({
   );
 }
 
+
 // ─────────────────────────────────────────────
-// Sidebar Direita (100% Real - Sem contadores falsos)
+// Carrossel de Sugestões no Feed (Estilo Instagram)
+// ─────────────────────────────────────────────
+function FeedSuggestionsCarousel({
+  students,
+  onToggleFollow,
+  onDismiss,
+  goTo,
+}: {
+  students: SuggestedStudent[];
+  onToggleFollow: (id: string, currentStatus: boolean) => void;
+  onDismiss: (id: string) => void;
+  goTo?: (section: any) => void;
+}) {
+  const visible = students.filter((s) => !s.isFollowing);
+  if (visible.length === 0) return null;
+
+  return (
+    <div className="rounded-2xl border border-border/70 bg-card/95 backdrop-blur-xs shadow-xs p-4 my-2">
+      <div className="flex items-center justify-between mb-3 px-1">
+        <div className="flex items-center gap-2">
+          <div className="size-7 rounded-lg bg-primary/10 grid place-items-center text-primary">
+            <Sparkles className="size-4" />
+          </div>
+          <div>
+            <h4 className="font-bold text-sm leading-none">Sugestões de colegas para você</h4>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Estudantes com metas e conexões em comum</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex gap-3 overflow-x-auto pb-2 pt-1 no-scrollbar -mx-1 px-1">
+        {visible.map((student) => (
+          <div
+            key={student.id}
+            className="w-48 shrink-0 rounded-2xl border border-border/60 bg-muted/20 hover:bg-muted/40 transition-all p-3 flex flex-col items-center text-center relative group"
+          >
+            <button
+              type="button"
+              onClick={() => onDismiss(student.id)}
+              className="absolute top-2 right-2 text-muted-foreground/50 hover:text-foreground p-1 rounded-full hover:bg-muted transition-colors cursor-pointer"
+              title="Dispensar sugestão"
+            >
+              <X className="size-3.5" />
+            </button>
+
+            <div className="relative my-1 cursor-pointer" onClick={() => goTo && goTo("perfil")}>
+              <Avatar
+                name={student.name}
+                url={student.avatar}
+                size={14}
+                ring={student.followsYou || (student.highestEssayScore ?? 0) >= 900}
+              />
+              {student.highestEssayScore && student.highestEssayScore >= 900 && (
+                <div
+                  className="absolute -bottom-1 -right-1 size-5 rounded-full bg-amber-500 text-white grid place-items-center shadow-xs"
+                  title={`Nota ${student.highestEssayScore} no Laboratório`}
+                >
+                  <Trophy className="size-3" />
+                </div>
+              )}
+            </div>
+
+            <p
+              className="mt-1.5 text-sm font-bold text-foreground truncate w-full hover:text-primary transition-colors cursor-pointer"
+              onClick={() => goTo && goTo("perfil")}
+            >
+              {student.name}
+            </p>
+
+            <p className="text-[11px] text-muted-foreground truncate w-full mb-1">
+              {student.course}
+            </p>
+
+            <div className="h-9 flex items-center justify-center w-full px-1 mb-2">
+              {student.followsYou ? (
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                  <UserPlus className="size-3" /> Segue você
+                </span>
+              ) : student.mutualFollows.length > 0 ? (
+                <div className="flex items-center gap-1 text-[11px] text-primary font-medium leading-tight text-center truncate">
+                  <MutualAvatarStack mutuals={student.mutualFollows} />
+                  <span className="truncate">{student.connectionReason}</span>
+                </div>
+              ) : student.badge ? (
+                <span className="text-[11px] text-muted-foreground leading-tight line-clamp-2">
+                  {student.connectionReason}
+                </span>
+              ) : (
+                <span className="text-[11px] text-muted-foreground">Estudante no Escreva+</span>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => onToggleFollow(student.id, student.isFollowing)}
+              className={`w-full py-1.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                student.followsYou
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs"
+                  : "bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground"
+              }`}
+            >
+              <UserPlus className="size-3.5" />
+              {student.followsYou ? "Seguir de volta" : "Seguir"}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Sidebar Direita: Tendências + Sugestões Instagram
 // ─────────────────────────────────────────────
 function RightSidebar({
   trendingTags,
   onHashtagClick,
   suggestedStudents,
   onToggleFollow,
+  onRefreshSuggestions,
+  refreshing,
   goTo,
 }: {
   trendingTags: string[];
   onHashtagClick: (tag: string) => void;
   suggestedStudents: SuggestedStudent[];
-  onToggleFollow: (id: string, isFollowing: boolean) => void;
+  onToggleFollow: (id: string, currentStatus: boolean) => void;
+  onRefreshSuggestions?: () => void;
+  refreshing?: boolean;
   goTo?: (section: any) => void;
 }) {
   return (
-    <div className="space-y-4">
-      {/* Assuntos da Redação */}
+    <div className="space-y-4 sticky top-20">
+      {/* Assuntos em Alta */}
       {trendingTags.length > 0 && (
         <div className="rounded-2xl border border-border/60 bg-card shadow-sm p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold text-sm">Assuntos do Feed</h3>
+          <div className="flex items-center gap-2 mb-3">
             <TrendingUp className="size-4 text-primary" />
+            <h3 className="font-bold text-sm">Assuntos em alta</h3>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {trendingTags.map((tag) => (
@@ -745,13 +896,27 @@ function RightSidebar({
         </div>
       )}
 
-      {/* Pessoas para Seguir (Dados Estritamente Reais do Banco) */}
+      {/* Sugestões para Você (Grafo Social & IA de Afinidade) */}
       <div className="rounded-2xl border border-border/60 bg-card shadow-sm p-4">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-bold text-sm">Estudantes para seguir</h3>
-          <Users className="size-4 text-primary" />
+          <div className="flex items-center gap-1.5">
+            <Sparkles className="size-4 text-primary" />
+            <h3 className="font-bold text-sm">Sugestões para você</h3>
+          </div>
+          {onRefreshSuggestions && (
+            <button
+              type="button"
+              onClick={onRefreshSuggestions}
+              disabled={refreshing}
+              className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all cursor-pointer"
+              title="Atualizar sugestões"
+            >
+              <RotateCw className={`size-3.5 ${refreshing ? "animate-spin text-primary" : ""}`} />
+            </button>
+          )}
         </div>
-        <ul className="space-y-3">
+
+        <ul className="space-y-3.5">
           {suggestedStudents.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border/60 bg-muted/20 p-4 text-center">
               <Users className="size-5 text-muted-foreground mx-auto mb-1.5 opacity-60" />
@@ -760,19 +925,41 @@ function RightSidebar({
               </p>
             </div>
           ) : (
-            suggestedStudents.map((s) => (
+            suggestedStudents.slice(0, 6).map((s) => (
               <li key={s.id} className="flex items-center gap-3">
-                <Avatar name={s.name} url={s.avatar} size={10} onClick={() => goTo && goTo("perfil")} />
+                <div className="relative cursor-pointer shrink-0" onClick={() => goTo && goTo("perfil")}>
+                  <Avatar
+                    name={s.name}
+                    url={s.avatar}
+                    size={10}
+                    ring={s.followsYou || (s.highestEssayScore ?? 0) >= 900}
+                  />
+                  {s.highestEssayScore && s.highestEssayScore >= 900 && (
+                    <div
+                      className="absolute -bottom-1 -right-1 size-3.5 rounded-full bg-amber-500 text-white grid place-items-center shadow-xs"
+                      title={`Nota ${s.highestEssayScore} no Laboratório`}
+                    >
+                      <Trophy className="size-2" />
+                    </div>
+                  )}
+                </div>
                 <div className="flex-1 min-w-0 cursor-pointer" onClick={() => goTo && goTo("perfil")}>
-                  <p className="text-sm font-bold truncate leading-tight hover:text-primary transition-colors">{s.name}</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm font-bold truncate leading-tight hover:text-primary transition-colors">{s.name}</p>
+                    {s.followsYou && (
+                      <span className="shrink-0 text-[10px] font-semibold bg-primary/15 text-primary px-1.5 py-0.2 rounded-md">
+                        Segue você
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-muted-foreground truncate">{s.course}</p>
                   {s.connectionReason && (
-                    <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground truncate">
+                    <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground truncate">
                       {s.mutualFollows && s.mutualFollows.length > 0 ? (
-                        <span className="flex items-center gap-1 text-primary font-medium truncate">
-                          <Users className="size-3 shrink-0" />
+                        <div className="flex items-center gap-1 text-primary font-medium truncate">
+                          <MutualAvatarStack mutuals={s.mutualFollows} />
                           <span className="truncate">{s.connectionReason}</span>
-                        </span>
+                        </div>
                       ) : (
                         <span className="truncate text-muted-foreground/80">{s.connectionReason}</span>
                       )}
@@ -784,12 +971,21 @@ function RightSidebar({
                   onClick={() => onToggleFollow(s.id, s.isFollowing)}
                   className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
                     s.isFollowing
-                      ? "bg-muted text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      ? "bg-muted text-muted-foreground hover:bg-destructive/10 hover:text-destructive group"
+                      : s.followsYou
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs"
                       : "border border-primary/40 text-primary hover:bg-primary/10"
                   }`}
                 >
                   {s.isFollowing ? (
-                    <><Check className="size-3" /> Seguindo</>
+                    <>
+                      <Check className="size-3 group-hover:hidden" />
+                      <X className="size-3 hidden group-hover:inline" />
+                      <span className="group-hover:hidden">Seguindo</span>
+                      <span className="hidden group-hover:inline">Deixar</span>
+                    </>
+                  ) : s.followsYou ? (
+                    <><UserPlus className="size-3" /> Seguir de volta</>
                   ) : (
                     <><UserPlus className="size-3" /> Seguir</>
                   )}
@@ -825,6 +1021,8 @@ export function SocialFeed({
   const [searchQuery, setSearchQuery] = useState("");
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [suggestedStudents, setSuggestedStudents] = useState<SuggestedStudent[]>([]);
+  const [refreshingSuggestions, setRefreshingSuggestions] = useState(false);
+  const [dismissedSuggestionIds, setDismissedSuggestionIds] = useState<Set<string>>(new Set());
 
   const currentUserName = preferences?.full_name ?? user?.email?.split("@")[0] ?? "Estudante";
   const currentUserAvatar = preferences?.avatar_url ?? null;
@@ -834,9 +1032,10 @@ export function SocialFeed({
     ? { id: essays[0].id, score: essays[0].score, theme_topic: essays[0].theme_topic }
     : null;
 
-  // Carregar perfis com detecção de grafo social (estilo Instagram: quem seus seguidos seguem)
-  const loadSuggestedProfiles = useCallback(async () => {
+  // Carregar perfis com IA de Afinidade Multidimensional (estilo Instagram & LinkedIn)
+  const loadSuggestedProfiles = useCallback(async (isManual = false) => {
     if (!user) return;
+    if (isManual) setRefreshingSuggestions(true);
     try {
       // 1. Quem o usuário atual segue
       const { data: myFollows } = await supabase
@@ -847,7 +1046,16 @@ export function SocialFeed({
       const myFollowingIds = (myFollows || []).map((f: any) => f.following_id);
       const followingSet = new Set(myFollowingIds);
 
-      // 2. Buscar nomes e avatares das pessoas que você segue
+      // 2. Quem segue o usuário atual ("Segue você" / Conexão recíproca prioritária)
+      const { data: myFollowers } = await supabase
+        .from("follows")
+        .select("follower_id")
+        .eq("following_id", user.id);
+
+      const myFollowersIds = (myFollowers || []).map((f: any) => f.follower_id);
+      const followersSet = new Set(myFollowersIds);
+
+      // 3. Buscar nomes e avatares das pessoas que você segue (amigos em comum)
       const followingProfilesMap = new Map<string, { name: string; avatar: string | null }>();
       if (myFollowingIds.length > 0) {
         const { data: followingProfiles } = await supabase
@@ -863,7 +1071,7 @@ export function SocialFeed({
         });
       }
 
-      // 3. Detecção de 2º Grau: quem as pessoas que você segue estão seguindo!
+      // 4. Detecção de 2º Grau: quem as pessoas que você segue estão seguindo!
       const mutualsMap = new Map<string, Array<{ name: string; avatar: string | null }>>();
       if (myFollowingIds.length > 0) {
         const { data: networkFollows } = await supabase
@@ -884,68 +1092,160 @@ export function SocialFeed({
         });
       }
 
-      // 4. Buscar perfis de outros estudantes
+      // 5. Notas reais de redações do laboratório para destacar quem tem 800+ ou 900+
+      const topScoreMap = new Map<string, number>();
+      try {
+        const { data: topEssays } = await supabase
+          .from("essays")
+          .select("user_id, score")
+          .gte("score", 800)
+          .order("score", { ascending: false })
+          .limit(40);
+
+        (topEssays || []).forEach((e: any) => {
+          if (!topScoreMap.has(e.user_id) || (e.score && e.score > (topScoreMap.get(e.user_id) || 0))) {
+            topScoreMap.set(e.user_id, e.score);
+          }
+        });
+      } catch {
+        // ignore
+      }
+
+      // 6. Atividade recente na comunidade
+      const recentPostersSet = new Set<string>();
+      try {
+        const { data: recentPosts } = await supabase
+          .from("posts")
+          .select("user_id")
+          .order("created_at", { ascending: false })
+          .limit(30);
+
+        (recentPosts || []).forEach((p: any) => recentPostersSet.add(p.user_id));
+      } catch {
+        // ignore
+      }
+
+      // 7. Buscar estudantes reais
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, full_name, avatar_url, course, college, state")
+        .select("id, full_name, avatar_url, course, college, state, target_score")
         .neq("id", user.id)
-        .limit(20);
+        .limit(40);
 
       if (profiles && profiles.length > 0) {
-        const userCourse = preferences?.course?.toLowerCase();
-        const userCollege = preferences?.college?.toLowerCase();
-        const userState = preferences?.state?.toLowerCase();
+        const userCourse = preferences?.course?.trim().toLowerCase();
+        const userCollege = preferences?.college?.trim().toLowerCase();
+        const userState = preferences?.state?.trim().toLowerCase();
 
-        const formatted: SuggestedStudent[] = profiles.map((p: any) => {
+        const candidateList: SuggestedStudent[] = profiles.map((p: any) => {
           const isFollowing = followingSet.has(p.id);
+          const followsYou = followersSet.has(p.id);
           const mutuals = mutualsMap.get(p.id) || [];
+          const highestScore = topScoreMap.get(p.id);
+          const isRecentPoster = recentPostersSet.has(p.id);
 
-          let reason = "Estudante na plataforma";
+          let affinityScore = 0;
+          let connectionReason = "Estudante no Escreva+";
+          let badge: SuggestedStudent["badge"] = undefined;
+
+          // Sinal 1: Segue você ("Follows you" - prioridade máxima estilo Instagram)
+          if (followsYou) {
+            affinityScore += 140;
+            connectionReason = "Segue você";
+            badge = { label: "Segue você", type: "follows_you" };
+          }
+
+          // Sinal 2: Grafo Social de 2º Grau (Amigos em comum)
           if (mutuals.length > 0) {
+            affinityScore += 60 + mutuals.length * 35;
             if (mutuals.length === 1) {
-              reason = `Seguido por ${mutuals[0].name}`;
+              connectionReason = `Seguido por ${mutuals[0].name}`;
+            } else if (mutuals.length === 2) {
+              connectionReason = `Seguido por ${mutuals[0].name} e ${mutuals[1].name}`;
             } else {
-              reason = `Seguido por ${mutuals[0].name} e mais ${mutuals.length - 1} que você segue`;
+              connectionReason = `Seguido por ${mutuals[0].name} e mais ${mutuals.length - 1}`;
             }
-          } else if (userCourse && p.course && p.course.toLowerCase().includes(userCourse)) {
-            reason = `Mesmo foco: ${p.course}`;
-          } else if (userCollege && p.college && p.college.toLowerCase().includes(userCollege)) {
-            reason = `Mesma meta: ${p.college}`;
-          } else if (userState && p.state && p.state.toLowerCase() === userState) {
-            reason = `Estudante de ${p.state.toUpperCase()}`;
-          } else if (p.course) {
-            reason = `Foco em ${p.course}`;
+            if (!badge || badge.type !== "follows_you") {
+              badge = { label: `${mutuals.length} em comum`, type: "mutual" };
+            }
+          }
+
+          // Sinal 3: Similaridade Acadêmica (Curso / Universidade / Estado)
+          const pCourse = p.course?.toLowerCase();
+          const pCollege = p.college?.toLowerCase();
+          const pState = p.state?.toLowerCase();
+
+          if (userCourse && pCourse && (pCourse.includes(userCourse) || userCourse.includes(pCourse))) {
+            affinityScore += 45;
+            if (!badge) {
+              connectionReason = `Mesmo foco: ${p.course}`;
+              badge = { label: p.course, type: "course" };
+            }
+          } else if (userCollege && pCollege && (pCollege.includes(userCollege) || userCollege.includes(pCollege))) {
+            affinityScore += 35;
+            if (!badge) {
+              connectionReason = `Mesma meta: ${p.college}`;
+              badge = { label: p.college, type: "college" };
+            }
+          } else if (userState && pState && pState === userState) {
+            affinityScore += 20;
+            if (!badge) {
+              connectionReason = `Estudante de ${p.state.toUpperCase()}`;
+              badge = { label: p.state.toUpperCase(), type: "state" };
+            }
+          }
+
+          // Sinal 4: Destaque de Nota Real no Laboratório
+          if (highestScore && highestScore >= 900) {
+            affinityScore += 30;
+            if (!badge || badge.type === "state") {
+              badge = { label: `Nota ${highestScore}`, type: "top_essay" };
+              if (!followsYou && mutuals.length === 0) {
+                connectionReason = `Destaque: Nota ${highestScore} no laboratório`;
+              }
+            }
+          } else if (highestScore && highestScore >= 800) {
+            affinityScore += 15;
+          }
+
+          // Sinal 5: Membro ativo na comunidade
+          if (isRecentPoster) {
+            affinityScore += 15;
+          }
+
+          // Penalidade para quem já é seguido (priorizar novos perfis)
+          if (isFollowing) {
+            affinityScore -= 1000;
           }
 
           return {
             id: p.id,
             name: p.full_name || "Estudante",
             course: [p.course, p.college].filter(Boolean).join(" • ") || "Vestibulando",
+            college: p.college,
+            state: p.state,
             avatar: p.avatar_url,
             isFollowing,
+            followsYou,
             mutualFollows: mutuals,
-            connectionReason: reason,
+            connectionReason,
+            affinityScore,
+            badge,
+            highestEssayScore: highestScore,
           };
         });
 
-        // Ordenação inteligente:
-        // 1. Quem NÃO é seguido ainda no topo
-        // 2. Quem tem conexões em comum (quem seus seguidos seguem) no topo
-        // 3. Quem compartilha o mesmo curso/faculdade
-        formatted.sort((a, b) => {
-          if (a.isFollowing !== b.isFollowing) return a.isFollowing ? 1 : -1;
-          const mutualsA = a.mutualFollows?.length || 0;
-          const mutualsB = b.mutualFollows?.length || 0;
-          if (mutualsB !== mutualsA) return mutualsB - mutualsA;
-          return 0;
-        });
+        // Ordenar por afinidade decrescente
+        candidateList.sort((a, b) => b.affinityScore - a.affinityScore);
 
-        setSuggestedStudents(formatted.slice(0, 6));
+        setSuggestedStudents(candidateList.slice(0, 10));
       } else {
         setSuggestedStudents([]);
       }
     } catch {
       setSuggestedStudents([]);
+    } finally {
+      if (isManual) setRefreshingSuggestions(false);
     }
   }, [user, preferences]);
 
@@ -1400,41 +1700,64 @@ export function SocialFeed({
               <PostSkeleton />
             </div>
           ) : filteredPosts.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border/60 bg-card py-16 text-center shadow-sm">
-              <div className="mx-auto size-14 rounded-full bg-muted/50 grid place-items-center mb-3">
-                <PenLine className="size-6 text-primary/50" />
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-dashed border-border/60 bg-card py-12 px-4 text-center shadow-sm">
+                <div className="mx-auto size-14 rounded-full bg-muted/50 grid place-items-center mb-3">
+                  <PenLine className="size-6 text-primary/50" />
+                </div>
+                <p className="font-bold text-base text-foreground">Nenhuma publicação ainda</p>
+                <p className="mt-1 text-sm text-muted-foreground max-w-xs mx-auto">
+                  {searchQuery
+                    ? `Nenhuma publicação encontrada para "${searchQuery}".`
+                    : "Seja o primeiro a compartilhar uma redação, conquista ou pensamento com a turma!"}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => { setSearchQuery(""); setCreateModalOpen(true); }}
+                  className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-all shadow-sm cursor-pointer"
+                >
+                  <PenLine className="size-4" /> Criar primeira publicação
+                </button>
               </div>
-              <p className="font-bold text-base text-foreground">Nenhuma publicação ainda</p>
-              <p className="mt-1 text-sm text-muted-foreground max-w-xs mx-auto">
-                {searchQuery
-                  ? `Nenhuma publicação encontrada para "${searchQuery}".`
-                  : "Seja o primeiro a compartilhar uma redação, conquista ou pensamento com a turma!"}
-              </p>
-              <button
-                type="button"
-                onClick={() => { setSearchQuery(""); setCreateModalOpen(true); }}
-                className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-all shadow-sm cursor-pointer"
-              >
-                <PenLine className="size-4" /> Criar primeira publicação
-              </button>
+
+              {/* Sugestões de Estudantes quando o Feed está vazio */}
+              {suggestedStudents.filter((s) => !s.isFollowing && !dismissedSuggestionIds.has(s.id)).length > 0 && (
+                <FeedSuggestionsCarousel
+                  students={suggestedStudents.filter((s) => !dismissedSuggestionIds.has(s.id))}
+                  onToggleFollow={handleToggleFollow}
+                  onDismiss={(id) => setDismissedSuggestionIds((prev) => new Set([...prev, id]))}
+                  goTo={goTo}
+                />
+              )}
             </div>
           ) : (
             <div className="space-y-4">
-              {filteredPosts.map((post) => (
-                <PostCard
-                  key={post.id}
-                  post={post}
-                  currentUserId={user?.id ?? ""}
-                  currentUserName={currentUserName}
-                  currentUserAvatar={currentUserAvatar}
-                  onLike={handleLike}
-                  onToggleComments={handleToggleComments}
-                  onAddComment={handleAddComment}
-                  onDeleteComment={handleDeleteComment}
-                  onDelete={handleDeletePost}
-                  onHashtagClick={(tag) => setSearchQuery(`#${tag}`)}
-                  onOpenProfile={() => goTo && goTo("perfil")}
-                />
+              {filteredPosts.map((post, index) => (
+                <div key={post.id} className="space-y-4">
+                  <PostCard
+                    post={post}
+                    currentUserId={user?.id ?? ""}
+                    currentUserName={currentUserName}
+                    currentUserAvatar={currentUserAvatar}
+                    onLike={handleLike}
+                    onToggleComments={handleToggleComments}
+                    onAddComment={handleAddComment}
+                    onDeleteComment={handleDeleteComment}
+                    onDelete={handleDeletePost}
+                    onHashtagClick={(tag) => setSearchQuery(`#${tag}`)}
+                    onOpenProfile={() => goTo && goTo("perfil")}
+                  />
+
+                  {/* Sugestões no Feed estilo Instagram (inserido organicamente após o 2º post) */}
+                  {index === 1 && suggestedStudents.filter((s) => !s.isFollowing && !dismissedSuggestionIds.has(s.id)).length > 0 && (
+                    <FeedSuggestionsCarousel
+                      students={suggestedStudents.filter((s) => !dismissedSuggestionIds.has(s.id))}
+                      onToggleFollow={handleToggleFollow}
+                      onDismiss={(id) => setDismissedSuggestionIds((prev) => new Set([...prev, id]))}
+                      goTo={goTo}
+                    />
+                  )}
+                </div>
               ))}
             </div>
           )}
@@ -1447,6 +1770,8 @@ export function SocialFeed({
             onHashtagClick={(tag) => setSearchQuery(`#${tag}`)}
             suggestedStudents={suggestedStudents}
             onToggleFollow={handleToggleFollow}
+            onRefreshSuggestions={() => loadSuggestedProfiles(true)}
+            refreshing={refreshingSuggestions}
             goTo={goTo}
           />
         </div>
