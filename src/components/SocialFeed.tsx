@@ -62,6 +62,11 @@ export interface SuggestedStudent {
   course: string;
   avatar: string | null;
   isFollowing: boolean;
+  mutualFollows?: {
+    name: string;
+    avatar: string | null;
+  }[];
+  connectionReason?: string;
 }
 
 // ─────────────────────────────────────────────
@@ -761,6 +766,18 @@ function RightSidebar({
                 <div className="flex-1 min-w-0 cursor-pointer" onClick={() => goTo && goTo("perfil")}>
                   <p className="text-sm font-bold truncate leading-tight hover:text-primary transition-colors">{s.name}</p>
                   <p className="text-xs text-muted-foreground truncate">{s.course}</p>
+                  {s.connectionReason && (
+                    <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground truncate">
+                      {s.mutualFollows && s.mutualFollows.length > 0 ? (
+                        <span className="flex items-center gap-1 text-primary font-medium truncate">
+                          <Users className="size-3 shrink-0" />
+                          <span className="truncate">{s.connectionReason}</span>
+                        </span>
+                      ) : (
+                        <span className="truncate text-muted-foreground/80">{s.connectionReason}</span>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <button
                   type="button"
@@ -817,40 +834,120 @@ export function SocialFeed({
     ? { id: essays[0].id, score: essays[0].score, theme_topic: essays[0].theme_topic }
     : null;
 
-  // Carregar perfis estritamente reais de outros estudantes
+  // Carregar perfis com detecção de grafo social (estilo Instagram: quem seus seguidos seguem)
   const loadSuggestedProfiles = useCallback(async () => {
     if (!user) return;
     try {
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, full_name, avatar_url, course, college")
-        .neq("id", user.id)
-        .limit(6);
-
+      // 1. Quem o usuário atual segue
       const { data: myFollows } = await supabase
         .from("follows")
         .select("following_id")
         .eq("follower_id", user.id);
 
-      const followingSet = new Set((myFollows || []).map((f: any) => f.following_id));
+      const myFollowingIds = (myFollows || []).map((f: any) => f.following_id);
+      const followingSet = new Set(myFollowingIds);
+
+      // 2. Buscar nomes e avatares das pessoas que você segue
+      const followingProfilesMap = new Map<string, { name: string; avatar: string | null }>();
+      if (myFollowingIds.length > 0) {
+        const { data: followingProfiles } = await supabase
+          .from("profiles")
+          .select("id, full_name, avatar_url")
+          .in("id", myFollowingIds);
+
+        followingProfiles?.forEach((p: any) => {
+          followingProfilesMap.set(p.id, {
+            name: p.full_name?.split(" ")[0] || "Estudante",
+            avatar: p.avatar_url,
+          });
+        });
+      }
+
+      // 3. Detecção de 2º Grau: quem as pessoas que você segue estão seguindo!
+      const mutualsMap = new Map<string, Array<{ name: string; avatar: string | null }>>();
+      if (myFollowingIds.length > 0) {
+        const { data: networkFollows } = await supabase
+          .from("follows")
+          .select("follower_id, following_id")
+          .in("follower_id", myFollowingIds)
+          .neq("following_id", user.id);
+
+        (networkFollows || []).forEach((rel: any) => {
+          const friendInfo = followingProfilesMap.get(rel.follower_id);
+          if (friendInfo) {
+            const list = mutualsMap.get(rel.following_id) || [];
+            if (!list.some((m) => m.name === friendInfo.name)) {
+              list.push(friendInfo);
+            }
+            mutualsMap.set(rel.following_id, list);
+          }
+        });
+      }
+
+      // 4. Buscar perfis de outros estudantes
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url, course, college, state")
+        .neq("id", user.id)
+        .limit(20);
 
       if (profiles && profiles.length > 0) {
-        setSuggestedStudents(
-          profiles.map((p: any) => ({
+        const userCourse = preferences?.course?.toLowerCase();
+        const userCollege = preferences?.college?.toLowerCase();
+        const userState = preferences?.state?.toLowerCase();
+
+        const formatted: SuggestedStudent[] = profiles.map((p: any) => {
+          const isFollowing = followingSet.has(p.id);
+          const mutuals = mutualsMap.get(p.id) || [];
+
+          let reason = "Estudante na plataforma";
+          if (mutuals.length > 0) {
+            if (mutuals.length === 1) {
+              reason = `Seguido por ${mutuals[0].name}`;
+            } else {
+              reason = `Seguido por ${mutuals[0].name} e mais ${mutuals.length - 1} que você segue`;
+            }
+          } else if (userCourse && p.course && p.course.toLowerCase().includes(userCourse)) {
+            reason = `Mesmo foco: ${p.course}`;
+          } else if (userCollege && p.college && p.college.toLowerCase().includes(userCollege)) {
+            reason = `Mesma meta: ${p.college}`;
+          } else if (userState && p.state && p.state.toLowerCase() === userState) {
+            reason = `Estudante de ${p.state.toUpperCase()}`;
+          } else if (p.course) {
+            reason = `Foco em ${p.course}`;
+          }
+
+          return {
             id: p.id,
             name: p.full_name || "Estudante",
             course: [p.course, p.college].filter(Boolean).join(" • ") || "Vestibulando",
             avatar: p.avatar_url,
-            isFollowing: followingSet.has(p.id),
-          }))
-        );
+            isFollowing,
+            mutualFollows: mutuals,
+            connectionReason: reason,
+          };
+        });
+
+        // Ordenação inteligente:
+        // 1. Quem NÃO é seguido ainda no topo
+        // 2. Quem tem conexões em comum (quem seus seguidos seguem) no topo
+        // 3. Quem compartilha o mesmo curso/faculdade
+        formatted.sort((a, b) => {
+          if (a.isFollowing !== b.isFollowing) return a.isFollowing ? 1 : -1;
+          const mutualsA = a.mutualFollows?.length || 0;
+          const mutualsB = b.mutualFollows?.length || 0;
+          if (mutualsB !== mutualsA) return mutualsB - mutualsA;
+          return 0;
+        });
+
+        setSuggestedStudents(formatted.slice(0, 6));
       } else {
         setSuggestedStudents([]);
       }
     } catch {
       setSuggestedStudents([]);
     }
-  }, [user]);
+  }, [user, preferences]);
 
   // Carregar posts reais do Supabase
   const loadPosts = useCallback(async () => {
