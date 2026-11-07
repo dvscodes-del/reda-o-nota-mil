@@ -1086,12 +1086,16 @@ function Feedback({ result, text, onBack }: { result: Correction; text: string; 
 }
 
 
-function TrainingSection({ goTo }: { goTo: (section: Section) => void }) {
-  const [selectedYear, setSelectedYear] = useState<number | "all">("all");
-  const [openEssay, setOpenEssay] = useState<TrainingEssay | null>(null);
 
-  const years = [...new Set(trainingEssays.map(e => e.year))].sort((a, b) => b - a);
-  const filtered = selectedYear === "all" ? trainingEssays : trainingEssays.filter(e => e.year === selectedYear);
+function TrainingSection({ goTo }: { goTo: (section: Section) => void }) {
+  const [openEssay, setOpenEssay] = useState<TrainingEssay | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filtered = trainingEssays.filter(e => 
+    !searchTerm || 
+    e.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    e.theme.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const scoreColor = (score: number) => {
     if (score >= 960) return "text-emerald-600 bg-emerald-500/10 border-emerald-500/30";
@@ -1120,7 +1124,7 @@ function TrainingSection({ goTo }: { goTo: (section: Section) => void }) {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-3">
-                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">ENEM {openEssay.year}</span>
+                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">Redação Modelo</span>
                 <span className={`rounded-full border px-3 py-1 text-xs font-bold ${scoreColor(openEssay.score)}`}>
                   <Star className="mr-1 inline size-3" /> {openEssay.score} pontos
                 </span>
@@ -1171,7 +1175,7 @@ function TrainingSection({ goTo }: { goTo: (section: Section) => void }) {
         <div className="mt-8 rounded-xl border border-primary/20 bg-primary/5 p-6 text-center">
           <GraduationCap className="mx-auto mb-3 size-10 text-primary" />
           <h3 className="text-lg font-bold">Agora é sua vez!</h3>
-          <p className="mt-1 text-sm text-muted-foreground">Inspirou-se nesta redação? Vá ao Laboratório e escreva a sua sobre o mesmo tema ou outro de sua preferência.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Inspirou-se nesta redação? Vá ao Laboratório e escreva a sua baseando-se na estrutura e repertórios estudados.</p>
           <Button onClick={() => goTo("laboratorio")} className="mt-4 rounded-xl">
             Escrever minha redação <ArrowRight className="ml-2 size-4" />
           </Button>
@@ -1182,40 +1186,35 @@ function TrainingSection({ goTo }: { goTo: (section: Section) => void }) {
 
   return (
     <>
-      <PageTitle eyebrow="Estude com os melhores" title="Treinamento" description="Leia redações nota 900+ de temas reais de ENEMs anteriores. Analise a estrutura, os repertórios legítimos e a proposta de intervenção para se inspirar e escrever as suas próprias redações." />
+      <PageTitle eyebrow="Modelos para inspirar sua escrita" title="Treinamento" description="Leia redações com notas acima de 900 comentadas passo a passo. Estude a estrutura, os repertórios legítimos e a proposta de intervenção para se basear nelas e escrever suas próprias redações." />
 
-      {/* Filtro por ano */}
-      <div className="mb-6 flex flex-wrap items-center gap-2">
-        <span className="text-sm font-semibold text-muted-foreground mr-2">Filtrar por ano:</span>
-        <Button
-          variant={selectedYear === "all" ? "default" : "outline"}
-          size="sm"
-          className="rounded-full"
-          onClick={() => setSelectedYear("all")}
-        >
-          Todos
-        </Button>
-        {years.map(year => (
-          <Button
-            key={year}
-            variant={selectedYear === year ? "default" : "outline"}
-            size="sm"
-            className="rounded-full"
-            onClick={() => setSelectedYear(year)}
-          >
-            {year}
+      {/* Barra de pesquisa */}
+      <div className="mb-6 flex max-w-md items-center gap-2">
+        <div className="relative w-full">
+          <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Buscar por tema ou palavra-chave..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full rounded-xl border border-border bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+        </div>
+        {searchTerm && (
+          <Button variant="ghost" size="sm" onClick={() => setSearchTerm("")}>
+            Limpar
           </Button>
-        ))}
+        )}
       </div>
 
       {/* Estatísticas */}
-      <div className="mb-8 grid gap-4 sm:grid-cols-3">
+      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <div className="mb-3 flex items-center gap-2">
             <span className="grid size-10 place-items-center rounded-lg bg-primary/10 text-primary"><FileText className="size-5" /></span>
           </div>
           <strong className="text-2xl">{filtered.length}</strong>
-          <p className="mt-1 text-sm text-muted-foreground">Redações disponíveis</p>
+          <p className="mt-1 text-sm text-muted-foreground">Redações para estudo</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <div className="mb-3 flex items-center gap-2">
@@ -1224,12 +1223,12 @@ function TrainingSection({ goTo }: { goTo: (section: Section) => void }) {
           <strong className="text-2xl">{Math.round(filtered.reduce((s, e) => s + e.score, 0) / (filtered.length || 1))}</strong>
           <p className="mt-1 text-sm text-muted-foreground">Média de pontuação</p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm sm:col-span-2 lg:col-span-1">
           <div className="mb-3 flex items-center gap-2">
-            <span className="grid size-10 place-items-center rounded-lg bg-amber-500/10 text-amber-600"><GraduationCap className="size-5" /></span>
+            <span className="grid size-10 place-items-center rounded-lg bg-purple-500/10 text-purple-600"><Award className="size-5" /></span>
           </div>
-          <strong className="text-2xl">{years.length}</strong>
-          <p className="mt-1 text-sm text-muted-foreground">Anos de ENEM cobertos</p>
+          <strong className="text-2xl">Nota 900+</strong>
+          <p className="mt-1 text-sm text-muted-foreground">Padrão de excelência</p>
         </div>
       </div>
 
@@ -1242,7 +1241,7 @@ function TrainingSection({ goTo }: { goTo: (section: Section) => void }) {
             className="group cursor-pointer rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md hover:border-primary/30"
           >
             <div className="mb-4 flex items-center justify-between">
-              <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">ENEM {essay.year}</span>
+              <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">Redação Modelo</span>
               <span className={`rounded-full border px-3 py-1 text-xs font-bold ${scoreColor(essay.score)}`}>
                 {essay.score} pts
               </span>
@@ -1268,7 +1267,7 @@ function TrainingSection({ goTo }: { goTo: (section: Section) => void }) {
       {filtered.length === 0 && (
         <div className="mt-12 text-center">
           <FileText className="mx-auto size-12 text-muted-foreground/30" />
-          <p className="mt-3 text-muted-foreground">Nenhuma redação encontrada para o ano selecionado.</p>
+          <p className="mt-3 text-muted-foreground">Nenhuma redação encontrada para essa pesquisa.</p>
         </div>
       )}
     </>

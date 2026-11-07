@@ -1,6 +1,5 @@
 export interface TrainingEssay {
   id: number;
-  year: number;
   theme: string;
   title: string;
   score: number;
@@ -14,10 +13,8 @@ export interface TrainingEssay {
 }
 
 export const trainingEssays: TrainingEssay[] = [
-  // ── ENEM 2023 ──
   {
     id: 1,
-    year: 2023,
     theme: "Desafios para o enfrentamento da invisibilidade do trabalho de cuidado realizado pela mulher no Brasil",
     title: "O peso invisível do cuidado feminino",
     score: 980,
@@ -37,7 +34,6 @@ export const trainingEssays: TrainingEssay[] = [
   },
   {
     id: 2,
-    year: 2023,
     theme: "Desafios para o enfrentamento da invisibilidade do trabalho de cuidado realizado pela mulher no Brasil",
     title: "Cuidar: verbo feminino no singular brasileiro",
     score: 940,
@@ -55,11 +51,8 @@ export const trainingEssays: TrainingEssay[] = [
       { paragraph: 3, label: "Proposta detalhada", tip: "Proposta com nome de programa, fonte de financiamento e ações complementares — bem articulada." }
     ]
   },
-
-  // ── ENEM 2022 ──
   {
     id: 3,
-    year: 2022,
     theme: "Desafios para a valorização de comunidades e povos tradicionais no Brasil",
     title: "Raízes silenciadas: o apagamento dos povos tradicionais",
     score: 960,
@@ -77,11 +70,8 @@ export const trainingEssays: TrainingEssay[] = [
       { paragraph: 3, label: "Proposta articulada", tip: "Coautoria com comunidades tradicionais é um diferencial — mostra respeito ao protagonismo desses povos." }
     ]
   },
-
-  // ── ENEM 2021 ──
   {
     id: 4,
-    year: 2021,
     theme: "Invisibilidade e registro civil: garantia de acesso à cidadania no Brasil",
     title: "Existir sem documento: a cidadania negada",
     score: 920,
@@ -99,11 +89,8 @@ export const trainingEssays: TrainingEssay[] = [
       { paragraph: 3, label: "Proposta viável", tip: "Mutirões itinerantes com embarcações e parcerias com agentes de saúde — solução criativa e realista." }
     ]
   },
-
-  // ── ENEM 2020 ──
   {
     id: 5,
-    year: 2020,
     theme: "O estigma associado às doenças mentais na sociedade brasileira",
     title: "Mentes aprisionadas pelo preconceito",
     score: 960,
@@ -121,11 +108,8 @@ export const trainingEssays: TrainingEssay[] = [
       { paragraph: 3, label: "Proposta dupla", tip: "Duas frentes (conscientização + ampliação de CAPS) com agentes, meios e finalidades claras." }
     ]
   },
-
-  // ── ENEM 2019 ──
   {
     id: 6,
-    year: 2019,
     theme: "Democratização do acesso ao cinema no Brasil",
     title: "Cinema para quem? O direito à tela negada",
     score: 940,
@@ -143,11 +127,8 @@ export const trainingEssays: TrainingEssay[] = [
       { paragraph: 3, label: "Proposta com financiamento", tip: "Fundo Setorial do Audiovisual como fonte de recurso mostra conhecimento das estruturas de fomento." }
     ]
   },
-
-  // ── ENEM 2018 ──
   {
     id: 7,
-    year: 2018,
     theme: "Manipulação do comportamento do usuário pelo controle de dados na internet",
     title: "Algoritmos que moldam mentes",
     score: 980,
@@ -165,11 +146,8 @@ export const trainingEssays: TrainingEssay[] = [
       { paragraph: 3, label: "Proposta legislativa + educacional", tip: "Fortalecer a LGPD + alfabetização digital = intervenção completa com dois eixos complementares." }
     ]
   },
-
-  // ── ENEM 2017 ──
   {
     id: 8,
-    year: 2017,
     theme: "Desafios para a formação educacional de surdos no Brasil",
     title: "O silêncio que exclui: educação e surdez",
     score: 920,
@@ -187,11 +165,8 @@ export const trainingEssays: TrainingEssay[] = [
       { paragraph: 3, label: "Proposta educacional", tip: "Bolsas para docentes + materiais em Libras + plataformas digitais — proposta com camadas de detalhamento." }
     ]
   },
-
-  // ── ENEM 2016 ──
   {
     id: 9,
-    year: 2016,
     theme: "Caminhos para combater a intolerância religiosa no Brasil",
     title: "Fé e respeito: a tolerância como pilar democrático",
     score: 940,
@@ -209,11 +184,8 @@ export const trainingEssays: TrainingEssay[] = [
       { paragraph: 3, label: "Proposta curricular", tip: "'História das religiões' como alternativa ao ensino confessional — proposta criativa e viável." }
     ]
   },
-
-  // ── ENEM 2015 ──
   {
     id: 10,
-    year: 2015,
     theme: "A persistência da violência contra a mulher na sociedade brasileira",
     title: "Feridas abertas: a violência que não cessa",
     score: 960,
@@ -232,4 +204,3 @@ export const trainingEssays: TrainingEssay[] = [
     ]
   },
 ];
-
