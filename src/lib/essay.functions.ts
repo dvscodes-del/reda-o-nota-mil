@@ -10,15 +10,24 @@ const EssayInput = z.object({
   course: z.string().optional(),
 });
 
+const CompetencyDetailSchema = z.object({
+  name: z.string(),
+  score: z.number(),
+  level: z.number(), // Nível 0 a 5 do INEP
+  descriptor: z.string(), // Texto oficial da Matriz de Referência do INEP
+  feedback: z.string(), // Parecer técnico personalizado do fiscal
+});
+
+const C5ElementSchema = z.object({
+  name: z.string(),
+  found: z.boolean(),
+  detail: z.string(),
+});
+
 const CorrectionSchema = z.object({
   score: z.number(),
-  competencies: z.array(
-    z.object({
-      name: z.string(),
-      score: z.number(),
-      feedback: z.string(),
-    }),
-  ),
+  competencies: z.array(CompetencyDetailSchema),
+  c5Elements: z.array(C5ElementSchema),
   strengths: z.array(z.string()),
   improvements: z.array(z.string()),
   annotations: z.array(
@@ -31,6 +40,73 @@ const CorrectionSchema = z.object({
 });
 
 export type CorrectionResult = z.infer<typeof CorrectionSchema>;
+
+// ─── MATRIZ OFICIAL DE REFERÊNCIA DO ENEM (INEP) ──────────────────────────────
+export const INEP_MATRIX: Record<
+  string,
+  { shortName: string; fullName: string; levels: Record<number, string> }
+> = {
+  C1: {
+    shortName: "Norma Padrão da Língua Portuguesa",
+    fullName: "Demonstrar domínio da modalidade escrita formal da língua portuguesa",
+    levels: {
+      200: "Demonstra excelente domínio da modalidade escrita formal da língua portuguesa e de escolha de registro, com no máximo dois desvios gramaticais leves isolados.",
+      160: "Demonstra bom domínio da modalidade escrita formal da língua portuguesa e de escolha de registro, com poucos desvios gramaticais e de convenções da escrita.",
+      120: "Demonstra domínio mediano da modalidade escrita formal da língua portuguesa e de escolha de registro, com alguns desvios gramaticais e de convenções da escrita.",
+      80: "Demonstra domínio insuficiente da modalidade escrita formal da língua portuguesa, com muitos desvios gramaticais, de escolha de registro e de convenções da escrita.",
+      40: "Demonstra domínio precário da modalidade escrita formal da língua portuguesa, com diversidade e frequência de desvios gramaticais e marcas sistemáticas de oralidade.",
+      0: "Demonstra desconhecimento da modalidade escrita formal da língua portuguesa.",
+    },
+  },
+  C2: {
+    shortName: "Compreensão da Proposta e Repertório",
+    fullName: "Compreender a proposta de redação e aplicar conceitos das várias áreas de conhecimento para desenvolver o tema, dentro dos limites estruturais do texto dissertativo-argumentativo em prosa",
+    levels: {
+      200: "Desenvolve o tema por meio de argumentação consistente, a partir de um repertório sociocultural produtivo e apresenta excelente domínio do texto dissertativo-argumentativo em 4 parágrafos.",
+      160: "Desenvolve o tema por meio de argumentação consistente e apresenta bom domínio do texto dissertativo-argumentativo, com repertório sociocultural legitimado e pertinente.",
+      120: "Desenvolve o tema por meio de argumentação previsível e apresenta domínio mediano do texto dissertativo-argumentativo, preso ao senso comum ou textos motivadores.",
+      80: "Desenvolve o tema recorrendo à cópia de trechos dos textos motivadores ou apresenta domínio insuficiente do texto dissertativo-argumentativo.",
+      40: "Apresenta o assunto, tangenciando o tema, ou demonstra domínio precário do texto dissertativo-argumentativo.",
+      0: "Fuga ao tema ou não atendimento ao tipo dissertativo-argumentativo.",
+    },
+  },
+  C3: {
+    shortName: "Projeto de Texto e Argumentação",
+    fullName: "Selecionar, relacionar, organizar e interpretar informações, fatos, opiniões e argumentos em defesa de um ponto de vista",
+    levels: {
+      200: "Apresenta informações, fatos e opiniões relacionados ao tema proposto, de forma consistente e organizada, configurando autoria crítica, em defesa de um ponto de vista.",
+      160: "Apresenta informações, fatos e opiniões relacionados ao tema, de forma organizada, com indícios de autoria, em defesa de um ponto de vista.",
+      120: "Apresenta informações, fatos e opiniões relacionados ao tema, limitados aos argumentos dos textos motivadores e pouco organizados, em defesa de um ponto de vista.",
+      80: "Apresenta informações, fatos e opiniões relacionados ao tema, mas desorganizados ou contraditórios, com projeto de texto frágil.",
+      40: "Apresenta informações, fatos e opiniões pouco relacionados ao tema ou incoerentes e sem defesa de um ponto de vista.",
+      0: "Apresenta informações, fatos e opiniões não relacionados ao tema e sem defesa de um ponto de vista.",
+    },
+  },
+  C4: {
+    shortName: "Coesão e Mecanismos Linguísticos",
+    fullName: "Demonstrar conhecimento dos mecanismos linguísticos necessários para a construção da argumentação",
+    levels: {
+      200: "Articula bem as partes do texto e apresenta repertório diversificado de recursos coesivos, com conectivos inter e intraparágrafos canônicos e sem repetições mecânicas.",
+      160: "Articula as partes do texto, com poucas inadequações, e apresenta repertório diversificado de recursos coesivos.",
+      120: "Articula as partes do texto, de forma mediana, com inadequações, ou com repertório pouco diversificado de recursos coesivos.",
+      80: "Articula as partes do texto, de forma insuficiente, com muitas inadequações e recursos coesivos muito escassos.",
+      40: "Articula as partes do texto de forma precária com frases justapostas.",
+      0: "Não articula as informações.",
+    },
+  },
+  C5: {
+    shortName: "Proposta de Intervenção Social",
+    fullName: "Elaborar proposta de intervenção para o problema abordado, respeitando os direitos humanos",
+    levels: {
+      200: "Elabora muito bem proposta de intervenção completa (5 elementos: Agente, Ação, Meio/Modo, Efeito e Detalhamento), articulada à discussão do texto.",
+      160: "Elabora bem proposta de intervenção relacionada ao tema (4 elementos presentes).",
+      120: "Elabora proposta de intervenção de forma mediana (3 elementos presentes).",
+      80: "Elabora proposta de intervenção incompleta ou insuficiente (2 elementos presentes).",
+      40: "Apresenta proposta de intervenção vaga ou precária (1 elemento presente).",
+      0: "Não apresenta proposta de intervenção ou desrespeita os direitos humanos.",
+    },
+  },
+};
 
 // ─── UTILITÁRIOS ─────────────────────────────────────────────────────────────
 
@@ -539,15 +615,29 @@ export function evaluateEssayHeuristically(
     }
   }
 
+  const buildCompetency = (id: "C1" | "C2" | "C3" | "C4" | "C5", score: number, technicalFeedback: string) => {
+    const meta = INEP_MATRIX[id];
+    const level = Math.max(0, Math.min(5, Math.round(score / 40)));
+    const descriptor = meta.levels[score] || meta.levels[0];
+    return {
+      name: `${id} · ${meta.shortName}`,
+      score,
+      level,
+      descriptor,
+      feedback: technicalFeedback,
+    };
+  };
+
   return CorrectionSchema.parse({
     score: totalScore,
     competencies: [
-      { name: "C1 – Norma Padrão da Língua Portuguesa", score: r1.score, feedback: r1.feedback },
-      { name: "C2 – Compreensão da Proposta e Repertório", score: r2.score, feedback: r2.feedback },
-      { name: "C3 – Seleção e Organização de Argumentos", score: r3.score, feedback: r3.feedback },
-      { name: "C4 – Mecanismos Linguísticos de Coesão", score: r4.score, feedback: r4.feedback },
-      { name: "C5 – Proposta de Intervenção Social", score: r5.score, feedback: r5.feedback },
+      buildCompetency("C1", r1.score, r1.feedback),
+      buildCompetency("C2", r2.score, r2.feedback),
+      buildCompetency("C3", r3.score, r3.feedback),
+      buildCompetency("C4", r4.score, r4.feedback),
+      buildCompetency("C5", r5.score, r5.feedback),
     ],
+    c5Elements: r5.elements,
     strengths: strengths.slice(0, 4),
     improvements: improvements.slice(0, 4),
     annotations: annotations.filter(a => a.excerpt.length >= 4).slice(0, 5),
@@ -568,35 +658,61 @@ export const correctEssay = createServerFn({ method: "POST" })
 
         const goalContext =
           data.course && data.college
-            ? `O aluno pretende ingressar em ${data.course} na ${data.college}, almejando ${data.targetScore || 900} pontos. Ajuste o feedback de forma construtiva e realista.`
-            : `O aluno tem meta de ${data.targetScore || 900} pontos no ENEM.`;
+            ? `O candidato pretende ingressar em ${data.course} na instituição ${data.college}, com meta de atingir ${data.targetScore || 900} pontos no ENEM.`
+            : `O candidato tem como objetivo alcançar ${data.targetScore || 900} pontos no ENEM.`;
 
         const result = await generateObject({
           model: google("gemini-2.5-flash"),
           schema: CorrectionSchema,
-          prompt: `Você é um corretor experiente e justo da banca do ENEM (INEP). ${goalContext}
+          prompt: `Você é um avaliador oficial da banca examinadora de redação do ENEM (INEP).
+Aplique estritamente a Matriz Oficial de Referência para Correção da Redação do ENEM. ${goalContext}
 
-Avalie a redação abaixo pelas cinco competências oficiais com rigor calibrado (notas justas que refletem a régua real do ENEM, sem punir excessivamente pequenos deslizes). Cada competência vale de 0 a 200 pontos (múltiplos de 40: 0, 40, 80, 120, 160 ou 200). A soma das cinco é a nota final de 0 a 1000.
+COMPETÊNCIAS OFICIAIS DO INEP (Pontuação por níveis: 0, 40, 80, 120, 160 ou 200 pontos):
+1. Competência 1: Demonstrar domínio da modalidade escrita formal da língua portuguesa.
+   - Nível 5 (200): Excelente estrutura sintática e no máximo dois desvios leves tolerados.
+   - Nível 4 (160): Boa estrutura sintática e poucos desvios gramaticais.
+   - Nível 3 (120): Domínio mediano da modalidade escrita formal.
+   - Nível 2 (80): Domínio insuficiente, com muitos desvios.
+   - Nível 1 (40): Domínio precário da norma culta.
+   - Nível 0 (0): Desconhecimento da norma culta formal.
 
-CRITÉRIOS OFICIAIS DO ENEM:
-- C1: Norma culta padrão (pequenos desvios isolados não impedem 160 ou 200).
-- C2: Compreensão da proposta dissertativa e repertório sociocultural legitimado e produtivo.
-- C3: Projeto de texto e argumentação coerente em defesa de um ponto de vista.
-- C4: Coesão textual (conectivos interparágrafos e intraparágrafos).
-- C5: Proposta de intervenção social com os 5 elementos (Agente, Ação, Meio/Modo, Finalidade e Detalhamento) — 40 pontos por elemento presente.
+2. Competência 2: Compreender a proposta e aplicar conceitos das várias áreas do conhecimento em texto dissertativo-argumentativo em prosa.
+   - Nível 5 (200): Repertório sociocultural legitimado, pertinente e com uso produtivo articulado à tese em 4 parágrafos.
+   - Nível 4 (160): Repertório legitimado e pertinente, mas com uso pontual / pouco produtivo.
+   - Nível 3 (120): Abordagem completa porém presa ao senso comum (sem repertório legitimado externo).
+   - Nível 2 (80): Cópia dos motivadores ou estrutura insuficiente.
+   - Nível 1 (40): Tangenciamento do tema.
+   - Nível 0 (0): Fuga total ao tema ou tipo textual não dissertativo.
 
-DIRETRIZES:
-- Mantenha um tom pedagógico, motivador e claro.
-- Aponte pontos fortes concretos e orientações práticas para atingir os 1000 pontos.
-- Extraia trechos literais do texto para as anotações ('acerto' ou 'erro').
+3. Competência 3: Selecionar, relacionar, organizar e interpretar informações em defesa de um ponto de vista.
+   - Nível 5 (200): Projeto de texto consistente, sem lacunas argumentativas e com autoria crítica.
+   - Nível 4 (160): Projeto de texto com poucas falhas de desdobramento.
+   - Nível 3 (120): Argumentação previsível ou predominantemente expositiva.
+   - Nível 2 (80): Projeto de texto frágil com muitas lacunas ou contradições.
 
-REDAÇÃO:
+4. Competência 4: Demonstrar conhecimento dos mecanismos linguísticos para construção da argumentação.
+   - Nível 5 (200): Conectivos interparágrafos canônicos em ao menos duas transições e ampla diversidade de conectivos intraparágrafos sem repetições mecânicas.
+   - Nível 4 (160): Conectivos interparágrafos presentes e coesão intraparágrafo satisfatória.
+   - Nível 3 (120): Ausência de interparágrafos ou repetições vocabulares evidentes.
+   - Nível 2 (80): Coesão precária com períodos justapostos.
+
+5. Competência 5: Proposta de intervenção social respeitando os direitos humanos (40 pontos por elemento):
+   - 5 elementos válidos (Agente, Ação, Meio/Modo, Efeito e Detalhamento) = 200 (Nível 5)
+   - 4 elementos = 160 (Nível 4)
+   - 3 elementos = 120 (Nível 3)
+   - 2 elementos = 80 (Nível 2)
+   - 1 elemento = 40 (Nível 1)
+   - 0 elementos = 0 (Nível 0)
+
+Preencha rigorosamente os campos 'score', 'level' (0 a 5), 'descriptor' (o texto oficial da matriz do INEP) e 'feedback' (seu parecer técnico fundamentado de fiscal do ENEM) para cada uma das 5 competências. Indique no 'c5Elements' cada um dos 5 elementos da intervenção.
+
+TEXTO DO PARTICIPANTE:
 ${data.essay}`,
         });
 
         if (result?.object) return result.object;
       } catch (err: unknown) {
-        console.warn("[correctEssay] Gemini API indisponível. Usando motor pedagógico ENEM calibrado:", err instanceof Error ? err.message : err);
+        console.warn("[correctEssay] Gemini API indisponível. Usando motor oficial ENEM calibrado:", err instanceof Error ? err.message : err);
       }
     }
 

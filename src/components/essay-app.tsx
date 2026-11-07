@@ -1265,78 +1265,248 @@ function HighlightedText({ text, annotations }: { text: string; annotations: Cor
 
 function Feedback({ result, text, onBack }: { result: Correction; text: string; onBack: () => void }) {
   const score = Math.max(0, Math.min(1000, Math.round(result.score)));
+  const [expandedComp, setExpandedComp] = useState<number | null>(null);
+
+  const getScoreVerdict = (pts: number) => {
+    if (pts >= 960) return { label: "Excelente! Nível Nota 1000", color: "text-emerald-500" };
+    if (pts >= 880) return { label: "Muito Bom! Padrão Competitivo", color: "text-blue-500" };
+    if (pts >= 720) return { label: "Bom Desempenho! Potencial de Avanço", color: "text-primary" };
+    if (pts >= 560) return { label: "Regular! Na Média Nacional", color: "text-amber-500" };
+    return { label: "Em Desenvolvimento! Foco na Estrutura", color: "text-rose-500" };
+  };
+
+  const verdict = getScoreVerdict(score);
+
   return (
     <>
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-        <PageTitle eyebrow="Correção concluída" title="Seu feedback personalizado" description="Use os comentários como um mapa para a próxima versão do seu texto." />
+        <div>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20 mb-2">
+            <Sparkles className="size-3.5" /> Espelho Oficial de Correção · Matriz INEP
+          </div>
+          <PageTitle
+            eyebrow="Resultado da Avaliação"
+            title="Parecer Técnico da Banca Examinadora"
+            description="Avaliação estruturada segundo as 5 competências oficiais da Matriz de Referência do ENEM."
+          />
+        </div>
         <Button variant="outline" onClick={onBack} className="rounded-xl">Voltar ao texto</Button>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
         {/* Lado Esquerdo: Texto Grifado */}
         <div className="rounded-xl border border-border bg-card p-6 shadow-sm h-fit sticky top-24">
-          <h2 className="text-xl font-bold mb-4">Sua Redação</h2>
-          <div className="text-base text-foreground/90 bg-accent/30 p-5 rounded-lg border border-border/50">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold">Texto Avaliado</h2>
+            <span className="text-xs text-muted-foreground font-medium">
+              {text.trim().split(/\s+/).filter(Boolean).length} palavras
+            </span>
+          </div>
+          <div className="text-base text-foreground/90 bg-accent/30 p-5 rounded-lg border border-border/50 max-h-[70vh] overflow-y-auto">
             <HighlightedText text={text} annotations={result.annotations} />
           </div>
-          <div className="mt-6 flex flex-wrap gap-4 text-sm font-semibold">
-            <span className="flex items-center gap-2"><div className="size-3 rounded-full bg-success"></div> Acertos</span>
-            <span className="flex items-center gap-2"><div className="size-3 rounded-full bg-highlight"></div> Pontos de Melhoria</span>
+          <div className="mt-5 flex flex-wrap gap-4 text-xs sm:text-sm font-semibold">
+            <span className="flex items-center gap-2"><div className="size-3 rounded-full bg-success"></div> Acertos (Repertório / Conectivos)</span>
+            <span className="flex items-center gap-2"><div className="size-3 rounded-full bg-highlight"></div> Desvios Gramaticais / Melhorias</span>
           </div>
         </div>
 
         {/* Lado Direito: Feedback */}
         <div className="space-y-6">
-          <div className="grid gap-6 sm:grid-cols-[1fr_1.5fr]">
-            <div className="rounded-xl border border-border bg-card p-7 text-center shadow-sm">
-              <div className="mx-auto grid size-32 sm:size-40 place-items-center rounded-full border-[10px] sm:border-[14px] border-primary bg-accent">
+          {/* Card de Pontuação Total */}
+          <div className="grid gap-6 sm:grid-cols-[1fr_1.4fr]">
+            <div className="rounded-xl border border-border bg-card p-6 text-center shadow-sm flex flex-col items-center justify-center">
+              <div className="grid size-32 sm:size-36 place-items-center rounded-full border-[10px] sm:border-[12px] border-primary bg-accent/40 shadow-inner">
                 <div>
-                  <strong className="text-4xl sm:text-5xl text-primary">{score}</strong>
-                  <span className="block text-xs sm:text-sm text-muted-foreground">de 1000</span>
+                  <strong className="text-4xl sm:text-5xl font-black text-primary tracking-tight">{score}</strong>
+                  <span className="block text-xs font-semibold text-muted-foreground mt-0.5">de 1000</span>
                 </div>
               </div>
-              <h2 className="mt-6 text-lg sm:text-xl font-bold">Ótimo avanço!</h2>
+              <h3 className={`mt-4 text-base font-bold ${verdict.color}`}>{verdict.label}</h3>
+              <p className="text-xs text-muted-foreground mt-1">Correção calibrada pela régua dos fiscais do ENEM</p>
             </div>
             
+            {/* Resumo Rápido das 5 Competências */}
             <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-              <h2 className="text-lg font-bold">Competências</h2>
-              <div className="mt-4 space-y-4">
-                {result.competencies.slice(0,5).map((item,i) => (
-                  <div key={`${item.name}-${i}`}>
-                    <div className="mb-1.5 flex justify-between gap-3 text-xs sm:text-sm">
-                      <span className="font-semibold truncate">C{i+1} · {item.name}</span>
-                      <strong className="text-primary">{Math.round(item.score)}/200</strong>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-base font-bold">Quadro de Competências</h3>
+                <span className="text-xs text-muted-foreground font-medium">INEP (0 a 200)</span>
+              </div>
+              <div className="space-y-3.5">
+                {result.competencies.slice(0, 5).map((item, i) => (
+                  <button
+                    key={`${item.name}-${i}`}
+                    type="button"
+                    onClick={() => setExpandedComp(expandedComp === i ? null : i)}
+                    className="w-full text-left group transition-colors p-1.5 rounded-lg hover:bg-accent/40"
+                  >
+                    <div className="mb-1 flex justify-between gap-3 text-xs sm:text-sm">
+                      <span className="font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+                        {item.name}
+                      </span>
+                      <span className="font-bold shrink-0 text-primary">
+                        {item.score} <span className="text-[10px] text-muted-foreground font-normal">/ 200</span>
+                      </span>
                     </div>
-                    <Progress value={Math.max(0,Math.min(100,item.score/2))} className="h-2" />
-                  </div>
+                    <Progress value={Math.max(0, Math.min(100, (item.score / 200) * 100))} className="h-1.5" />
+                  </button>
                 ))}
               </div>
             </div>
           </div>
 
+          {/* Checklist Exclusivo da Competência 5 (Proposta de Intervenção) */}
+          {result.c5Elements && result.c5Elements.length > 0 && (
+            <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Target className="size-5 text-primary" />
+                  <h3 className="text-base font-bold">Competência 5 · Os 5 Elementos da Intervenção</h3>
+                </div>
+                <span className="text-xs font-bold px-2 py-0.5 rounded bg-primary/10 text-primary">
+                  {result.c5Elements.filter(e => e.found).length}/5 identificados
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mb-4">
+                Na grade oficial do INEP, cada elemento válido confere exatamente 40 pontos na Competência 5.
+              </p>
+              <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                {result.c5Elements.map((el) => (
+                  <div
+                    key={el.name}
+                    className={`p-3 rounded-lg border text-xs flex flex-col justify-between ${
+                      el.found
+                        ? "border-emerald-500/30 bg-emerald-500/5 text-foreground"
+                        : "border-amber-500/30 bg-amber-500/5 text-muted-foreground"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between font-bold mb-1">
+                      <span>{el.name}</span>
+                      {el.found ? (
+                        <span className="text-emerald-600 font-extrabold flex items-center gap-1 text-[11px]">
+                          <CheckCircle2 className="size-3.5" /> +40 pts
+                        </span>
+                      ) : (
+                        <span className="text-amber-600 font-bold flex items-center gap-1 text-[11px]">
+                          <AlertCircle className="size-3.5" /> 0 pts
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] leading-snug line-clamp-2 text-muted-foreground">{el.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Detalhamento das 5 Competências com Descritores Oficiais do INEP */}
+          <div className="rounded-xl border border-border bg-card p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-border/60 pb-3">
+              <h3 className="text-base font-bold">Espelho Analítico da Banca (INEP)</h3>
+              <span className="text-xs text-muted-foreground">Clique para ver o parecer completo</span>
+            </div>
+
+            <div className="space-y-3">
+              {result.competencies.map((comp, idx) => {
+                const isExpanded = expandedComp === idx || expandedComp === null;
+                const levelNum = comp.level ?? Math.round(comp.score / 40);
+                return (
+                  <div key={comp.name} className="border border-border/70 rounded-xl overflow-hidden bg-background/50">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedComp(expandedComp === idx ? -1 : idx)}
+                      className="w-full p-4 flex items-center justify-between text-left hover:bg-accent/30 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary font-black text-xs">
+                          C{idx + 1}
+                        </span>
+                        <div>
+                          <strong className="block text-sm font-bold text-foreground">{comp.name}</strong>
+                          <span className="text-xs text-muted-foreground">
+                            Nível {levelNum} ({comp.score} de 200 pontos)
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs px-2.5 py-1 rounded-md font-bold ${
+                          comp.score >= 160 ? "bg-emerald-500/10 text-emerald-600" :
+                          comp.score >= 120 ? "bg-blue-500/10 text-blue-600" :
+                          "bg-amber-500/10 text-amber-600"
+                        }`}>
+                          {comp.score} pts
+                        </span>
+                        <ChevronRight className={`size-4 text-muted-foreground transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`} />
+                      </div>
+                    </button>
+
+                    {isExpanded && (
+                      <div className="p-4 pt-1 border-t border-border/40 text-xs sm:text-sm space-y-2.5 bg-card/40">
+                        {comp.descriptor && (
+                          <div className="p-2.5 rounded-lg bg-accent/40 border border-border/40">
+                            <span className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                              Descritor Oficial da Matriz INEP (Nível {levelNum}):
+                            </span>
+                            <p className="italic text-foreground/90 leading-relaxed text-xs">
+                              “{comp.descriptor}”
+                            </p>
+                          </div>
+                        )}
+                        <div>
+                          <span className="block text-[11px] font-bold text-primary uppercase tracking-wider mb-1">
+                            Parecer do Avaliador:
+                          </span>
+                          <p className="text-foreground leading-relaxed">
+                            {comp.feedback}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* O que está excelente vs O que precisa melhorar */}
           <div className="grid gap-6 sm:grid-cols-2">
             <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-              <h2 className="flex items-center gap-2 text-base font-bold text-success"><CheckCircle2 className="size-5" /> O que está excelente</h2>
-              <ul className="mt-4 space-y-3">
-                {result.strengths.map((item) => <li key={item} className="flex gap-2 text-sm leading-6"><CheckCircle2 className="mt-1 size-4 shrink-0 text-success" />{item}</li>)}
+              <h3 className="flex items-center gap-2 text-base font-bold text-success mb-3">
+                <CheckCircle2 className="size-5" /> Pontos Fortes Concretos
+              </h3>
+              <ul className="space-y-2.5">
+                {result.strengths.map((item) => (
+                  <li key={item} className="flex gap-2 text-xs sm:text-sm leading-relaxed text-foreground/90">
+                    <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" />
+                    <span>{item}</span>
+                  </li>
+                ))}
               </ul>
             </div>
             <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-              <h2 className="flex items-center gap-2 text-base font-bold text-highlight"><AlertCircle className="size-5" /> O que precisa melhorar</h2>
-              <ul className="mt-4 space-y-3">
-                {result.improvements.map((item) => <li key={item} className="flex gap-2 text-sm leading-6"><AlertCircle className="mt-1 size-4 shrink-0 text-highlight" />{item}</li>)}
+              <h3 className="flex items-center gap-2 text-base font-bold text-highlight mb-3">
+                <AlertCircle className="size-5" /> Recomendações Prioritárias
+              </h3>
+              <ul className="space-y-2.5">
+                {result.improvements.map((item) => (
+                  <li key={item} className="flex gap-2 text-xs sm:text-sm leading-relaxed text-foreground/90">
+                    <AlertCircle className="mt-0.5 size-4 shrink-0 text-highlight" />
+                    <span>{item}</span>
+                  </li>
+                ))}
               </ul>
             </div>
           </div>
 
+          {/* Intervenções no Texto */}
           {result.annotations.length > 0 && (
             <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-              <h2 className="text-lg font-bold">Intervenções no seu texto</h2>
-              <div className="mt-5 space-y-4">
+              <h3 className="text-base font-bold mb-4">Apontamentos Pontuais no Texto</h3>
+              <div className="space-y-3.5">
                 {result.annotations.map((item) => (
                   <div key={item.excerpt} className={`rounded-lg border-l-4 p-4 ${item.type === 'acerto' ? 'border-success bg-success/10' : 'border-highlight bg-highlight/10'}`}>
-                    <p className="font-medium text-sm italic">“{item.excerpt}”</p>
-                    <p className={`mt-2 text-sm font-medium ${item.type === 'acerto' ? 'text-success' : 'text-highlight'}`}>
+                    <p className="font-semibold text-xs sm:text-sm italic">“{item.excerpt}”</p>
+                    <p className={`mt-2 text-xs sm:text-sm font-medium ${item.type === 'acerto' ? 'text-success' : 'text-highlight'}`}>
                       <Sparkles className="mr-1.5 inline size-4" />{item.suggestion}
                     </p>
                   </div>
