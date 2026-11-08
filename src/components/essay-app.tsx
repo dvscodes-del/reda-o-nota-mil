@@ -320,7 +320,7 @@ export function EssayApp() {
   const navigate = useNavigate();
   const { preferences, isLoading: isPrefsLoading } = useUserPreferences();
   const { saveEssay } = useEssays();
-  const { unreadCount, refreshNotifications } = useNotifications();
+  const { unreadCount, refreshNotifications, sendCustomDeviceNotification } = useNotifications();
 
   useEffect(() => {
     if (isLoading || (user && isPrefsLoading)) return;
@@ -374,6 +374,11 @@ export function EssayApp() {
           annotations: correction.annotations,
         });
         await refreshNotifications();
+        sendCustomDeviceNotification({
+          title: "🎉 Redação Corrigida!",
+          body: `Nota ${correction.score}/1000 no tema "${currentThemeItem.topic}". Toque para ver os pontos fortes e melhorias!`,
+          url: "/?section=laboratorio",
+        });
       }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Não foi possível corrigir agora. Tente novamente em instantes.");
