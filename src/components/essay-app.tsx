@@ -75,7 +75,6 @@ type Correction = Awaited<ReturnType<typeof correctEssay>>;
 const navItems = [
   { id: "dashboard" as const, label: "Visão geral", icon: LayoutDashboard },
   { id: "perfil" as const, label: "Meu Perfil", icon: User },
-  { id: "notificacoes" as const, label: "Notificações", icon: Bell },
   { id: "mensagens" as const, label: "Mensagens", icon: MessageCircle },
   { id: "curso" as const, label: "Seu Curso", icon: TrendingUp },
   { id: "mural" as const, label: "Mural nota mil", icon: Award },
@@ -397,38 +396,21 @@ export function EssayApp() {
             <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMobileOpen(false)} aria-label="Fechar menu"><X /></Button>
           </div>
           <nav className="space-y-1.5 flex-1" aria-label="Navegação principal">
-            {navItems.map((item) => {
-              const isNotifs = item.id === "notificacoes";
-              const hasUnread = isNotifs && unreadCount > 0;
-              return (
-                <Button
-                  key={item.id}
-                  variant="ghost"
-                  onClick={() => goTo(item.id)}
-                  className={`h-11 w-full justify-between rounded-xl px-3 ${
-                    section === item.id
-                      ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  <span className="flex items-center">
-                    <item.icon className="mr-2 size-4" />
-                    {item.label}
-                  </span>
-                  {hasUnread && (
-                    <span
-                      className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${
-                        section === item.id
-                          ? "bg-primary-foreground text-primary"
-                          : "bg-primary text-primary-foreground animate-pulse"
-                      }`}
-                    >
-                      {unreadCount > 99 ? "99+" : unreadCount}
-                    </span>
-                  )}
-                </Button>
-              );
-            })}
+            {navItems.map((item) => (
+              <Button
+                key={item.id}
+                variant="ghost"
+                onClick={() => goTo(item.id)}
+                className={`h-11 w-full justify-start rounded-xl px-3 ${
+                  section === item.id
+                    ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+                    : "text-muted-foreground"
+                }`}
+              >
+                <item.icon className="mr-2 size-4" />
+                {item.label}
+              </Button>
+            ))}
           </nav>
           <div className="mt-auto space-y-4">
             <div className="rounded-xl bg-sidebar-accent p-4">
@@ -454,12 +436,12 @@ export function EssayApp() {
               onClick={() => goTo("notificacoes")}
               className={`relative rounded-full text-muted-foreground hover:text-foreground ${section === "notificacoes" ? "bg-accent text-primary" : ""}`}
               aria-label="Abrir notificações"
+              title="Notificações"
             >
               <Bell className="size-5" />
               {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 flex size-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                  <span className="relative inline-flex rounded-full size-2.5 bg-primary"></span>
+                <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground shadow">
+                  {unreadCount > 99 ? '99+' : unreadCount}
                 </span>
               )}
             </Button>
