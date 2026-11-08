@@ -1,6 +1,8 @@
 import constituicaoImage from "@/assets/repertorio-constituicao.jpg";
 import geografiaImage from "@/assets/repertorio-geografia.jpg";
 import cinemaImage from "@/assets/repertorio-cinema.jpg";
+import estacaoCarandiruImage from "@/assets/repertorio-estacao-carandiru.jpg";
+import massacreCarandiruImage from "@/assets/repertorio-massacre-carandiru.jpg";
 
 export interface ThemeMediaInfo {
   themeImage: string;
@@ -76,9 +78,9 @@ export const THEME_MEDIA: Record<number, ThemeMediaInfo> = {
     themeAccent: "from-slate-700/90 to-zinc-950/90",
     repertoryImages: {
       "Lei de Execução Penal": constituicaoImage,
-      "Estação Carandiru": "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80",
+      "Estação Carandiru": estacaoCarandiruImage,
       "Vigiar e Punir": "https://images.unsplash.com/photo-1457369804613-52c61a468e7d?auto=format&fit=crop&w=800&q=80",
-      "Massacre do Carandiru": "https://images.unsplash.com/photo-1577495508048-b635879837f1?auto=format&fit=crop&w=800&q=80",
+      "Massacre do Carandiru": massacreCarandiruImage,
       "A 13ª Emenda": cinemaImage,
     },
   },
@@ -206,3 +208,4 @@ export function getRepertoryImage(day: number, title: string, category: string):
   }
   return theme ? theme.themeImage : constituicaoImage;
 }
+

@@ -298,7 +298,7 @@ function avaliarC2(text: string, paragraphs: string[], wordCount: number): {
   const found: { label: string; excerpt: string; weight: number }[] = [];
   for (const r of repRules) {
     const m = [...text.matchAll(new RegExp(r.rgx.source, "gi"))];
-    if (m.length > 0 && m[0].index !== undefined) {
+    if (m.length > 0 && m[0] && m[0].index !== undefined) {
       found.push({
         label: r.label,
         excerpt: excerptAround(text, m[0].index, m[0][0].length, 40),
@@ -424,7 +424,7 @@ function avaliarC4(text: string, paragraphs: string[], wordCount: number): {
 
   let interMatches = 0;
   for (let i = 1; i < paragraphs.length; i++) {
-    const p = paragraphs[i].trim();
+    const p = (paragraphs[i] || "").trim();
     if (interParagraphConnectors.some(rgx => rgx.test(p))) {
       interMatches++;
     }
@@ -591,7 +591,7 @@ export function evaluateCompetencyHeuristically(
     if (r1.syntaxIssues.length === 0) {
       strengths.push("Estrutura sintática adequada, respeitando a regência e concordância padrão.");
     }
-    if (r1.informalFound.length > 0) {
+    if (r1.informalFound.length > 0 && r1.informalFound[0]) {
       tips.push(`Evite termos coloquiais: substitua "${r1.informalFound[0].excerpt}" por termos mais formais.`);
     }
     if (tips.length === 0) {
@@ -615,7 +615,7 @@ export function evaluateCompetencyHeuristically(
     const strengths: string[] = [];
     const tips: string[] = [];
 
-    if (hasNominal) {
+    if (hasNominal && r2.repertoireFound[0]) {
       strengths.push(`Repertório legitimado identificado com sucesso: ${r2.repertoireFound[0].label}.`);
       strengths.push("Boa aplicação do repertório em diálogo com a proposta.");
       tips.push("Lembre-se sempre de interpretar o repertório, amarrando-o diretamente à sua tese.");
@@ -627,7 +627,7 @@ export function evaluateCompetencyHeuristically(
     return {
       score,
       status,
-      feedback: hasNominal
+      feedback: hasNominal && r2.repertoireFound[0]
         ? `Excelente aplicação de repertório sociocultural legitimado (${r2.repertoireFound[0].label}) voltado ao tema!`
         : "Bom desenvolvimento da ideia, porém o repertório ainda permanece restrito ao senso comum. Adicione uma autoridade externa.",
       strengths,
@@ -775,7 +775,7 @@ export function evaluateEssayHeuristically(
   }
 
   // Acerto de repertório
-  if (r2.repertoireFound.length > 0) {
+  if (r2.repertoireFound.length > 0 && r2.repertoireFound[0]) {
     annotations.push({
       excerpt: r2.repertoireFound[0].excerpt,
       suggestion: `${r2.repertoireFound[0].label}: repertório pertinente que enriquece a fundamentação da tese (Competência 2).`,
@@ -785,7 +785,7 @@ export function evaluateEssayHeuristically(
 
   // Acerto de conectivo em D2
   if (paragraphs.length >= 3) {
-    const d2Conn = findLiteralExcerpt(paragraphs[2], /^(ademais|outrossim|além disso|por outro lado|em segundo lugar)/i);
+    const d2Conn = findLiteralExcerpt(paragraphs[2] || "", /^(ademais|outrossim|além disso|por outro lado|em segundo lugar)/i);
     if (d2Conn) {
       annotations.push({
         excerpt: d2Conn,
@@ -796,7 +796,7 @@ export function evaluateEssayHeuristically(
   }
 
   // Erro de termo informal
-  if (r1.informalFound.length > 0) {
+  if (r1.informalFound.length > 0 && r1.informalFound[0]) {
     annotations.push({
       excerpt: r1.informalFound[0].excerpt,
       suggestion: `Substitua a expressão informal por uma opção mais adequada à norma padrão, como "${r1.informalFound[0].fix}" (Competência 1).`,
@@ -821,9 +821,9 @@ export function evaluateEssayHeuristically(
   const buildCompetency = (id: "C1" | "C2" | "C3" | "C4" | "C5", score: number, technicalFeedback: string) => {
     const meta = INEP_MATRIX[id];
     const level = Math.max(0, Math.min(5, Math.round(score / 40)));
-    const descriptor = meta.levels[score] || meta.levels[0];
+    const descriptor = (meta && meta.levels[score]) || (meta && meta.levels[0]) || "";
     return {
-      name: `${id} · ${meta.shortName}`,
+      name: `${id} · ${meta ? meta.shortName : ""}`,
       score,
       level,
       descriptor,
@@ -921,8 +921,8 @@ ${data.essay}`,
 
     // Motor pedagógico ENEM calibrado
     return evaluateEssayHeuristically(data.essay, {
-      course: data.course,
-      college: data.college,
-      targetScore: data.targetScore,
+      ...(data.course ? { course: data.course } : {}),
+      ...(data.college ? { college: data.college } : {}),
+      ...(data.targetScore ? { targetScore: data.targetScore } : {}),
     });
   });
