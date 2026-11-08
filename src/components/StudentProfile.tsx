@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { 
   Search, Award, MapPin, Calendar, Target, UserPlus, 
   MessageCircle, Medal, BrainCircuit, BookOpen, Flame, 
-  FileText, ArrowRight, CheckCircle2, Camera, Trash2, Loader2
+  FileText, ArrowRight, CheckCircle2, Camera, Trash2, Loader2,
+  ArrowLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
@@ -28,11 +29,15 @@ type ExtendedProfile = Profile & {
 export function StudentProfile({ 
   onOpen, 
   goTo,
-  onStartChat
+  onStartChat,
+  targetProfile,
+  onBackToMyProfile,
 }: { 
   onOpen: (essay: any) => void;
   goTo: (section: string) => void;
   onStartChat: (profile: any) => void;
+  targetProfile?: any | null;
+  onBackToMyProfile?: () => void;
 }) {
   const { preferences, updateAvatar } = useUserPreferences();
   const { user } = useAuth();
@@ -45,34 +50,100 @@ export function StudentProfile({
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Inicializa o perfil visualizado como o próprio usuário se nada estiver selecionado
-  useEffect(() => {
-    if (user && !viewingProfile) {
-      setViewingProfile({
-        id: user.id,
-        name: preferences?.full_name || (user.user_metadata?.['name'] as string | undefined) || user.email?.split('@')[0] || "Estudante",
-        avatar_url: preferences?.avatar_url || (user.user_metadata?.['avatar_url'] as string | undefined) || null,
-        email: user.email || null,
-        course: preferences?.course || "Curso Desejado",
-        college: preferences?.college || "Universidade",
-        age: preferences?.age || null,
-        gender: preferences?.gender || (user.user_metadata?.['gender'] as string | undefined) || null,
-        state: preferences?.state || "SP"
-      });
-      
-      const fetchMyFollowers = async () => {
-        const { count } = await supabase
-          .from('follows')
-          .select('*', { count: 'exact', head: true })
-          .eq('following_id', user.id);
-        setFollowersCount(count || 0);
-      };
-      fetchMyFollowers();
-    } else if (user && viewingProfile && viewingProfile.id === user.id && preferences?.avatar_url !== viewingProfile.avatar_url) {
-      // Sincroniza avatar se o preferences mudar
-      setViewingProfile(prev => prev ? { ...prev, avatar_url: preferences?.avatar_url || null } : null);
+  // Carrega meu próprio perfil
+  const loadMyProfile = useCallback(async () => {
+    if (!user) return;
+    setViewingProfile({
+      id: user.id,
+      name: preferences?.full_name || (user.user_metadata?.['name'] as string | undefined) || user.email?.split('@')[0] || "Estudante",
+      avatar_url: preferences?.avatar_url || (user.user_metadata?.['avatar_url'] as string | undefined) || null,
+      email: user.email || null,
+      course: preferences?.course || "Curso Desejado",
+      college: preferences?.college || "Universidade",
+      age: preferences?.age || null,
+      gender: preferences?.gender || (user.user_metadata?.['gender'] as string | undefined) || null,
+      state: preferences?.state || "SP"
+    });
+    
+    try {
+      const { count } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('following_id', user.id);
+      setFollowersCount(count || 0);
+    } catch {
+      // ignore
     }
-  }, [user, preferences, viewingProfile]);
+  }, [user, preferences]);
+
+  // Carrega perfil de outro estudante
+  const loadTargetStudent = useCallback(async (target: any) => {
+    if (!target) return;
+    if (user && target.id === user.id) {
+      loadMyProfile();
+      return;
+    }
+
+    setViewingProfile({
+      id: target.id,
+      name: target.name || target.full_name || "Estudante",
+      avatar_url: target.avatar || target.avatar_url || null,
+      email: target.email || null,
+      course: target.course || "Não informado",
+      college: target.college || "Não informado",
+      age: target.age || null,
+      gender: target.gender || null,
+      state: target.state || "Não informado"
+    });
+
+    try {
+      const { data: dbProfile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", target.id)
+        .maybeSingle();
+
+      if (dbProfile) {
+        setViewingProfile({
+          id: dbProfile.id,
+          name: dbProfile.full_name || target.name || "Estudante",
+          avatar_url: dbProfile.avatar_url || target.avatar || null,
+          email: null,
+          course: dbProfile.course || "Vestibulando",
+          college: dbProfile.college || "Universidade",
+          age: dbProfile.age || null,
+          gender: null,
+          state: dbProfile.state || "SP"
+        });
+      }
+
+      const { count } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('following_id', target.id);
+      setFollowersCount(count || 0);
+
+      if (user) {
+        const { data: followRel } = await supabase
+          .from('follows')
+          .select('id')
+          .eq('follower_id', user.id)
+          .eq('following_id', target.id)
+          .maybeSingle();
+        setIsFollowing(!!followRel);
+      }
+    } catch {
+      // ignore
+    }
+  }, [user, loadMyProfile]);
+
+  useEffect(() => {
+    if (targetProfile) {
+      loadTargetStudent(targetProfile);
+    } else {
+      loadMyProfile();
+    }
+  }, [targetProfile, loadTargetStudent, loadMyProfile]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -226,6 +297,21 @@ export function StudentProfile({
 
   return (
     <>
+      {!isOwnProfile && (
+        <div className="mb-4 flex items-center justify-between">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onBackToMyProfile ? onBackToMyProfile() : goTo("perfil")}
+            className="gap-2 text-muted-foreground hover:text-foreground cursor-pointer"
+          >
+            <ArrowLeft className="size-4" />
+            <span>Voltar ao meu perfil</span>
+          </Button>
+          <span className="text-xs text-muted-foreground font-medium">Visualizando perfil da comunidade</span>
+        </div>
+      )}
+
       <div className="mb-8 relative z-50">
         <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-2 shadow-sm">
           <div className="flex flex-1 items-center gap-2 px-3 text-muted-foreground">

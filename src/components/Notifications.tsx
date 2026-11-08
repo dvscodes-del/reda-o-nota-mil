@@ -12,7 +12,10 @@ import {
   Clock, 
   Award,
   BellOff,
-  Filter
+  Filter,
+  Smartphone,
+  CheckCircle2,
+  AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -51,10 +54,24 @@ export function Notifications({ goTo, onStartChat, onOpenEssay }: NotificationsP
     unreadCount, 
     markAsRead, 
     markAllAsRead, 
-    clearNotification 
+    clearNotification,
+    devicePermission,
+    isDeviceSupported,
+    requestDevicePermission,
+    testDeviceNotification
   } = useNotifications();
 
   const [activeFilter, setActiveFilter] = useState<"all" | NotificationType>("all");
+  const [testingNotification, setTestingNotification] = useState(false);
+
+  const handleTest = async () => {
+    setTestingNotification(true);
+    try {
+      await testDeviceNotification();
+    } finally {
+      setTestingNotification(false);
+    }
+  };
 
   const filteredNotifications = notifications.filter((notif) => {
     if (activeFilter === "all") return true;
@@ -125,6 +142,78 @@ export function Notifications({ goTo, onStartChat, onOpenEssay }: NotificationsP
           </Button>
         )}
       </div>
+
+      {/* Banner de Notificações no Eletrônico (Dispositivo) */}
+      {isDeviceSupported && (
+        <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-accent/30 to-background p-5 shadow-sm">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3.5">
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+                <Smartphone className="size-5" />
+              </span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-foreground">Avisos no seu celular e computador</h3>
+                  {devicePermission === "granted" ? (
+                    <Badge variant="outline" className="border-success/30 bg-success/10 text-success text-[11px] gap-1">
+                      <CheckCircle2 className="size-3" /> Ativado
+                    </Badge>
+                  ) : devicePermission === "denied" ? (
+                    <Badge variant="outline" className="border-destructive/30 bg-destructive/10 text-destructive text-[11px] gap-1">
+                      <AlertTriangle className="size-3" /> Bloqueado
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="border-amber-500/30 bg-amber-500/10 text-amber-600 text-[11px]">
+                      Pendente
+                    </Badge>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground leading-relaxed max-w-xl">
+                  {devicePermission === "granted"
+                    ? "Tudo pronto! Novas mensagens e avisos aparecerão diretamente na central de notificações do seu aparelho eletrônico."
+                    : devicePermission === "denied"
+                    ? "As notificações foram bloqueadas no navegador. Para receber no seu celular ou computador, libere no ícone de cadeado da barra de endereço."
+                    : "Ative para receber mensagens de outros estudantes e avisos de correções de redação direto no seu aparelho mesmo com o site em segundo plano."}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0 sm:self-center">
+              {devicePermission === "granted" ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleTest}
+                  disabled={testingNotification}
+                  className="rounded-xl border-border bg-card hover:bg-accent text-xs h-9 gap-1.5"
+                >
+                  <Bell className="size-3.5 text-primary" />
+                  {testingNotification ? "Enviando..." : "Testar no aparelho"}
+                </Button>
+              ) : devicePermission === "denied" ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => requestDevicePermission()}
+                  className="rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 text-xs h-9 gap-1.5"
+                >
+                  <AlertTriangle className="size-3.5" />
+                  Como desbloquear
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={() => requestDevicePermission()}
+                  className="rounded-xl text-xs h-9 gap-1.5 shadow-sm"
+                >
+                  <Bell className="size-3.5" />
+                  Ativar no aparelho
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filter Tabs */}
       <div className="flex flex-wrap gap-2 border-b border-border pb-3">
