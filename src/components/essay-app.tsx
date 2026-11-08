@@ -344,8 +344,45 @@ export function EssayApp() {
   const { user, signOut, isLoading } = useAuth();
   const navigate = useNavigate();
   const { preferences, isLoading: isPrefsLoading } = useUserPreferences();
-  const { saveEssay } = useEssays();
-  const { unreadCount, refreshNotifications } = useNotifications();
+  const { saveEssay, essays } = useEssays();
+  const { unreadCount, refreshNotifications, notifications, sendCustomDeviceNotification } = useNotifications();
+
+  const unreadMessagesCount = useMemo(() => {
+    return notifications?.filter((n) => n.type === "message" && !n.isRead).length || 0;
+  }, [notifications]);
+
+  const unreadNotifsCount = useMemo(() => {
+    return notifications?.filter((n) => n.type !== "message" && !n.isRead).length || 0;
+  }, [notifications]);
+
+  const streakDays = useMemo(() => {
+    if (!essays || essays.length === 0) return 0;
+    const dates = new Set(
+      essays.map((e) => new Date(e.created_at).toISOString().split("T")[0])
+    );
+    let streak = 0;
+    const checkDate = new Date();
+    const todayStr = checkDate.toISOString().split("T")[0];
+
+    if (!dates.has(todayStr)) {
+      checkDate.setDate(checkDate.getDate() - 1);
+      const yesterdayStr = checkDate.toISOString().split("T")[0];
+      if (!dates.has(yesterdayStr)) {
+        return 0;
+      }
+    }
+
+    while (true) {
+      const dStr = checkDate.toISOString().split("T")[0];
+      if (dates.has(dStr)) {
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+    return streak;
+  }, [essays]);
 
   useEffect(() => {
     if (isLoading || (user && isPrefsLoading)) return;
