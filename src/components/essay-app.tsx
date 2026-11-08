@@ -52,6 +52,15 @@ import {
   ChevronRight,
   Pause,
   Swords,
+  Copy,
+  Check,
+  Scale,
+  Film,
+  Tv,
+  Video,
+  Landmark,
+  Music,
+  Brain,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -67,6 +76,7 @@ import { correctEssay } from "@/lib/essay.functions";
 import constituicaoImage from "@/assets/repertorio-constituicao.jpg";
 import geografiaImage from "@/assets/repertorio-geografia.jpg";
 import cinemaImage from "@/assets/repertorio-cinema.jpg";
+import { getThemeMedia, getRepertoryImage } from "@/data/theme-media";
 
 type Section = "dashboard" | "mural" | "competencias" | "repertorio" | "laboratorio" | "curso" | "perfil" | "mensagens" | "notificacoes" | "treinamento" | "arena";
 type Correction = Awaited<ReturnType<typeof correctEssay>>;
@@ -494,7 +504,15 @@ export function EssayApp() {
           {section === "curso" && <CourseTarget goTo={goTo} />}
           {section === "mural" && <Mural onOpen={setSelectedEssay} currentTheme={activeTheme} />}
           {section === "competencias" && <Competencies active={activeCompetency} setActive={setActiveCompetency} currentTheme={activeTheme} />}
-          {section === "repertorio" && <Repertory filter={filter} setFilter={setFilter} currentTheme={activeTheme} />}
+          {section === "repertorio" && (
+            <Repertory
+              filter={filter}
+              setFilter={setFilter}
+              selectedDay={selectedDay}
+              setSelectedDay={setSelectedDay}
+              goTo={goTo}
+            />
+          )}
           {section === "treinamento" && <TrainingSection goTo={goTo} />}
           {section === "laboratorio" && <Laboratory tab={labTab} setTab={setLabTab} text={text} setText={setText} stats={stats} timer={timer} setTimer={setTimer} timerSeconds={timerSeconds} setTimerSeconds={setTimerSeconds} preview={preview} fileRef={fileRef} setPreview={setPreview} correcting={correcting} error={error} handleCorrection={handleCorrection} result={result} setResult={setResult} selectedDay={selectedDay} setSelectedDay={setSelectedDay} />}
         </div>
@@ -753,52 +771,373 @@ function Competencies({ active, setActive, currentTheme }: {
   </>;
 }
 
-function Repertory({ filter, setFilter, currentTheme }: { filter: string; setFilter: (value: string) => void; currentTheme: typeof dailyThemes[number] }) {
-  const filters = ["Todos", "Leis", "Livros", "Filmes", "Séries", "Documentários", "Fatos Históricos", "Citações", "Músicas", "Conceitos"];
+function Repertory({
+  filter,
+  setFilter,
+  selectedDay,
+  setSelectedDay,
+  goTo,
+}: {
+  filter: string;
+  setFilter: (value: string) => void;
+  selectedDay: number;
+  setSelectedDay: (value: number) => void;
+  goTo: (section: Section) => void;
+}) {
+  const currentTheme = dailyThemes[selectedDay] || dailyThemes[0]!;
+  const themeMedia = getThemeMedia(currentTheme.day);
   const [selectedItem, setSelectedItem] = useState<typeof currentTheme.repertories[number] | null>(null);
-  
+  const [copied, setCopied] = useState(false);
+
+  const filters = ["Todos", "Leis", "Livros", "Filmes", "Séries", "Documentários", "Fatos Históricos", "Citações", "Músicas", "Conceitos"];
+
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case "Leis": return Scale;
+      case "Livros": return BookOpen;
+      case "Filmes": return Film;
+      case "Séries": return Tv;
+      case "Documentários": return Video;
+      case "Fatos Históricos": return Landmark;
+      case "Citações": return Quote;
+      case "Músicas": return Music;
+      case "Conceitos": return Brain;
+      default: return Sparkles;
+    }
+  };
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const filteredRepertories = currentTheme.repertories.filter(
+    (item) => filter === "Todos" || item.category === filter
+  );
+
   return (
     <>
-      <PageTitle eyebrow="Banco de ideias" title="Repertório sociocultural" description="Referências legitimadas e explicadas para você usar com pertinência — sem decorar frases soltas." />
-      <div className="mb-6 flex flex-wrap gap-2">
-        {filters.map((item) => (
-          <Button key={item} variant={filter === item ? "default" : "outline"} onClick={() => setFilter(item)} className="rounded-full">
-            {item}
-          </Button>
-        ))}
-      </div>
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {currentTheme.repertories.filter((item) => filter === "Todos" || item.category === filter).map((item) => (
-          <article 
-            key={item.title} 
-            onClick={() => setSelectedItem(item)}
-            className="overflow-hidden rounded-xl border border-border bg-card shadow-sm cursor-pointer hover:border-primary/50 transition-colors"
-          >
-            <div className="p-5">
-              <span className="text-xs font-bold uppercase text-primary">{item.category}</span>
-              <h2 className="mt-2 text-xl font-bold">{item.title}</h2>
-              <p className="mt-1 text-sm font-semibold text-muted-foreground">{item.author}</p>
-              <div className="mt-5 rounded-lg bg-accent p-3 text-xs font-semibold text-primary/80 flex items-center justify-center">
-                Clique para ver detalhes
-              </div>
-            </div>
-          </article>
-        ))}
-      </div>
-      <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">{selectedItem?.title}</DialogTitle>
-            <DialogDescription className="text-sm font-semibold text-primary uppercase tracking-wide">
-              {selectedItem?.category} • {selectedItem?.author}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-sm leading-6 text-foreground">{selectedItem?.body}</p>
-            <div className="mt-5 rounded-lg bg-accent p-3 text-xs text-accent-foreground">
-              <Lightbulb className="mr-1 inline size-4" /> Dica: apresente, relacione e interprete a referência.
+      <PageTitle
+        eyebrow="Banco de ideias nota 1000"
+        title="Repertório Sociocultural por Tema"
+        description="Imagens, referências legitimadas e direcionamento crítico estruturados para você brilhar na Competência 2 e 3 do ENEM."
+      />
+
+      {/* Trilha de Temas com Miniaturas e Imagens */}
+      <div className="mb-8 rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-sm">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="grid size-7 place-items-center rounded-lg bg-primary/10 text-primary">
+              <Sparkles className="size-4" />
+            </span>
+            <div>
+              <h3 className="text-sm font-bold text-foreground">
+                Selecione o Tema da Redação ({dailyThemes.length} temas disponíveis)
+              </h3>
+              <p className="text-xs text-muted-foreground hidden sm:block">
+                Cada tema possui acervo visual exclusivo com leis, livros, filmes e teorias sociológicas
+              </p>
             </div>
           </div>
+          <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+            Tema {currentTheme.day} de {dailyThemes.length}
+          </span>
+        </div>
+
+        <div className="flex gap-3 overflow-x-auto pb-2 pt-1">
+          {dailyThemes.map((theme, idx) => {
+            const media = getThemeMedia(theme.day);
+            const isSelected = selectedDay === idx;
+            return (
+              <button
+                key={theme.day}
+                type="button"
+                onClick={() => {
+                  setSelectedDay(idx);
+                  setFilter("Todos");
+                }}
+                className={`group relative flex-shrink-0 w-44 overflow-hidden rounded-xl border text-left transition-all ${
+                  isSelected
+                    ? "border-primary ring-2 ring-primary/50 shadow-md scale-[1.02] bg-accent/40"
+                    : "border-border hover:border-primary/50 bg-card opacity-85 hover:opacity-100"
+                }`}
+              >
+                <div className="relative h-20 w-full overflow-hidden">
+                  <img
+                    src={media.themeImage}
+                    alt={theme.topic}
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                  <span className="absolute top-1.5 left-1.5 rounded-md bg-black/60 backdrop-blur-xs px-1.5 py-0.5 text-[10px] font-bold text-white">
+                    Dia {theme.day}
+                  </span>
+                  {theme.hot && (
+                    <span className="absolute top-1.5 right-1.5 rounded-md bg-amber-500 px-1.5 py-0.5 text-[9px] font-bold text-white shadow-xs">
+                      🔥 Quente
+                    </span>
+                  )}
+                  <span className="absolute bottom-1.5 left-1.5 right-1.5 text-[10px] font-bold text-white truncate">
+                    {media.themeTag}
+                  </span>
+                </div>
+                <div className="p-2.5">
+                  <p className="text-[11px] font-semibold line-clamp-2 leading-snug text-foreground">
+                    {theme.topic}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Hero Banner do Tema Selecionado com Imagem de Destaque */}
+      <div className="relative mb-8 overflow-hidden rounded-2xl border border-border shadow-lg">
+        <div className="relative min-h-[240px] md:min-h-[280px] w-full">
+          <img
+            src={themeMedia.themeImage}
+            alt={currentTheme.topic}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/75 to-black/35 md:from-black/90 md:via-black/60 md:to-black/30" />
+
+          <div className="relative z-10 flex h-full flex-col justify-between p-6 md:p-8 text-white">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-primary px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary-foreground shadow-xs">
+                Tema {currentTheme.day} de {dailyThemes.length}
+              </span>
+              <span className="rounded-full bg-white/20 backdrop-blur-md px-3 py-1 text-xs font-semibold text-white">
+                {themeMedia.themeTag}
+              </span>
+              {currentTheme.hot && (
+                <span className="rounded-full bg-amber-500/90 backdrop-blur-md px-3 py-1 text-xs font-bold text-white shadow-xs flex items-center gap-1">
+                  <Flame className="size-3.5 fill-white" />
+                  Tema quente ENEM 2025
+                </span>
+              )}
+            </div>
+
+            <div className="my-4 space-y-3">
+              <h2 className="text-xl font-extrabold sm:text-2xl md:text-3xl leading-tight max-w-4xl text-white drop-shadow-sm">
+                "{currentTheme.topic}"
+              </h2>
+              <div className="flex items-start gap-2.5 max-w-3xl rounded-xl bg-white/10 backdrop-blur-md p-3.5 border border-white/15">
+                <Lightbulb className="size-4 shrink-0 text-amber-300 mt-0.5" />
+                <p className="text-xs md:text-sm text-white/95 leading-relaxed">
+                  <strong className="text-white font-semibold">Dica de abordagem:</strong> {currentTheme.hint}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/20">
+              <div className="flex items-center gap-3 text-xs font-medium text-white/80">
+                <span className="flex items-center gap-1.5">
+                  <BookOpen className="size-3.5" />
+                  {currentTheme.repertories.length} referências catalogadas
+                </span>
+                <span>•</span>
+                <span>Ilustradas e comentadas</span>
+              </div>
+              <Button
+                onClick={() => goTo("laboratorio")}
+                size="sm"
+                className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md flex items-center gap-1.5"
+              >
+                <PenLine className="size-4" />
+                Escrever redação deste tema
+                <ArrowRight className="size-3.5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filtros de Categorias com Contadores */}
+      <div className="mb-6 flex flex-wrap gap-2 items-center">
+        <span className="text-xs font-bold text-muted-foreground mr-1 uppercase tracking-wider">
+          Filtrar:
+        </span>
+        {filters.map((cat) => {
+          const count = cat === "Todos"
+            ? currentTheme.repertories.length
+            : currentTheme.repertories.filter((r) => r.category === cat).length;
+          if (cat !== "Todos" && count === 0) return null;
+          const Icon = getCategoryIcon(cat);
+          return (
+            <Button
+              key={cat}
+              variant={filter === cat ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilter(cat)}
+              className="rounded-full text-xs flex items-center gap-1.5 h-8 px-3"
+            >
+              <Icon className="size-3.5" />
+              {cat}
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                  filter === cat
+                    ? "bg-primary-foreground/25 text-primary-foreground"
+                    : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {count}
+              </span>
+            </Button>
+          );
+        })}
+      </div>
+
+      {/* Grid de Cards de Repertório com Imagens Reais */}
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        {filteredRepertories.map((item) => {
+          const itemImage = getRepertoryImage(currentTheme.day, item.title, item.category);
+          const CategoryIcon = getCategoryIcon(item.category);
+          return (
+            <article
+              key={item.title}
+              onClick={() => setSelectedItem(item)}
+              className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm hover:shadow-md hover:border-primary/50 transition-all cursor-pointer flex flex-col"
+            >
+              <div className="relative h-48 w-full overflow-hidden bg-muted">
+                <img
+                  src={itemImage}
+                  alt={item.title}
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+                <div className="absolute top-3 left-3">
+                  <span className="inline-flex items-center gap-1 rounded-lg bg-black/60 backdrop-blur-md px-2.5 py-1 text-xs font-bold text-white border border-white/20 shadow-xs">
+                    <CategoryIcon className="size-3 text-primary" />
+                    {item.category}
+                  </span>
+                </div>
+                <div className="absolute bottom-3 left-3 right-3">
+                  <p className="text-xs font-medium text-white/95 truncate">
+                    Por <strong className="text-white">{item.author}</strong>
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-5 flex-1 flex flex-col justify-between">
+                <div>
+                  <h2 className="text-lg font-bold group-hover:text-primary transition-colors line-clamp-1 text-foreground">
+                    {item.title}
+                  </h2>
+                  <p className="mt-2 text-xs leading-relaxed text-muted-foreground line-clamp-3">
+                    {item.body}
+                  </p>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs font-semibold text-primary">
+                  <span className="flex items-center gap-1.5">
+                    <Sparkles className="size-3.5" />
+                    Ver como citar na redação
+                  </span>
+                  <ChevronRight className="size-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
+      {/* Modal de Detalhes do Repertório */}
+      <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
+        <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto p-0">
+          {selectedItem && (
+            <div>
+              {/* Header com Imagem */}
+              <div className="relative h-56 w-full overflow-hidden bg-muted">
+                <img
+                  src={getRepertoryImage(currentTheme.day, selectedItem.title, selectedItem.category)}
+                  alt={selectedItem.title}
+                  className="h-full w-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+                <div className="absolute bottom-4 left-5 right-5 text-white">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="rounded-md bg-primary px-2.5 py-0.5 text-xs font-bold text-primary-foreground">
+                      {selectedItem.category}
+                    </span>
+                    <span className="rounded-md bg-white/20 backdrop-blur-md px-2.5 py-0.5 text-xs font-medium text-white">
+                      {selectedItem.author}
+                    </span>
+                  </div>
+                  <DialogTitle className="text-xl sm:text-2xl font-extrabold text-white leading-tight">
+                    {selectedItem.title}
+                  </DialogTitle>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-5">
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+                    Fundamentação e Justificativa
+                  </h4>
+                  <p className="text-sm leading-relaxed text-foreground">
+                    {selectedItem.body}
+                  </p>
+                </div>
+
+                {/* Guia Prático: Como Aplicar na Redação */}
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
+                    <Award className="size-4" />
+                    Como aplicar no texto (Estrutura Nota 1000)
+                  </div>
+                  <div className="space-y-2 text-xs text-foreground/90">
+                    <div className="flex gap-2">
+                      <span className="font-bold text-primary shrink-0">1. Apresentar:</span>
+                      <span>Introduza a obra ou lei com precisão contextual, citando o autor ou órgão responsável.</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="font-bold text-primary shrink-0">2. Relacionar:</span>
+                      <span>Faça o elo explícito com a frase temática: <em>"{currentTheme.topic}"</em>.</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="font-bold text-primary shrink-0">3. Interpretar:</span>
+                      <span>Mostre que a realidade brasileira contrasta com o ideal da referência, sustentando sua tese crítica.</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Botões de Ação */}
+                <div className="flex flex-wrap gap-3 pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => handleCopy(`${selectedItem.title} (${selectedItem.author}): ${selectedItem.body}`)}
+                    className="flex-1 rounded-xl flex items-center justify-center gap-2"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="size-4 text-emerald-500" />
+                        <span className="text-emerald-500 font-semibold">Copiado!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="size-4" />
+                        <span>Copiar Repertório</span>
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setSelectedItem(null);
+                      goTo("laboratorio");
+                    }}
+                    className="flex-1 rounded-xl flex items-center justify-center gap-2 bg-primary text-primary-foreground font-semibold shadow-md"
+                  >
+                    <PenLine className="size-4" />
+                    <span>Treinar no Laboratório</span>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </>

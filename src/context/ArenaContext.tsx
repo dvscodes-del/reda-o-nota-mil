@@ -210,7 +210,7 @@ export const ArenaProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         category: data.category,
         description: data.description.trim(),
         context: data.context?.trim() || data.description.trim(),
-        creatorName: preferences?.fullName || user?.email?.split('@')[0] || 'Estudante',
+        creatorName: preferences?.full_name || user?.email?.split('@')[0] || 'Estudante',
         createdAt: new Date().toISOString(),
         totalVotesPro: 0,
         totalVotesAgainst: 0,
@@ -234,17 +234,17 @@ export const ArenaProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         id: `arg-${Date.now()}`,
         topicId: selectedTopicId,
         authorId: user?.id || `user-local-${Date.now()}`,
-        authorName: preferences?.fullName || user?.email?.split('@')[0] || 'Estudante',
+        authorName: preferences?.full_name || user?.email?.split('@')[0] || 'Estudante',
         authorAvatar: preferences?.avatar_url || null,
         side: data.side,
         title: data.title.trim(),
         content: data.content.trim(),
-        repertoireType: data.repertoireType?.trim() || undefined,
-        repertoireDetail: data.repertoireDetail?.trim() || undefined,
         votes: 1, // começa com o próprio voto
         repertoireVotes: data.repertoireType ? 1 : 0,
         replies: [],
         createdAt: new Date().toISOString(),
+        ...(data.repertoireType?.trim() ? { repertoireType: data.repertoireType.trim() } : {}),
+        ...(data.repertoireDetail?.trim() ? { repertoireDetail: data.repertoireDetail.trim() } : {}),
       };
 
       setArgumentsList((prev) => [newArg, ...prev]);
@@ -287,7 +287,7 @@ export const ArenaProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         argumentId,
         topicId: selectedTopicId,
         authorId: user?.id || `user-local-${Date.now()}`,
-        authorName: preferences?.fullName || user?.email?.split('@')[0] || 'Estudante',
+        authorName: preferences?.full_name || user?.email?.split('@')[0] || 'Estudante',
         authorAvatar: preferences?.avatar_url || null,
         side,
         content: content.trim(),

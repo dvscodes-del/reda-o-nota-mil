@@ -100,8 +100,7 @@ export function ArenaOfArguments({ goTo, onStartChat }: ArenaOfArgumentsProps) {
       side: newArgSide,
       title: newArgTitle,
       content: newArgContent,
-      repertoireType: newArgRepDetail.trim() ? newArgRepType : undefined,
-      repertoireDetail: newArgRepDetail.trim() || undefined,
+      ...(newArgRepDetail.trim() ? { repertoireType: newArgRepType, repertoireDetail: newArgRepDetail.trim() } : {}),
     });
 
     setNewArgTitle('');
@@ -518,7 +517,7 @@ export function ArenaOfArguments({ goTo, onStartChat }: ArenaOfArgumentsProps) {
                     isRepVoted={userRepertoireVotes.has(arg.id)}
                     onVote={() => voteArgument(arg.id)}
                     onVoteRep={() => voteRepertoire(arg.id)}
-                    onStartChat={onStartChat}
+                    {...(onStartChat ? { onStartChat } : {})}
                     isExpanded={expandedArgId === arg.id}
                     onToggleExpand={() => setExpandedArgId((prev) => (prev === arg.id ? null : arg.id))}
                     replyText={replyTextMap[arg.id] || ''}
@@ -556,7 +555,7 @@ export function ArenaOfArguments({ goTo, onStartChat }: ArenaOfArgumentsProps) {
                     isRepVoted={userRepertoireVotes.has(arg.id)}
                     onVote={() => voteArgument(arg.id)}
                     onVoteRep={() => voteRepertoire(arg.id)}
-                    onStartChat={onStartChat}
+                    {...(onStartChat ? { onStartChat } : {})}
                     isExpanded={expandedArgId === arg.id}
                     onToggleExpand={() => setExpandedArgId((prev) => (prev === arg.id ? null : arg.id))}
                     replyText={replyTextMap[arg.id] || ''}
