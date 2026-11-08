@@ -1,11 +1,8 @@
 import { StudentProfile } from "./StudentProfile";
 import { Messages } from "./Messages";
 import { Notifications } from "./Notifications";
-<<<<<<< HEAD
 import { SocialFeed } from "./SocialFeed";
-=======
 import { ArenaOfArguments } from "./ArenaOfArguments";
->>>>>>> ad75584e1826542964371715116399dd97157c88
 import { useMemo, useRef, useState, useEffect } from "react";
 import type { LucideIcon } from "lucide-react";
 import { useUserPreferences } from "@/context/UserPreferencesContext";
@@ -89,28 +86,20 @@ import geografiaImage from "@/assets/repertorio-geografia.jpg";
 import cinemaImage from "@/assets/repertorio-cinema.jpg";
 import { getThemeMedia, getRepertoryImage } from "@/data/theme-media";
 
-<<<<<<< HEAD
-type Section = "dashboard" | "feed" | "mural" | "competencias" | "repertorio" | "laboratorio" | "curso" | "perfil" | "mensagens" | "notificacoes" | "treinamento";
-=======
-type Section = "dashboard" | "mural" | "competencias" | "repertorio" | "laboratorio" | "curso" | "perfil" | "mensagens" | "notificacoes" | "treinamento" | "arena";
->>>>>>> ad75584e1826542964371715116399dd97157c88
+type Section = "dashboard" | "feed" | "mural" | "competencias" | "repertorio" | "laboratorio" | "curso" | "perfil" | "mensagens" | "notificacoes" | "treinamento" | "arena";
 type Correction = Awaited<ReturnType<typeof correctEssay>>;
 
 const mainNavItems = [
   { id: "dashboard" as const, label: "Visão geral", icon: LayoutDashboard },
-<<<<<<< HEAD
   { id: "feed" as const, label: "Feed da Turma", icon: Sparkles },
+  { id: "arena" as const, label: "Arena de Argumentos", icon: Swords },
+  { id: "notificacoes" as const, label: "Notificações", icon: Bell },
+  { id: "mensagens" as const, label: "Mensagens", icon: MessageCircle },
   { id: "curso" as const, label: "Seu Curso & Meta", icon: TrendingUp },
 ];
 
 const studyNavItems = [
   { id: "treinamento" as const, label: "Treinamento 900+", icon: GraduationCap },
-=======
-  { id: "arena" as const, label: "Arena de Argumentos", icon: Swords },
-  { id: "notificacoes" as const, label: "Notificações", icon: Bell },
-  { id: "mensagens" as const, label: "Mensagens", icon: MessageCircle },
-  { id: "curso" as const, label: "Seu Curso", icon: TrendingUp },
->>>>>>> ad75584e1826542964371715116399dd97157c88
   { id: "mural" as const, label: "Mural nota mil", icon: Award },
   { id: "repertorio" as const, label: "Repertório", icon: BookOpen },
   { id: "competencias" as const, label: "Competências", icon: Target },
@@ -719,7 +708,6 @@ export function EssayApp() {
 
         <div className="mx-auto max-w-7xl p-4 md:p-8 lg:p-10">
           {section === "dashboard" && <Dashboard goTo={goTo} />}
-<<<<<<< HEAD
           {section === "feed" && (
             <SocialFeed
               goTo={goTo}
@@ -734,6 +722,7 @@ export function EssayApp() {
               }}
             />
           )}
+          {section === "arena" && <ArenaOfArguments goTo={goTo} onStartChat={(profile) => { setChatTarget(profile); goTo("mensagens"); }} />}
           {section === "perfil" && (
             <StudentProfile
               targetProfile={profileTarget}
@@ -749,10 +738,6 @@ export function EssayApp() {
               }}
             />
           )}
-=======
-          {section === "arena" && <ArenaOfArguments goTo={goTo} onStartChat={(profile) => { setChatTarget(profile); goTo("mensagens"); }} />}
-          {section === "perfil" && <StudentProfile onOpen={setSelectedEssay} goTo={(s: string) => goTo(s as Section)} onStartChat={(profile) => { setChatTarget(profile); goTo("mensagens"); }} />}
->>>>>>> ad75584e1826542964371715116399dd97157c88
           {section === "notificacoes" && <Notifications goTo={goTo} onStartChat={(profile) => { setChatTarget(profile); goTo("mensagens"); }} onOpenEssay={(essay) => setSelectedEssay(essay)} />}
           {section === "mensagens" && <Messages initialUser={chatTarget} onClearInitial={() => setChatTarget(null)} />}
           {section === "curso" && <CourseTarget goTo={goTo} />}
@@ -1135,49 +1120,6 @@ function Repertory({
   const currentTheme = dailyThemes[selectedDay] || dailyThemes[0]!;
   const themeMedia = getThemeMedia(currentTheme.day);
   const [selectedItem, setSelectedItem] = useState<typeof currentTheme.repertories[number] | null>(null);
-<<<<<<< HEAD
-
-  return (
-    <>
-      <PageTitle eyebrow="Banco de ideias" title="Repertório sociocultural" description="Referências legitimadas e explicadas para você usar com pertinência — sem decorar frases soltas." />
-      <div className="mb-6 flex flex-wrap gap-2">
-        {filters.map((item) => (
-          <Button key={item} variant={filter === item ? "default" : "outline"} onClick={() => setFilter(item)} className="rounded-full">
-            {item}
-          </Button>
-        ))}
-      </div>
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {currentTheme.repertories.filter((item) => filter === "Todos" || item.category === filter).map((item) => (
-          <article
-            key={item.title}
-            onClick={() => setSelectedItem(item)}
-            className="overflow-hidden rounded-xl border border-border bg-card shadow-sm cursor-pointer hover:border-primary/50 transition-colors"
-          >
-            <div className="p-5">
-              <span className="text-xs font-bold uppercase text-primary">{item.category}</span>
-              <h2 className="mt-2 text-xl font-bold">{item.title}</h2>
-              <p className="mt-1 text-sm font-semibold text-muted-foreground">{item.author}</p>
-              <div className="mt-5 rounded-lg bg-accent p-3 text-xs font-semibold text-primary/80 flex items-center justify-center">
-                Clique para ver detalhes
-              </div>
-            </div>
-          </article>
-        ))}
-      </div>
-      <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">{selectedItem?.title}</DialogTitle>
-            <DialogDescription className="text-sm font-semibold text-primary uppercase tracking-wide">
-              {selectedItem?.category} • {selectedItem?.author}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-sm leading-6 text-foreground">{selectedItem?.body}</p>
-            <div className="mt-5 rounded-lg bg-accent p-3 text-xs text-accent-foreground">
-              <Lightbulb className="mr-1 inline size-4" /> Dica: apresente, relacione e interprete a referência.
-=======
   const [copied, setCopied] = useState(false);
 
   const filters = ["Todos", "Leis", "Livros", "Filmes", "Séries", "Documentários", "Fatos Históricos", "Citações", "Músicas", "Conceitos"];
@@ -1229,7 +1171,6 @@ function Repertory({
               <p className="text-xs text-muted-foreground hidden sm:block">
                 Cada tema possui acervo visual exclusivo com leis, livros, filmes e teorias sociológicas
               </p>
->>>>>>> ad75584e1826542964371715116399dd97157c88
             </div>
           </div>
           <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
