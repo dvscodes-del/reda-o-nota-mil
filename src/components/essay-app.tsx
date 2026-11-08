@@ -1,6 +1,7 @@
-﻿import { StudentProfile } from "./StudentProfile";
+import { StudentProfile } from "./StudentProfile";
 import { Messages } from "./Messages";
 import { Notifications } from "./Notifications";
+import { ArenaOfArguments } from "./ArenaOfArguments";
 import { useMemo, useRef, useState, useEffect } from "react";
 import type { LucideIcon } from "lucide-react";
 import { useUserPreferences } from "@/context/UserPreferencesContext";
@@ -50,6 +51,7 @@ import {
   Star,
   ChevronRight,
   Pause,
+  Swords,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -66,11 +68,12 @@ import constituicaoImage from "@/assets/repertorio-constituicao.jpg";
 import geografiaImage from "@/assets/repertorio-geografia.jpg";
 import cinemaImage from "@/assets/repertorio-cinema.jpg";
 
-type Section = "dashboard" | "mural" | "competencias" | "repertorio" | "laboratorio" | "curso" | "perfil" | "mensagens" | "notificacoes" | "treinamento";
+type Section = "dashboard" | "mural" | "competencias" | "repertorio" | "laboratorio" | "curso" | "perfil" | "mensagens" | "notificacoes" | "treinamento" | "arena";
 type Correction = Awaited<ReturnType<typeof correctEssay>>;
 
 const navItems = [
   { id: "dashboard" as const, label: "Visão geral", icon: LayoutDashboard },
+  { id: "arena" as const, label: "Arena de Argumentos", icon: Swords },
   { id: "notificacoes" as const, label: "Notificações", icon: Bell },
   { id: "mensagens" as const, label: "Mensagens", icon: MessageCircle },
   { id: "curso" as const, label: "Seu Curso", icon: TrendingUp },
@@ -484,6 +487,7 @@ export function EssayApp() {
 
         <div className="mx-auto max-w-7xl p-4 md:p-8 lg:p-10">
           {section === "dashboard" && <Dashboard goTo={goTo} />}
+          {section === "arena" && <ArenaOfArguments goTo={goTo} onStartChat={(profile) => { setChatTarget(profile); goTo("mensagens"); }} />}
           {section === "perfil" && <StudentProfile onOpen={setSelectedEssay} goTo={(s: string) => goTo(s as Section)} onStartChat={(profile) => { setChatTarget(profile); goTo("mensagens"); }} />}
           {section === "notificacoes" && <Notifications goTo={goTo} onStartChat={(profile) => { setChatTarget(profile); goTo("mensagens"); }} onOpenEssay={(essay) => setSelectedEssay(essay)} />}
           {section === "mensagens" && <Messages initialUser={chatTarget} onClearInitial={() => setChatTarget(null)} />}
@@ -607,26 +611,30 @@ function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
     <section className="mt-6 grid gap-4 sm:grid-cols-3">{dashboardStats.map(([value,label,Icon]) => <div key={label} className="rounded-xl border border-border bg-card p-5 shadow-sm"><div className="mb-5 flex items-center justify-between"><span className="grid size-10 place-items-center rounded-lg bg-accent text-primary"><Icon className="size-5" /></span><span className="text-xs font-semibold text-success">este mês</span></div><strong className="text-3xl">{value}</strong><p className="mt-1 text-sm text-muted-foreground">{label}</p></div>)}</section>
     <section className="mt-8">
       <h3 className="font-bold text-lg mb-4">Acesso Rápido</h3>
-      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
         <Button variant="outline" onClick={() => goTo("laboratorio")} className="h-auto flex-col gap-3 p-4 rounded-xl border-border bg-card hover:bg-accent hover:border-primary">
           <span className="grid size-12 place-items-center rounded-full bg-primary/10 text-primary"><PenLine className="size-5" /></span>
-          <span className="font-semibold">Escrever Redação</span>
+          <span className="font-semibold text-center">Escrever Redação</span>
+        </Button>
+        <Button variant="outline" onClick={() => goTo("arena")} className="h-auto flex-col gap-3 p-4 rounded-xl border-border bg-card hover:bg-accent hover:border-primary border-primary/30 bg-primary/5">
+          <span className="grid size-12 place-items-center rounded-full bg-primary text-primary-foreground shadow-xs"><Swords className="size-5" /></span>
+          <span className="font-semibold text-center text-primary">Arena de Argumentos</span>
         </Button>
         <Button variant="outline" onClick={() => goTo("competencias")} className="h-auto flex-col gap-3 p-4 rounded-xl border-border bg-card hover:bg-accent hover:border-primary">
           <span className="grid size-12 place-items-center rounded-full bg-primary/10 text-primary"><Target className="size-5" /></span>
-          <span className="font-semibold">Treinar Competências</span>
+          <span className="font-semibold text-center">Competências</span>
         </Button>
         <Button variant="outline" onClick={() => goTo("repertorio")} className="h-auto flex-col gap-3 p-4 rounded-xl border-border bg-card hover:bg-accent hover:border-primary">
           <span className="grid size-12 place-items-center rounded-full bg-primary/10 text-primary"><BookOpen className="size-5" /></span>
-          <span className="font-semibold">Ver Repertórios</span>
+          <span className="font-semibold text-center">Repertórios</span>
         </Button>
         <Button variant="outline" onClick={() => goTo("mural")} className="h-auto flex-col gap-3 p-4 rounded-xl border-border bg-card hover:bg-accent hover:border-primary">
           <span className="grid size-12 place-items-center rounded-full bg-primary/10 text-primary"><Award className="size-5" /></span>
-          <span className="font-semibold">Mural Nota 1000</span>
+          <span className="font-semibold text-center">Mural Nota 1000</span>
         </Button>
         <Button variant="outline" onClick={() => goTo("treinamento")} className="h-auto flex-col gap-3 p-4 rounded-xl border-border bg-card hover:bg-accent hover:border-primary">
           <span className="grid size-12 place-items-center rounded-full bg-primary/10 text-primary"><GraduationCap className="size-5" /></span>
-          <span className="font-semibold text-center">Treinamento Nota 900+</span>
+          <span className="font-semibold text-center">Treinamento 900+</span>
         </Button>
       </div>
     </section>
