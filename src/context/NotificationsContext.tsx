@@ -4,6 +4,14 @@ import { useAuth } from './AuthContext';
 import { useEssays } from './EssaysContext';
 import { toast } from 'sonner';
 import { getChatLastReadTime } from '@/lib/messages';
+import {
+  isDeviceNotificationSupported,
+  getDeviceNotificationPermission,
+  requestDeviceNotificationPermission,
+  registerNotificationServiceWorker,
+  sendDeviceNotification,
+  type DeviceNotificationPermission,
+} from '@/lib/device-notifications';
 
 export type NotificationType = 'follower' | 'essay' | 'message' | 'milestone';
 
@@ -36,6 +44,12 @@ export interface NotificationsContextType {
   markAllAsRead: () => void;
   clearNotification: (id: string) => void;
   refreshNotifications: () => Promise<void>;
+  // Notificações no eletrônico (celular, tablet, desktop)
+  devicePermission: DeviceNotificationPermission;
+  isDeviceSupported: boolean;
+  requestDevicePermission: () => Promise<DeviceNotificationPermission>;
+  testDeviceNotification: () => Promise<boolean>;
+  sendCustomDeviceNotification: (payload: { title: string; body: string; url?: string }) => Promise<boolean>;
 }
 
 const NotificationsContext = createContext<NotificationsContextType | undefined>(undefined);
@@ -45,6 +59,82 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   const { essays } = useEssays();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [devicePermission, setDevicePermission] = useState<DeviceNotificationPermission>(() =>
+    getDeviceNotificationPermission()
+  );
+  const isDeviceSupported = useMemo(() => isDeviceNotificationSupported(), []);
+
+  // Registra o Service Worker assim que montar
+  useEffect(() => {
+    registerNotificationServiceWorker();
+    setDevicePermission(getDeviceNotificationPermission());
+
+    // Ouve mensagens enviadas pelo Service Worker (ex: clique na notificação)
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      const handleMessage = (event: MessageEvent) => {
+        if (event.data?.type === 'NOTIFICATION_CLICKED' && event.data?.url) {
+          window.focus();
+        }
+      };
+      navigator.serviceWorker.addEventListener('message', handleMessage);
+      return () => {
+        navigator.serviceWorker.removeEventListener('message', handleMessage);
+      };
+    }
+    return undefined;
+  }, []);
+
+  // Solicita permissão no eletrônico do usuário
+  const requestDevicePermission = useCallback(async (): Promise<DeviceNotificationPermission> => {
+    const perm = await requestDeviceNotificationPermission();
+    setDevicePermission(perm);
+    if (perm === 'granted') {
+      toast.success('Notificações no aparelho ativadas com sucesso!', {
+        description: 'Você receberá mensagens, correções e novos seguidores no seu dispositivo.',
+      });
+      // Envia notificação de confirmação no eletrônico
+      sendDeviceNotification({
+        title: '🔔 Notificações Ativadas!',
+        body: 'Você agora receberá avisos e mensagens do Escreva+ diretamente no seu eletrônico.',
+        url: '/?section=notificacoes',
+      });
+    } else if (perm === 'denied') {
+      toast.error('Permissão de notificações bloqueada no seu navegador.', {
+        description: 'Clique no ícone de cadeado na barra de endereços para permitir notificações.',
+      });
+    }
+    return perm;
+  }, []);
+
+  // Testar notificação no dispositivo
+  const testDeviceNotification = useCallback(async (): Promise<boolean> => {
+    if (devicePermission !== 'granted') {
+      const perm = await requestDevicePermission();
+      if (perm !== 'granted') return false;
+    }
+
+    const sent = await sendDeviceNotification({
+      title: '✨ Teste do Escreva+',
+      body: 'As notificações estão funcionando perfeitamente no seu dispositivo!',
+      url: '/?section=notificacoes',
+    });
+
+    if (sent) {
+      toast.success('Notificação de teste enviada para o seu dispositivo!');
+    }
+    return sent;
+  }, [devicePermission, requestDevicePermission]);
+
+  const sendCustomDeviceNotification = useCallback(
+    async (payload: { title: string; body: string; url?: string }): Promise<boolean> => {
+      return sendDeviceNotification({
+        title: payload.title,
+        body: payload.body,
+        url: payload.url || '/',
+      });
+    },
+    []
+  );
 
   // Carrega IDs já lidos do localStorage
   const getReadIds = useCallback((): Set<string> => {
@@ -82,7 +172,6 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
       const items: AppNotification[] = [];
 
       // 1. Notificações de Redações Corrigidas
-      // Pega das essays já carregadas no contexto ou busca diretamente
       essays.forEach((essay) => {
         const notifId = `essay_${essay.id}`;
         items.push({
@@ -113,7 +202,6 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         if (!followsError && Array.isArray(followsData) && followsData.length > 0) {
           const followerIds = followsData.map((f: any) => f.follower_id);
           
-          // Busca os nomes e avatares dos seguidores
           const { data: profilesData } = await supabase
             .from('profiles')
             .select('id, full_name, avatar_url')
@@ -200,7 +288,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         console.warn('Erro ao buscar mensagens para notificações:', err);
       }
 
-      // 4. Notificação de Boas-vindas (se for usuário novo sem notificações ou como primeira)
+      // 4. Notificação de Boas-vindas
       const welcomeId = `welcome_${user.id}`;
       items.push({
         id: welcomeId,
@@ -255,6 +343,14 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
               description: 'Toque na aba Notificações para interagir.',
             });
 
+            // Envia para o eletrônico do usuário
+            sendDeviceNotification({
+              title: '🎉 Novo seguidor no Escreva+!',
+              body: `${name} começou a seguir o seu perfil no Escreva+.`,
+              tag: `follow_${newFollow.id}`,
+              url: '/?section=perfil',
+            });
+
             // Atualiza lista
             refreshNotifications();
           }
@@ -262,7 +358,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
       )
       .subscribe();
 
-    // Canal para ouvir novas mensagens
+    // Canal para ouvir novas mensagens recebidas
     const messagesChannel = supabase
       .channel(`realtime-messages-notifs-${user.id}`)
       .on(
@@ -276,6 +372,24 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         async (payload: any) => {
           const newMsg = payload.new;
           if (newMsg) {
+            // Busca remetente
+            const { data: senderProfile } = await supabase
+              .from('profiles')
+              .select('id, full_name')
+              .eq('id', newMsg.sender_id)
+              .maybeSingle();
+
+            const senderName = senderProfile?.full_name || 'Estudante';
+            const preview = newMsg.content?.length > 70 ? `${newMsg.content.slice(0, 70)}...` : newMsg.content;
+
+            // Dispara notificação no eletrônico do usuário (desktop / celular)
+            sendDeviceNotification({
+              title: `💬 Mensagem de ${senderName}`,
+              body: preview || 'Você recebeu uma nova mensagem no Escreva+.',
+              tag: `msg_${newMsg.id}`,
+              url: '/?section=mensagens',
+            });
+
             refreshNotifications();
           }
         }
@@ -326,6 +440,11 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         markAllAsRead,
         clearNotification,
         refreshNotifications,
+        devicePermission,
+        isDeviceSupported,
+        requestDevicePermission,
+        testDeviceNotification,
+        sendCustomDeviceNotification,
       }}
     >
       {children}

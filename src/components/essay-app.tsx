@@ -105,162 +105,162 @@ const competencyTraining: Array<{
     placeholder: string;
   }>;
 }> = [
-  {
-    code: "C1",
-    title: "Domínio da norma culta",
-    description: "Gramática, ortografia, pontuação e registro formal em toda a redação.",
-    sections: [
-      {
-        id: "intro", label: "Introdução",
-        theory: "Na introdução, a C1 é avaliada desde a primeira linha. Evite coloquialismos, use vírgula corretamente após adjuntos adverbiais e empregue a norma culta do início ao fim.",
-        exercise: (t) => `Escreva a primeira frase da sua introdução sobre o tema "${t}" usando a norma culta. Depois, identifique: você usou vírgula depois do adjunto adverbial? Há algum coloquialismo que deva ser trocado?`,
-        placeholder: "Escreva sua frase de abertura e depois analise a norma culta usada...",
-      },
-      {
-        id: "des1", label: "Desenvolvimento 1",
-        theory: "No primeiro argumento, cuidado com regência verbal (ex: 'assistir AO filme') e concordância nominal. Cada ideia deve estar conectada por uma conjunção adequada.",
-        exercise: (t) => `Escreva o tópico frasal (primeira frase) do seu 1º parágrafo sobre "${t}". Depois corrija: você usou regência verbal correta? Há concordância nominal e verbal adequadas?`,
-        placeholder: "Escreva o tópico frasal e revise a norma culta...",
-      },
-      {
-        id: "des2", label: "Desenvolvimento 2",
-        theory: "No segundo argumento, atenção especial ao uso de pronomes relativos (que, o qual, cujo) e às regras de crase. Isso garante elegância e sofisticação à escrita.",
-        exercise: (t) => `Escreva uma frase sobre "${t}" que use corretamente um pronome relativo (que / o qual / cujo) E uma crase. Depois identifique e justifique os dois usos.`,
-        placeholder: "Escreva a frase com pronome relativo e crase, e justifique cada escolha...",
-      },
-      {
-        id: "conc", label: "Conclusão",
-        theory: "Na conclusão, o domínio da norma culta fecha o texto com autoridade. Atenção à regência do verbo 'propor' (propõe-se que + subjuntivo) e ao ponto final após cada ideia completa.",
-        exercise: (t) => `Escreva a proposta de intervenção da conclusão sobre "${t}" usando o verbo 'propor' na estrutura correta: 'Propõe-se que + subjuntivo'. Liste 2 outros erros gramaticais comuns para evitar na conclusão.`,
-        placeholder: "Escreva a conclusão com a proposta na norma culta e liste os erros a evitar...",
-      },
-    ],
-  },
-  {
-    code: "C2",
-    title: "Compreensão e repertório",
-    description: "Leitura do tema e uso de repertório produtivo, pertinente e legitimado.",
-    sections: [
-      {
-        id: "intro", label: "Introdução",
-        theory: "A introdução é o lugar ideal para inserir o repertório! Cite uma lei, obra literária, dado ou fato histórico para contextualizar o problema. A referência deve ser apresentada, relacionada ao tema e interpretada — não apenas citada.",
-        exercise: (t) => `Construa uma introdução de 3–4 linhas sobre "${t}" usando UM destes repertórios: (1) Constituição Federal, (2) um dado do IBGE ou ONU, ou (3) uma obra literária/filosófica. Siga a lógica: Apresentar → Relacionar ao tema → Interpretar.`,
-        placeholder: "Escreva sua introdução com repertório seguindo Apresentar → Relacionar → Interpretar...",
-      },
-      {
-        id: "des1", label: "Desenvolvimento 1",
-        theory: "No 1º desenvolvimento, reforce sua tese com um repertório diferente do da introdução: teoria social (Bourdieu, Foucault), dado estatístico ou episódio histórico. Apresente → Relacione → Interprete.",
-        exercise: (t) => `Para o tema "${t}", escreva o 1º parágrafo de desenvolvimento usando um teórico ou dado estatístico como repertório. Use a estrutura: 'Segundo [fonte], _____. Isso evidencia que _____. Assim, _____.'`,
-        placeholder: "Escreva o Desenvolvimento 1 com repertório acadêmico/estatístico...",
-      },
-      {
-        id: "des2", label: "Desenvolvimento 2",
-        theory: "O 2º desenvolvimento aprofunda uma causa ou consequência. Cite repertório que evidencie EFEITOS concretos: notícia de jornal, relatório de ONG, série de dados históricos.",
-        exercise: (t) => `Para o tema "${t}", escreva o 2º parágrafo usando um repertório que mostre CONSEQUÊNCIAS do problema (notícia, relatório, dados históricos). O parágrafo deve começar com 'Ademais' ou 'Outrossim'.`,
-        placeholder: "Escreva o Desenvolvimento 2 com repertório de consequências...",
-      },
-      {
-        id: "conc", label: "Conclusão",
-        theory: "A conclusão NÃO é lugar de inserir novo repertório — ela deve retomar o argumento principal e propor a solução. Evite citações novas aqui para não dispersar o foco.",
-        exercise: (t) => `Escreva uma conclusão de 3 linhas sobre "${t}" SEM nenhuma citação nova. Apenas: retome a tese + sintetize os argumentos + apresente a proposta de intervenção.`,
-        placeholder: "Escreva a conclusão sem repertório novo — só retomada da tese e proposta...",
-      },
-    ],
-  },
-  {
-    code: "C3",
-    title: "Projeto de texto",
-    description: "Seleção e organização de argumentos para defender uma tese.",
-    sections: [
-      {
-        id: "intro", label: "Introdução",
-        theory: "Uma boa introdução de C3 termina com a TESE: a afirmação central que você vai defender. A tese deve ser clara, posicionada e antever os 2 argumentos que você desenvolverá.",
-        exercise: (t) => `Escreva uma introdução de 4 linhas sobre "${t}" que: (1) contextualize o problema, (2) apresente o recorte temático e (3) finalize com uma TESE que já anuncie 2 argumentos que você vai desenvolver.`,
-        placeholder: "Escreva sua introdução com tese clara que anuncia 2 argumentos...",
-      },
-      {
-        id: "des1", label: "Desenvolvimento 1",
-        theory: "O 1º parágrafo defende o PRIMEIRO argumento da tese. Estrutura eficaz: (1) tópico frasal, (2) desenvolvimento, (3) exemplo/dado, (4) interpretação que reforça a tese.",
-        exercise: (t) => `Escreva o 1º parágrafo de desenvolvimento sobre "${t}" usando a estrutura: tópico frasal → argumento → exemplo concreto → conclusão parcial que reforça a tese.`,
-        placeholder: "Escreva o Desenvolvimento 1 com estrutura: tópico frasal → argumento → exemplo → conclusão parcial...",
-      },
-      {
-        id: "des2", label: "Desenvolvimento 2",
-        theory: "O 2º parágrafo traz um argumento DIFERENTE e complementar. Não repita o raciocínio anterior. Conecte com 'Ademais', 'Por outro lado' ou 'A esse cenário soma-se'.",
-        exercise: (t) => `Escreva o 2º parágrafo sobre "${t}" com um ângulo DIFERENTE do 1º argumento. Comece com 'Ademais' ou 'A esse cenário soma-se' e explore uma causa ou consequência distinta.`,
-        placeholder: "Escreva o Desenvolvimento 2 com argumento diferente do primeiro...",
-      },
-      {
-        id: "conc", label: "Conclusão",
-        theory: "A conclusão deve RETOMAR a tese (sem repetir exatamente) e antecipar a proposta. É o 'para tanto' do texto: fecha os argumentos e aponta a saída.",
-        exercise: (t) => `Escreva uma conclusão sobre "${t}" que: (1) retome a tese com outras palavras, (2) sintetize os 2 argumentos em 1 frase e (3) introduza a proposta com 'Portanto' ou 'Diante do exposto'.`,
-        placeholder: "Escreva a conclusão retomando a tese e introduzindo a proposta...",
-      },
-    ],
-  },
-  {
-    code: "C4",
-    title: "Coesão",
-    description: "Conectivos e mecanismos linguísticos que articulam as ideias do texto.",
-    sections: [
-      {
-        id: "intro", label: "Introdução",
-        theory: "Na introdução, a coesão garante que o contexto, o recorte e a tese fluam sem interrupções. Evite listar ideias com 'e...e...e'. Prefira: 'Nesse sentido', 'Sob essa ótica', 'Diante disso'.",
-        exercise: (t) => `Reescreva esta introdução sobre "${t}" trocando os conectivos fracos por opções sofisticadas: 'O Brasil tem muitos problemas e ${t.toLowerCase()} é um deles e por isso o governo deve agir e resolver isso.'`,
-        placeholder: "Reescreva a introdução com conectivos sofisticados...",
-      },
-      {
-        id: "des1", label: "Desenvolvimento 1",
-        theory: "O início do 1º parágrafo NUNCA deve começar com 'E'. Use: 'Em primeiro lugar', 'Primeiramente', 'Nesse contexto', 'Sob essa perspectiva'.",
-        exercise: (t) => `Escreva as primeiras 2 frases do 1º parágrafo sobre "${t}" usando um conector de abertura sofisticado (não use 'Em primeiro lugar'). Depois justifique por que o conector escolhido é adequado.`,
-        placeholder: "Escreva as primeiras frases com conector sofisticado e justifique a escolha...",
-      },
-      {
-        id: "des2", label: "Desenvolvimento 2",
-        theory: "Para o 2º argumento, use conectivos de ADIÇÃO sofisticados: 'Outrossim', 'Ademais', 'A esse contexto soma-se', 'Corrobora esse cenário'. Eles mostram que você amplia, não repete.",
-        exercise: (t) => `Escreva o tópico frasal (primeira frase) do 2º parágrafo sobre "${t}" usando 'Ademais' ou 'Outrossim'. Depois reescreva a mesma ideia usando 'A esse cenário soma-se'. Compare os dois.`,
-        placeholder: "Escreva com 'Ademais' e depois com 'A esse cenário soma-se' e compare...",
-      },
-      {
-        id: "conc", label: "Conclusão",
-        theory: "A conclusão tem conectivos próprios de fechamento: 'Portanto', 'Logo', 'Conclui-se que', 'Diante do exposto'. Escolha um e NÃO repita o conector já usado no texto.",
-        exercise: (t) => `Escreva a primeira linha de uma conclusão sobre "${t}" usando um conectivo conclusivo diferente de 'Portanto'. Depois escreva mais 2 opções de primeira linha com conectivos diferentes para treinar a variedade.`,
-        placeholder: "Escreva 3 opções de primeira frase da conclusão com conectivos diferentes...",
-      },
-    ],
-  },
-  {
-    code: "C5",
-    title: "Proposta de intervenção",
-    description: "Ação detalhada, completa e alinhada aos direitos humanos.",
-    sections: [
-      {
-        id: "intro", label: "Introdução",
-        theory: "A introdução NÃO é o lugar da proposta. Aqui, você apenas CONTEXTUALIZA o problema que será resolvido na conclusão. Não adiante soluções antes de argumentar.",
-        exercise: (t) => `Escreva uma introdução sobre "${t}" SEM incluir nenhuma proposta de solução — apenas contextualize o problema e apresente sua tese. Depois sublinhue mentalmente onde estaria a tentação de adiantar a proposta.`,
-        placeholder: "Escreva a introdução apenas contextualizando o problema, sem proposta...",
-      },
-      {
-        id: "des1", label: "Desenvolvimento 1",
-        theory: "No desenvolvimento, explore as CAUSAS do problema para embasar a proposta futura. Ex: 'A falta de investimento público... gera como consequência...'. Isso prepara o leitor para a solução.",
-        exercise: (t) => `Escreva um parágrafo sobre "${t}" explorando as CAUSAS estruturais do problema. Termine o parágrafo com uma frase que crie urgência para a solução (sem ainda propô-la).`,
-        placeholder: "Explore as causas do problema e crie urgência sem ainda propor a solução...",
-      },
-      {
-        id: "des2", label: "Desenvolvimento 2",
-        theory: "O 2º desenvolvimento explora as CONSEQUÊNCIAS do problema — o que agrava a situação. Isso cria urgência para a solução que virá. Use 'Esse cenário perpetua... o que aprofunda...'.",
-        exercise: (t) => `Escreva um parágrafo sobre "${t}" explorando as CONSEQUÊNCIAS do problema a longo prazo. Comece com 'Ademais' e mostre como o problema se perpetua e se agrava sem intervenção.`,
-        placeholder: "Explore as consequências do problema começando com 'Ademais'...",
-      },
-      {
-        id: "conc", label: "Conclusão",
-        theory: "A proposta COMPLETA tem 5 elementos obrigatórios: (1) AGENTE — quem age? (2) AÇÃO — o que faz? (3) MEIO — como faz? (4) FINALIDADE — por quê? (5) DETALHAMENTO — com qual recurso/lei? Faltando um, a nota cai.",
-        exercise: (t) => `Monte a proposta de intervenção COMPLETA para o tema "${t}". Use o modelo: 'Cabe ao [AGENTE], por meio de [MEIO], [AÇÃO], a fim de [FINALIDADE], com [DETALHAMENTO].' Preencha todos os 5 elementos obrigatórios.`,
-        placeholder: "Cabe ao [AGENTE], por meio de [MEIO], [AÇÃO], a fim de [FINALIDADE], com [DETALHAMENTO]...",
-      },
-    ],
-  },
-];
+    {
+      code: "C1",
+      title: "Domínio da norma culta",
+      description: "Gramática, ortografia, pontuação e registro formal em toda a redação.",
+      sections: [
+        {
+          id: "intro", label: "Introdução",
+          theory: "Na introdução, a C1 é avaliada desde a primeira linha. Evite coloquialismos, use vírgula corretamente após adjuntos adverbiais e empregue a norma culta do início ao fim.",
+          exercise: (t) => `Escreva a primeira frase da sua introdução sobre o tema "${t}" usando a norma culta. Depois, identifique: você usou vírgula depois do adjunto adverbial? Há algum coloquialismo que deva ser trocado?`,
+          placeholder: "Escreva sua frase de abertura e depois analise a norma culta usada...",
+        },
+        {
+          id: "des1", label: "Desenvolvimento 1",
+          theory: "No primeiro argumento, cuidado com regência verbal (ex: 'assistir AO filme') e concordância nominal. Cada ideia deve estar conectada por uma conjunção adequada.",
+          exercise: (t) => `Escreva o tópico frasal (primeira frase) do seu 1º parágrafo sobre "${t}". Depois corrija: você usou regência verbal correta? Há concordância nominal e verbal adequadas?`,
+          placeholder: "Escreva o tópico frasal e revise a norma culta...",
+        },
+        {
+          id: "des2", label: "Desenvolvimento 2",
+          theory: "No segundo argumento, atenção especial ao uso de pronomes relativos (que, o qual, cujo) e às regras de crase. Isso garante elegância e sofisticação à escrita.",
+          exercise: (t) => `Escreva uma frase sobre "${t}" que use corretamente um pronome relativo (que / o qual / cujo) E uma crase. Depois identifique e justifique os dois usos.`,
+          placeholder: "Escreva a frase com pronome relativo e crase, e justifique cada escolha...",
+        },
+        {
+          id: "conc", label: "Conclusão",
+          theory: "Na conclusão, o domínio da norma culta fecha o texto com autoridade. Atenção à regência do verbo 'propor' (propõe-se que + subjuntivo) e ao ponto final após cada ideia completa.",
+          exercise: (t) => `Escreva a proposta de intervenção da conclusão sobre "${t}" usando o verbo 'propor' na estrutura correta: 'Propõe-se que + subjuntivo'. Liste 2 outros erros gramaticais comuns para evitar na conclusão.`,
+          placeholder: "Escreva a conclusão com a proposta na norma culta e liste os erros a evitar...",
+        },
+      ],
+    },
+    {
+      code: "C2",
+      title: "Compreensão e repertório",
+      description: "Leitura do tema e uso de repertório produtivo, pertinente e legitimado.",
+      sections: [
+        {
+          id: "intro", label: "Introdução",
+          theory: "A introdução é o lugar ideal para inserir o repertório! Cite uma lei, obra literária, dado ou fato histórico para contextualizar o problema. A referência deve ser apresentada, relacionada ao tema e interpretada — não apenas citada.",
+          exercise: (t) => `Construa uma introdução de 3–4 linhas sobre "${t}" usando UM destes repertórios: (1) Constituição Federal, (2) um dado do IBGE ou ONU, ou (3) uma obra literária/filosófica. Siga a lógica: Apresentar → Relacionar ao tema → Interpretar.`,
+          placeholder: "Escreva sua introdução com repertório seguindo Apresentar → Relacionar → Interpretar...",
+        },
+        {
+          id: "des1", label: "Desenvolvimento 1",
+          theory: "No 1º desenvolvimento, reforce sua tese com um repertório diferente do da introdução: teoria social (Bourdieu, Foucault), dado estatístico ou episódio histórico. Apresente → Relacione → Interprete.",
+          exercise: (t) => `Para o tema "${t}", escreva o 1º parágrafo de desenvolvimento usando um teórico ou dado estatístico como repertório. Use a estrutura: 'Segundo [fonte], _____. Isso evidencia que _____. Assim, _____.'`,
+          placeholder: "Escreva o Desenvolvimento 1 com repertório acadêmico/estatístico...",
+        },
+        {
+          id: "des2", label: "Desenvolvimento 2",
+          theory: "O 2º desenvolvimento aprofunda uma causa ou consequência. Cite repertório que evidencie EFEITOS concretos: notícia de jornal, relatório de ONG, série de dados históricos.",
+          exercise: (t) => `Para o tema "${t}", escreva o 2º parágrafo usando um repertório que mostre CONSEQUÊNCIAS do problema (notícia, relatório, dados históricos). O parágrafo deve começar com 'Ademais' ou 'Outrossim'.`,
+          placeholder: "Escreva o Desenvolvimento 2 com repertório de consequências...",
+        },
+        {
+          id: "conc", label: "Conclusão",
+          theory: "A conclusão NÃO é lugar de inserir novo repertório — ela deve retomar o argumento principal e propor a solução. Evite citações novas aqui para não dispersar o foco.",
+          exercise: (t) => `Escreva uma conclusão de 3 linhas sobre "${t}" SEM nenhuma citação nova. Apenas: retome a tese + sintetize os argumentos + apresente a proposta de intervenção.`,
+          placeholder: "Escreva a conclusão sem repertório novo — só retomada da tese e proposta...",
+        },
+      ],
+    },
+    {
+      code: "C3",
+      title: "Projeto de texto",
+      description: "Seleção e organização de argumentos para defender uma tese.",
+      sections: [
+        {
+          id: "intro", label: "Introdução",
+          theory: "Uma boa introdução de C3 termina com a TESE: a afirmação central que você vai defender. A tese deve ser clara, posicionada e antever os 2 argumentos que você desenvolverá.",
+          exercise: (t) => `Escreva uma introdução de 4 linhas sobre "${t}" que: (1) contextualize o problema, (2) apresente o recorte temático e (3) finalize com uma TESE que já anuncie 2 argumentos que você vai desenvolver.`,
+          placeholder: "Escreva sua introdução com tese clara que anuncia 2 argumentos...",
+        },
+        {
+          id: "des1", label: "Desenvolvimento 1",
+          theory: "O 1º parágrafo defende o PRIMEIRO argumento da tese. Estrutura eficaz: (1) tópico frasal, (2) desenvolvimento, (3) exemplo/dado, (4) interpretação que reforça a tese.",
+          exercise: (t) => `Escreva o 1º parágrafo de desenvolvimento sobre "${t}" usando a estrutura: tópico frasal → argumento → exemplo concreto → conclusão parcial que reforça a tese.`,
+          placeholder: "Escreva o Desenvolvimento 1 com estrutura: tópico frasal → argumento → exemplo → conclusão parcial...",
+        },
+        {
+          id: "des2", label: "Desenvolvimento 2",
+          theory: "O 2º parágrafo traz um argumento DIFERENTE e complementar. Não repita o raciocínio anterior. Conecte com 'Ademais', 'Por outro lado' ou 'A esse cenário soma-se'.",
+          exercise: (t) => `Escreva o 2º parágrafo sobre "${t}" com um ângulo DIFERENTE do 1º argumento. Comece com 'Ademais' ou 'A esse cenário soma-se' e explore uma causa ou consequência distinta.`,
+          placeholder: "Escreva o Desenvolvimento 2 com argumento diferente do primeiro...",
+        },
+        {
+          id: "conc", label: "Conclusão",
+          theory: "A conclusão deve RETOMAR a tese (sem repetir exatamente) e antecipar a proposta. É o 'para tanto' do texto: fecha os argumentos e aponta a saída.",
+          exercise: (t) => `Escreva uma conclusão sobre "${t}" que: (1) retome a tese com outras palavras, (2) sintetize os 2 argumentos em 1 frase e (3) introduza a proposta com 'Portanto' ou 'Diante do exposto'.`,
+          placeholder: "Escreva a conclusão retomando a tese e introduzindo a proposta...",
+        },
+      ],
+    },
+    {
+      code: "C4",
+      title: "Coesão",
+      description: "Conectivos e mecanismos linguísticos que articulam as ideias do texto.",
+      sections: [
+        {
+          id: "intro", label: "Introdução",
+          theory: "Na introdução, a coesão garante que o contexto, o recorte e a tese fluam sem interrupções. Evite listar ideias com 'e...e...e'. Prefira: 'Nesse sentido', 'Sob essa ótica', 'Diante disso'.",
+          exercise: (t) => `Reescreva esta introdução sobre "${t}" trocando os conectivos fracos por opções sofisticadas: 'O Brasil tem muitos problemas e ${t.toLowerCase()} é um deles e por isso o governo deve agir e resolver isso.'`,
+          placeholder: "Reescreva a introdução com conectivos sofisticados...",
+        },
+        {
+          id: "des1", label: "Desenvolvimento 1",
+          theory: "O início do 1º parágrafo NUNCA deve começar com 'E'. Use: 'Em primeiro lugar', 'Primeiramente', 'Nesse contexto', 'Sob essa perspectiva'.",
+          exercise: (t) => `Escreva as primeiras 2 frases do 1º parágrafo sobre "${t}" usando um conector de abertura sofisticado (não use 'Em primeiro lugar'). Depois justifique por que o conector escolhido é adequado.`,
+          placeholder: "Escreva as primeiras frases com conector sofisticado e justifique a escolha...",
+        },
+        {
+          id: "des2", label: "Desenvolvimento 2",
+          theory: "Para o 2º argumento, use conectivos de ADIÇÃO sofisticados: 'Outrossim', 'Ademais', 'A esse contexto soma-se', 'Corrobora esse cenário'. Eles mostram que você amplia, não repete.",
+          exercise: (t) => `Escreva o tópico frasal (primeira frase) do 2º parágrafo sobre "${t}" usando 'Ademais' ou 'Outrossim'. Depois reescreva a mesma ideia usando 'A esse cenário soma-se'. Compare os dois.`,
+          placeholder: "Escreva com 'Ademais' e depois com 'A esse cenário soma-se' e compare...",
+        },
+        {
+          id: "conc", label: "Conclusão",
+          theory: "A conclusão tem conectivos próprios de fechamento: 'Portanto', 'Logo', 'Conclui-se que', 'Diante do exposto'. Escolha um e NÃO repita o conector já usado no texto.",
+          exercise: (t) => `Escreva a primeira linha de uma conclusão sobre "${t}" usando um conectivo conclusivo diferente de 'Portanto'. Depois escreva mais 2 opções de primeira linha com conectivos diferentes para treinar a variedade.`,
+          placeholder: "Escreva 3 opções de primeira frase da conclusão com conectivos diferentes...",
+        },
+      ],
+    },
+    {
+      code: "C5",
+      title: "Proposta de intervenção",
+      description: "Ação detalhada, completa e alinhada aos direitos humanos.",
+      sections: [
+        {
+          id: "intro", label: "Introdução",
+          theory: "A introdução NÃO é o lugar da proposta. Aqui, você apenas CONTEXTUALIZA o problema que será resolvido na conclusão. Não adiante soluções antes de argumentar.",
+          exercise: (t) => `Escreva uma introdução sobre "${t}" SEM incluir nenhuma proposta de solução — apenas contextualize o problema e apresente sua tese. Depois sublinhue mentalmente onde estaria a tentação de adiantar a proposta.`,
+          placeholder: "Escreva a introdução apenas contextualizando o problema, sem proposta...",
+        },
+        {
+          id: "des1", label: "Desenvolvimento 1",
+          theory: "No desenvolvimento, explore as CAUSAS do problema para embasar a proposta futura. Ex: 'A falta de investimento público... gera como consequência...'. Isso prepara o leitor para a solução.",
+          exercise: (t) => `Escreva um parágrafo sobre "${t}" explorando as CAUSAS estruturais do problema. Termine o parágrafo com uma frase que crie urgência para a solução (sem ainda propô-la).`,
+          placeholder: "Explore as causas do problema e crie urgência sem ainda propor a solução...",
+        },
+        {
+          id: "des2", label: "Desenvolvimento 2",
+          theory: "O 2º desenvolvimento explora as CONSEQUÊNCIAS do problema — o que agrava a situação. Isso cria urgência para a solução que virá. Use 'Esse cenário perpetua... o que aprofunda...'.",
+          exercise: (t) => `Escreva um parágrafo sobre "${t}" explorando as CONSEQUÊNCIAS do problema a longo prazo. Comece com 'Ademais' e mostre como o problema se perpetua e se agrava sem intervenção.`,
+          placeholder: "Explore as consequências do problema começando com 'Ademais'...",
+        },
+        {
+          id: "conc", label: "Conclusão",
+          theory: "A proposta COMPLETA tem 5 elementos obrigatórios: (1) AGENTE — quem age? (2) AÇÃO — o que faz? (3) MEIO — como faz? (4) FINALIDADE — por quê? (5) DETALHAMENTO — com qual recurso/lei? Faltando um, a nota cai.",
+          exercise: (t) => `Monte a proposta de intervenção COMPLETA para o tema "${t}". Use o modelo: 'Cabe ao [AGENTE], por meio de [MEIO], [AÇÃO], a fim de [FINALIDADE], com [DETALHAMENTO].' Preencha todos os 5 elementos obrigatórios.`,
+          placeholder: "Cabe ao [AGENTE], por meio de [MEIO], [AÇÃO], a fim de [FINALIDADE], com [DETALHAMENTO]...",
+        },
+      ],
+    },
+  ];
 
 
 
@@ -322,52 +322,15 @@ export function EssayApp() {
     // Garante que o índice não passe do tamanho do array
     return index < dailyThemes.length ? index : 0;
   };
-  
+
   const [selectedDay, setSelectedDay] = useState(getTodayThemeIndex()); // dia atual dinâmico
   const fileRef = useRef<HTMLInputElement>(null);
   const runCorrection = useServerFn(correctEssay);
   const { user, signOut, isLoading } = useAuth();
   const navigate = useNavigate();
   const { preferences, isLoading: isPrefsLoading } = useUserPreferences();
-  const { saveEssay, essays } = useEssays();
-  const { unreadCount, refreshNotifications, notifications } = useNotifications();
-
-  const unreadMessagesCount = useMemo(() => {
-    return notifications?.filter((n) => n.type === "message" && !n.isRead).length || 0;
-  }, [notifications]);
-
-  const unreadNotifsCount = useMemo(() => {
-    return notifications?.filter((n) => n.type !== "message" && !n.isRead).length || 0;
-  }, [notifications]);
-
-  const streakDays = useMemo(() => {
-    if (!essays || essays.length === 0) return 0;
-    const dates = new Set(
-      essays.map((e) => new Date(e.created_at).toISOString().split("T")[0])
-    );
-    let streak = 0;
-    const checkDate = new Date();
-    const todayStr = checkDate.toISOString().split("T")[0];
-
-    if (!dates.has(todayStr)) {
-      checkDate.setDate(checkDate.getDate() - 1);
-      const yesterdayStr = checkDate.toISOString().split("T")[0];
-      if (!dates.has(yesterdayStr)) {
-        return 0;
-      }
-    }
-
-    while (true) {
-      const dStr = checkDate.toISOString().split("T")[0];
-      if (dates.has(dStr)) {
-        streak++;
-        checkDate.setDate(checkDate.getDate() - 1);
-      } else {
-        break;
-      }
-    }
-    return streak;
-  }, [essays]);
+  const { saveEssay } = useEssays();
+  const { unreadCount, refreshNotifications } = useNotifications();
 
   useEffect(() => {
     if (isLoading || (user && isPrefsLoading)) return;
@@ -404,13 +367,13 @@ export function EssayApp() {
       let correction: Correction;
       try {
         // Tenta enviar para o servidor de correção
-        correction = await runCorrection({ 
-          data: { 
+        correction = await runCorrection({
+          data: {
             essay: trimmed,
             targetScore: preferences?.targetScore,
             college: preferences?.college,
             course: preferences?.course
-          } 
+          }
         });
       } catch (networkOrServerErr) {
         console.warn("[handleCorrection] Fallback local ativado para mobile/offline:", networkOrServerErr);
@@ -428,23 +391,18 @@ export function EssayApp() {
 
       const currentThemeItem = dailyThemes[selectedDay];
       if (currentThemeItem) {
-        try {
-          await saveEssay({
-            theme_day: currentThemeItem.day,
-            theme_topic: currentThemeItem.topic,
-            essay_text: trimmed,
-            score: correction.score,
-            competencies: correction.competencies,
-            strengths: correction.strengths,
-            improvements: correction.improvements,
-            annotations: correction.annotations,
-          });
-          await refreshNotifications();
-        } catch (saveErr) {
-          console.warn("[handleCorrection] Erro ao salvar no histórico:", saveErr);
-        }
+        await saveEssay({
+          theme_day: currentThemeItem.day,
+          theme_topic: currentThemeItem.topic,
+          essay_text: text,
+          score: correction.score,
+          competencies: correction.competencies,
+          strengths: correction.strengths,
+          improvements: correction.improvements,
+          annotations: correction.annotations,
+        });
+        await refreshNotifications();
       }
-      toast.success("Redação corrigida com sucesso!");
     } catch (caught) {
       const msg = caught instanceof Error ? caught.message : "Não foi possível corrigir agora. Tente novamente em instantes.";
       setError(msg);
@@ -485,25 +443,22 @@ export function EssayApp() {
             <button
               type="button"
               onClick={() => goTo("laboratorio")}
-              className={`group flex w-full items-center justify-between rounded-xl px-3.5 py-3 text-sm font-semibold transition-all duration-200 shadow-sm ${
-                section === "laboratorio"
+              className={`group flex w-full items-center justify-between rounded-xl px-3.5 py-3 text-sm font-semibold transition-all duration-200 shadow-sm ${section === "laboratorio"
                   ? "bg-primary text-primary-foreground shadow-md shadow-primary/30 ring-2 ring-primary/40"
                   : "bg-primary/10 text-primary border border-primary/25 hover:bg-primary/15 hover:border-primary/45 hover:shadow-xs"
-              }`}
+                }`}
             >
               <span className="flex items-center gap-2.5">
-                <span className={`grid size-7 place-items-center rounded-lg transition-transform group-hover:scale-110 ${
-                  section === "laboratorio" ? "bg-primary-foreground/20 text-primary-foreground" : "bg-primary text-primary-foreground"
-                }`}>
+                <span className={`grid size-7 place-items-center rounded-lg transition-transform group-hover:scale-110 ${section === "laboratorio" ? "bg-primary-foreground/20 text-primary-foreground" : "bg-primary text-primary-foreground"
+                  }`}>
                   <PenLine className="size-3.5" />
                 </span>
                 <span className="font-bold">Laboratório</span>
               </span>
-              <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                section === "laboratorio"
+              <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full ${section === "laboratorio"
                   ? "bg-primary-foreground/20 text-primary-foreground"
                   : "bg-primary/20 text-primary"
-              }`}>
+                }`}>
                 Escrever
               </span>
             </button>
@@ -524,15 +479,13 @@ export function EssayApp() {
                       key={item.id}
                       type="button"
                       onClick={() => goTo(item.id)}
-                      className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-                        isActive
+                      className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${isActive
                           ? "bg-primary text-primary-foreground font-semibold shadow-xs"
                           : "text-muted-foreground hover:bg-accent/60 hover:text-foreground hover:translate-x-0.5"
-                      }`}
+                        }`}
                     >
-                      <item.icon className={`size-4 transition-transform group-hover:scale-110 ${
-                        isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground"
-                      }`} />
+                      <item.icon className={`size-4 transition-transform group-hover:scale-110 ${isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground"
+                        }`} />
                       <span>{item.label}</span>
                     </button>
                   );
@@ -553,16 +506,14 @@ export function EssayApp() {
                       key={item.id}
                       type="button"
                       onClick={() => goTo(item.id)}
-                      className={`group flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-                        isActive
+                      className={`group flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${isActive
                           ? "bg-primary text-primary-foreground font-semibold shadow-xs"
                           : "text-muted-foreground hover:bg-accent/60 hover:text-foreground hover:translate-x-0.5"
-                      }`}
+                        }`}
                     >
                       <span className="flex items-center gap-3">
-                        <item.icon className={`size-4 transition-transform group-hover:scale-110 ${
-                          isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground"
-                        }`} />
+                        <item.icon className={`size-4 transition-transform group-hover:scale-110 ${isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground"
+                          }`} />
                         <span>{item.label}</span>
                       </span>
                     </button>
@@ -583,11 +534,10 @@ export function EssayApp() {
                 <button
                   type="button"
                   onClick={() => goTo("mensagens")}
-                  className={`flex items-center justify-between gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-all ${
-                    section === "mensagens"
+                  className={`flex items-center justify-between gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-all ${section === "mensagens"
                       ? "bg-primary text-primary-foreground font-semibold shadow-xs"
                       : "bg-background text-muted-foreground hover:text-foreground hover:bg-accent border border-border/50"
-                  }`}
+                    }`}
                   title="Abrir Mensagens"
                 >
                   <span className="flex items-center gap-1.5 truncate">
@@ -595,11 +545,10 @@ export function EssayApp() {
                     <span>Chat</span>
                   </span>
                   {unreadMessagesCount > 0 && (
-                    <span className={`flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold ${
-                      section === "mensagens"
+                    <span className={`flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold ${section === "mensagens"
                         ? "bg-primary-foreground text-primary"
                         : "bg-primary text-primary-foreground"
-                    }`}>
+                      }`}>
                       {unreadMessagesCount > 9 ? "9+" : unreadMessagesCount}
                     </span>
                   )}
@@ -608,11 +557,10 @@ export function EssayApp() {
                 <button
                   type="button"
                   onClick={() => goTo("notificacoes")}
-                  className={`flex items-center justify-between gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-all ${
-                    section === "notificacoes"
+                  className={`flex items-center justify-between gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-all ${section === "notificacoes"
                       ? "bg-primary text-primary-foreground font-semibold shadow-xs"
                       : "bg-background text-muted-foreground hover:text-foreground hover:bg-accent border border-border/50"
-                  }`}
+                    }`}
                   title="Abrir Notificações"
                 >
                   <span className="flex items-center gap-1.5 truncate">
@@ -620,11 +568,10 @@ export function EssayApp() {
                     <span>Avisos</span>
                   </span>
                   {unreadNotifsCount > 0 && (
-                    <span className={`flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold ${
-                      section === "notificacoes"
+                    <span className={`flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold ${section === "notificacoes"
                         ? "bg-primary-foreground text-primary"
                         : "bg-primary text-primary-foreground"
-                    }`}>
+                      }`}>
                       {unreadNotifsCount > 9 ? "9+" : unreadNotifsCount}
                     </span>
                   )}
@@ -694,9 +641,8 @@ export function EssayApp() {
               variant="ghost"
               size="icon"
               onClick={() => goTo("mensagens")}
-              className={`relative size-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors ${
-                section === "mensagens" ? "bg-accent text-primary ring-2 ring-primary/20" : ""
-              }`}
+              className={`relative size-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors ${section === "mensagens" ? "bg-accent text-primary ring-2 ring-primary/20" : ""
+                }`}
               title="Mensagens"
               aria-label="Abrir mensagens"
             >
@@ -713,9 +659,8 @@ export function EssayApp() {
               variant="ghost"
               size="icon"
               onClick={() => goTo("notificacoes")}
-              className={`relative size-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors ${
-                section === "notificacoes" ? "bg-accent text-primary ring-2 ring-primary/20" : ""
-              }`}
+              className={`relative size-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors ${section === "notificacoes" ? "bg-accent text-primary ring-2 ring-primary/20" : ""
+                }`}
               title="Notificações"
               aria-label="Abrir notificações"
             >
@@ -794,11 +739,11 @@ export function EssayApp() {
             const sentences = p.split('. ');
             const firstSentence = sentences[0] + (sentences.length > 1 ? '.' : '');
             const restOfText = sentences.length > 1 ? ' ' + sentences.slice(1).join('. ') : '';
-            
+
             const highlightColor = i === 0 ? "bg-blue-200/60 text-blue-900 dark:bg-blue-900/40 dark:text-blue-100" : i === 1 ? "bg-green-200/60 text-green-900 dark:bg-green-900/40 dark:text-green-100" : "bg-purple-200/60 text-purple-900 dark:bg-purple-900/40 dark:text-purple-100";
             const tipColorClass = i === 0 ? "border-blue-500 bg-blue-100 text-blue-900 dark:bg-blue-900/60 dark:text-blue-50" : i === 1 ? "border-green-500 bg-green-100 text-green-900 dark:bg-green-900/60 dark:text-green-50" : "border-purple-500 bg-purple-100 text-purple-900 dark:bg-purple-900/60 dark:text-purple-50";
             const label = i === 0 ? "Ponto Positivo: Tese clara e repertório bem conectado." : i === 1 ? "Ponto Positivo: Argumentação progressiva, mantendo o recorte temático." : "Ponto Positivo: Intervenção completa (agente, ação, meio e finalidade).";
-            
+
             return (
               <div key={i} className="relative p-5 rounded-xl border border-border bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,rgba(0,0,0,0.02)_10px,rgba(0,0,0,0.02)_20px)] dark:bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,rgba(255,255,255,0.02)_10px,rgba(255,255,255,0.02)_20px)] shadow-sm">
                 <p className="text-base relative z-10">
@@ -828,16 +773,16 @@ function CourseTarget({ goTo }: { goTo: (section: Section) => void }) {
   const targetScoreNum = preferences?.targetScore ? parseInt(preferences.targetScore, 10) : 900;
   const course = preferences?.course || "seu curso";
   const college = preferences?.college || "sua universidade";
-  
+
   const avgRequired = Math.max(700, targetScoreNum - 40);
   const hoursPerWeek = targetScoreNum > 800 ? 4 : targetScoreNum > 700 ? 3 : 2;
   const currentAvg = essayStats.averageScore;
   const distance = Math.max(0, targetScoreNum - currentAvg);
-  
+
   return (
     <>
       <PageTitle eyebrow="Seu Alvo" title={`Meta: ${course} na ${college}`} description="Entenda os números e o esforço necessário para alcançar sua vaga." />
-      
+
       <div className="grid gap-6 md:grid-cols-3 mb-8">
         <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
           <div className="mb-4 text-primary"><Target className="size-8" /></div>
@@ -845,14 +790,14 @@ function CourseTarget({ goTo }: { goTo: (section: Section) => void }) {
           <p className="mt-2 text-3xl font-black">{targetScoreNum}</p>
           <p className="mt-2 text-sm text-muted-foreground">Essa é a meta que você deve buscar na redação para garantir uma margem segura.</p>
         </div>
-        
+
         <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
           <div className="mb-4 text-primary"><TrendingUp className="size-8" /></div>
           <h3 className="text-lg font-bold">Média dos Aprovados</h3>
           <p className="mt-2 text-3xl font-black">{avgRequired}</p>
           <p className="mt-2 text-sm text-muted-foreground">A maioria dos aprovados neste curso tirou notas próximas a essa.</p>
         </div>
-        
+
         <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
           <div className="mb-4 text-primary"><Clock3 className="size-8" /></div>
           <h3 className="text-lg font-bold">Carga Horária Ideal</h3>
@@ -860,7 +805,7 @@ function CourseTarget({ goTo }: { goTo: (section: Section) => void }) {
           <p className="mt-2 text-sm text-muted-foreground">Tempo recomendado focado apenas em redação (prática e correção) para o seu nível de meta.</p>
         </div>
       </div>
-      
+
       <div className="rounded-xl border border-border bg-card p-8 shadow-sm">
         <h3 className="text-xl font-bold mb-4">Onde você está vs. Onde precisa chegar</h3>
         <p className="mb-6 text-muted-foreground">Sua média atual nas últimas redações é de <strong>{currentAvg}</strong> pontos. Você precisa de mais <strong>{distance}</strong> pontos para atingir sua meta com segurança.</p>
@@ -869,7 +814,7 @@ function CourseTarget({ goTo }: { goTo: (section: Section) => void }) {
           <span>Atual: {currentAvg}</span>
           <span className="text-primary">Meta: {targetScoreNum}</span>
         </div>
-        
+
         <div className="mt-8">
           <Button onClick={() => goTo("laboratorio")} className="rounded-xl w-full md:w-auto">
             Começar a treinar <ArrowRight className="ml-2 size-4" />
@@ -885,7 +830,7 @@ function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
   const { user } = useAuth();
   const { stats: essayStats } = useEssays();
   const targetScoreNum = preferences?.targetScore ? parseInt(preferences.targetScore, 10) : 900;
-  
+
   const dashboardStats: Array<[string, string, LucideIcon]> = [
     [essayStats.totalCompleted.toString(), "Redações enviadas", FileText],
     [essayStats.totalCompleted > 0 ? essayStats.averageScore.toString() : "-", "Média atual", TrendingUp],
@@ -896,7 +841,7 @@ function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
       <div className="absolute right-8 top-1/2 hidden -translate-y-1/2 opacity-15 md:block"><Quote className="size-52" /></div>
       <div className="relative max-w-3xl"><span className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary-foreground/15 px-3 py-1 text-xs font-bold uppercase"><Sparkles className="size-3" /> Desafio do dia · +120 XP</span><h2 className="text-2xl font-bold leading-tight md:text-4xl">Desafios para o enfrentamento da insegurança alimentar no Brasil contemporâneo</h2><p className="mt-4 text-primary-foreground/75">Pratique repertório produtivo, construção de tese e proposta de intervenção completa.</p><Button onClick={() => goTo("laboratorio")} className="mt-7 rounded-xl bg-background text-foreground hover:bg-background/90">Começar a escrever <ArrowRight /></Button></div>
     </section>
-    <section className="mt-6 grid gap-4 sm:grid-cols-3">{dashboardStats.map(([value,label,Icon]) => <div key={label} className="rounded-xl border border-border bg-card p-5 shadow-sm"><div className="mb-5 flex items-center justify-between"><span className="grid size-10 place-items-center rounded-lg bg-accent text-primary"><Icon className="size-5" /></span><span className="text-xs font-semibold text-success">este mês</span></div><strong className="text-3xl">{value}</strong><p className="mt-1 text-sm text-muted-foreground">{label}</p></div>)}</section>
+    <section className="mt-6 grid gap-4 sm:grid-cols-3">{dashboardStats.map(([value, label, Icon]) => <div key={label} className="rounded-xl border border-border bg-card p-5 shadow-sm"><div className="mb-5 flex items-center justify-between"><span className="grid size-10 place-items-center rounded-lg bg-accent text-primary"><Icon className="size-5" /></span><span className="text-xs font-semibold text-success">este mês</span></div><strong className="text-3xl">{value}</strong><p className="mt-1 text-sm text-muted-foreground">{label}</p></div>)}</section>
     <section className="mt-8">
       <h3 className="font-bold text-lg mb-4">Acesso Rápido</h3>
       <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
@@ -922,13 +867,13 @@ function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
         </Button>
       </div>
     </section>
-    <section className="mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]"><div className="rounded-xl border border-border bg-card p-6 shadow-sm"><div className="mb-8 flex items-center justify-between"><div><h3 className="font-bold">Sua evolução</h3><p className="text-sm text-muted-foreground">Últimas cinco redações</p></div><span className="rounded-lg bg-accent px-3 py-1 text-xs font-semibold text-primary">{essayStats.totalCompleted > 1 ? `${essayStats.evolutionPercent >= 0 ? '+' : ''}${essayStats.evolutionPercent}%` : `${essayStats.totalCompleted} concluída(s)`}</span></div><div className="flex h-44 items-end justify-between gap-3 border-b border-border px-2">{essayStats.recentScores.map((score,i) => <div key={i} className="flex h-full flex-1 flex-col justify-end gap-2 text-center"><span className="text-xs font-bold">{score > 0 ? score : "-"}</span><div className="rounded-t-md bg-primary/20 transition-colors hover:bg-primary" style={{height: `${score > 0 ? score/10 : 0}%`}} /><span className="pb-2 text-xs text-muted-foreground">R{i+1}</span></div>)}</div></div><div className="rounded-xl border border-border bg-card p-6 shadow-sm"><h3 className="font-bold">Sua Meta (Target)</h3><p className="mt-1 text-sm text-muted-foreground">Chegue à média {targetScoreNum}</p><div className="my-6 grid place-items-center"><div className="grid size-32 place-items-center rounded-full border-[12px] border-accent"><div className="text-center"><strong className="text-2xl">{essayStats.averageScore}</strong><small className="block text-muted-foreground">de {targetScoreNum}</small></div></div></div><Progress value={targetScoreNum > 0 ? Math.min(100, Math.round((essayStats.averageScore / targetScoreNum) * 100)) : 0} /><p className="mt-3 text-center text-xs text-muted-foreground">{essayStats.totalCompleted === 0 ? "Envie sua primeira redação para começar a medir a distância da meta." : essayStats.averageScore >= targetScoreNum ? "🎉 Parabéns! Você já superou sua meta!" : `Você está a ${Math.max(0, targetScoreNum - essayStats.averageScore)} pontos da meta.`}</p></div></section>
+    <section className="mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]"><div className="rounded-xl border border-border bg-card p-6 shadow-sm"><div className="mb-8 flex items-center justify-between"><div><h3 className="font-bold">Sua evolução</h3><p className="text-sm text-muted-foreground">Últimas cinco redações</p></div><span className="rounded-lg bg-accent px-3 py-1 text-xs font-semibold text-primary">{essayStats.totalCompleted > 1 ? `${essayStats.evolutionPercent >= 0 ? '+' : ''}${essayStats.evolutionPercent}%` : `${essayStats.totalCompleted} concluída(s)`}</span></div><div className="flex h-44 items-end justify-between gap-3 border-b border-border px-2">{essayStats.recentScores.map((score, i) => <div key={i} className="flex h-full flex-1 flex-col justify-end gap-2 text-center"><span className="text-xs font-bold">{score > 0 ? score : "-"}</span><div className="rounded-t-md bg-primary/20 transition-colors hover:bg-primary" style={{ height: `${score > 0 ? score / 10 : 0}%` }} /><span className="pb-2 text-xs text-muted-foreground">R{i + 1}</span></div>)}</div></div><div className="rounded-xl border border-border bg-card p-6 shadow-sm"><h3 className="font-bold">Sua Meta (Target)</h3><p className="mt-1 text-sm text-muted-foreground">Chegue à média {targetScoreNum}</p><div className="my-6 grid place-items-center"><div className="grid size-32 place-items-center rounded-full border-[12px] border-accent"><div className="text-center"><strong className="text-2xl">{essayStats.averageScore}</strong><small className="block text-muted-foreground">de {targetScoreNum}</small></div></div></div><Progress value={targetScoreNum > 0 ? Math.min(100, Math.round((essayStats.averageScore / targetScoreNum) * 100)) : 0} /><p className="mt-3 text-center text-xs text-muted-foreground">{essayStats.totalCompleted === 0 ? "Envie sua primeira redação para começar a medir a distância da meta." : essayStats.averageScore >= targetScoreNum ? "🎉 Parabéns! Você já superou sua meta!" : `Você está a ${Math.max(0, targetScoreNum - essayStats.averageScore)} pontos da meta.`}</p></div></section>
   </>;
 }
 
 function Mural({ onOpen, currentTheme }: { onOpen: (essay: any) => void; currentTheme: typeof dailyThemes[number] }) {
   const themeEssays = currentTheme.essays || [];
-  return <><PageTitle eyebrow="Inspire-se" title="Mural nota mil" description={`Leia textos exemplares sobre o tema do dia: ${currentTheme.topic}`} /><div className="grid gap-5 md:grid-cols-3">{themeEssays.map((essay,i) => <article key={essay.title} onClick={() => onOpen(essay)} className="group cursor-pointer rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"><div className="mb-5 flex items-center justify-between"><span className="rounded-full bg-accent px-3 py-1 text-xs font-bold text-primary">NOTA 1000</span><span className="text-5xl font-black text-primary/10">0{i+1}</span></div><h2 className="text-xl font-bold leading-snug group-hover:text-primary">{essay.title}</h2><p className="mt-2 text-xs font-semibold text-muted-foreground">{essay.author}</p><p className="mt-5 line-clamp-4 text-sm leading-6 text-muted-foreground">{essay.intro}</p><div className="mt-6 flex items-center gap-2 text-sm font-bold text-primary">Ler e analisar <ArrowRight className="size-4" /></div></article>)}</div></>;
+  return <><PageTitle eyebrow="Inspire-se" title="Mural nota mil" description={`Leia textos exemplares sobre o tema do dia: ${currentTheme.topic}`} /><div className="grid gap-5 md:grid-cols-3">{themeEssays.map((essay, i) => <article key={essay.title} onClick={() => onOpen(essay)} className="group cursor-pointer rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"><div className="mb-5 flex items-center justify-between"><span className="rounded-full bg-accent px-3 py-1 text-xs font-bold text-primary">NOTA 1000</span><span className="text-5xl font-black text-primary/10">0{i + 1}</span></div><h2 className="text-xl font-bold leading-snug group-hover:text-primary">{essay.title}</h2><p className="mt-2 text-xs font-semibold text-muted-foreground">{essay.author}</p><p className="mt-5 line-clamp-4 text-sm leading-6 text-muted-foreground">{essay.intro}</p><div className="mt-6 flex items-center gap-2 text-sm font-bold text-primary">Ler e analisar <ArrowRight className="size-4" /></div></article>)}</div></>;
 }
 
 function Competencies({ active, setActive, currentTheme }: {
@@ -943,9 +888,9 @@ function Competencies({ active, setActive, currentTheme }: {
 
   const sectionLabels: Record<string, { short: string; color: string }> = {
     intro: { short: "Introdução", color: "bg-blue-500/10 text-blue-600 border-blue-500/30" },
-    des1:  { short: "Dev. 1",     color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30" },
-    des2:  { short: "Dev. 2",     color: "bg-amber-500/10 text-amber-600 border-amber-500/30" },
-    conc:  { short: "Conclusão",  color: "bg-purple-500/10 text-purple-600 border-purple-500/30" },
+    des1: { short: "Dev. 1", color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30" },
+    des2: { short: "Dev. 2", color: "bg-amber-500/10 text-amber-600 border-amber-500/30" },
+    conc: { short: "Conclusão", color: "bg-purple-500/10 text-purple-600 border-purple-500/30" },
   };
 
   const handleVerifyExercise = async (
@@ -987,156 +932,154 @@ function Competencies({ active, setActive, currentTheme }: {
 
   return <><PageTitle eyebrow="Teoria em prática" title="Domine as competências" description="Para cada competência, pratique especificamente em cada parte da redação: Introdução, Desenvolvimento 1 e 2, e Conclusão." />
 
-  {/* Tema ativo do Laboratório */}
-  <div className={`mb-6 flex items-center gap-3 rounded-xl p-4 ${currentTheme.hot ? 'border border-orange-400/30 bg-orange-500/8' : 'border border-border bg-accent/40'}`}>
-    <div className={`grid size-10 shrink-0 place-items-center rounded-lg text-white ${currentTheme.hot ? 'bg-orange-500' : 'bg-primary'}`}>
-      {currentTheme.hot ? <span className="text-lg">🔥</span> : <FileText className="size-5" />}
+    {/* Tema ativo do Laboratório */}
+    <div className={`mb-6 flex items-center gap-3 rounded-xl p-4 ${currentTheme.hot ? 'border border-orange-400/30 bg-orange-500/8' : 'border border-border bg-accent/40'}`}>
+      <div className={`grid size-10 shrink-0 place-items-center rounded-lg text-white ${currentTheme.hot ? 'bg-orange-500' : 'bg-primary'}`}>
+        {currentTheme.hot ? <span className="text-lg">🔥</span> : <FileText className="size-5" />}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className={`text-xs font-bold uppercase tracking-wide ${currentTheme.hot ? 'text-orange-600' : 'text-primary'}`}>Tema do laboratório — Dia {currentTheme.day}</p>
+        <p className="truncate font-semibold text-sm">{currentTheme.topic}</p>
+      </div>
+      <span className="shrink-0 rounded-full border border-border bg-background px-2 py-1 text-[10px] font-bold text-muted-foreground">Treino ativo</span>
     </div>
-    <div className="min-w-0 flex-1">
-      <p className={`text-xs font-bold uppercase tracking-wide ${currentTheme.hot ? 'text-orange-600' : 'text-primary'}`}>Tema do laboratório — Dia {currentTheme.day}</p>
-      <p className="truncate font-semibold text-sm">{currentTheme.topic}</p>
-    </div>
-    <span className="shrink-0 rounded-full border border-border bg-background px-2 py-1 text-[10px] font-bold text-muted-foreground">Treino ativo</span>
-  </div>
-  <div className="space-y-4">
-    {competencyTraining.map((comp, i) => {
-      const currentSection = (activeSection[i] ?? 'intro') as "intro" | "des1" | "des2" | "conc";
-      const currentSectionData = comp.sections.find(s => s.id === currentSection)!;
-      const answerKey = `${i}-${currentSection}`;
-      const isEvaluatingThis = !!evaluating[answerKey];
-      const currentEval = evalResults[answerKey];
+    <div className="space-y-4">
+      {competencyTraining.map((comp, i) => {
+        const currentSection = (activeSection[i] ?? 'intro') as "intro" | "des1" | "des2" | "conc";
+        const currentSectionData = comp.sections.find(s => s.id === currentSection)!;
+        const answerKey = `${i}-${currentSection}`;
+        const isEvaluatingThis = !!evaluating[answerKey];
+        const currentEval = evalResults[answerKey];
 
-      return (
-        <div key={comp.code} className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-          {/* Header */}
-          <button type="button" onClick={() => setActive(active === i ? -1 : i)} className="flex w-full items-center gap-4 p-5 text-left">
-            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-accent font-bold text-primary">{comp.code}</span>
-            <span className="flex-1">
-              <strong className="block">{comp.title}</strong>
-              <small className="text-muted-foreground">0 a 200 pontos</small>
-            </span>
-            <ChevronDown className={`size-5 transition-transform ${active === i ? 'rotate-180' : ''}`} />
-          </button>
+        return (
+          <div key={comp.code} className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+            {/* Header */}
+            <button type="button" onClick={() => setActive(active === i ? -1 : i)} className="flex w-full items-center gap-4 p-5 text-left">
+              <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-accent font-bold text-primary">{comp.code}</span>
+              <span className="flex-1">
+                <strong className="block">{comp.title}</strong>
+                <small className="text-muted-foreground">0 a 200 pontos</small>
+              </span>
+              <ChevronDown className={`size-5 transition-transform ${active === i ? 'rotate-180' : ''}`} />
+            </button>
 
-          {/* Expanded Content */}
-          {active === i && (
-            <div className="border-t border-border">
-              {/* Section Tabs */}
-              <div className="flex gap-2 overflow-x-auto border-b border-border bg-muted/30 px-5 py-3">
-                {comp.sections.map((section) => (
-                  <button
-                    key={section.id}
-                    type="button"
-                    onClick={() => setActiveSection(prev => ({ ...prev, [i]: section.id }))}
-                    className={`shrink-0 rounded-lg border px-4 py-1.5 text-sm font-semibold transition-all ${
-                      currentSection === section.id
-                        ? (sectionLabels[section.id]?.color || '') + ' shadow-sm'
-                        : 'border-transparent text-muted-foreground hover:bg-accent'
-                    }`}
-                  >
-                    {sectionLabels[section.id]?.short || section.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Theory + Exercise */}
-              <div className="px-5 py-6 md:px-8">
-                <div className="mb-4 flex items-start gap-3 rounded-xl bg-accent/60 p-4">
-                  <Lightbulb className="mt-0.5 size-5 shrink-0 text-primary" />
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-wide text-primary mb-1">{currentSectionData.label} — teoria</p>
-                    <p className="text-sm leading-6 text-foreground">{currentSectionData.theory}</p>
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-5">
-                  <strong className="flex items-center gap-2 text-sm text-foreground">
-                    <Play className="size-4 text-primary" />
-                    Exercício — {currentSectionData.label}
-                  </strong>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{currentSectionData.exercise(currentTheme.topic)}</p>
-                  <textarea
-                    value={answers[answerKey] ?? ''}
-                    onChange={(e) => setAnswers(prev => ({ ...prev, [answerKey]: e.target.value }))}
-                    placeholder={currentSectionData.placeholder}
-                    rows={4}
-                    className="mt-4 w-full resize-none rounded-lg border border-input bg-background p-3 text-sm leading-6 outline-none transition-all focus:ring-2 focus:ring-primary"
-                  />
-                  <div className="mt-3 flex items-center justify-between gap-3">
-                    <span className="text-xs text-muted-foreground">{(answers[answerKey] ?? '').length} caracteres</span>
-                    <Button
-                      size="sm"
-                      className="rounded-lg gap-1.5"
-                      disabled={isEvaluatingThis}
-                      onClick={() => handleVerifyExercise(comp.code as "C1" | "C2" | "C3" | "C4" | "C5", currentSection, answerKey)}
+            {/* Expanded Content */}
+            {active === i && (
+              <div className="border-t border-border">
+                {/* Section Tabs */}
+                <div className="flex gap-2 overflow-x-auto border-b border-border bg-muted/30 px-5 py-3">
+                  {comp.sections.map((section) => (
+                    <button
+                      key={section.id}
+                      type="button"
+                      onClick={() => setActiveSection(prev => ({ ...prev, [i]: section.id }))}
+                      className={`shrink-0 rounded-lg border px-4 py-1.5 text-sm font-semibold transition-all ${currentSection === section.id
+                          ? (sectionLabels[section.id]?.color || '') + ' shadow-sm'
+                          : 'border-transparent text-muted-foreground hover:bg-accent'
+                        }`}
                     >
-                      <Sparkles className="size-3.5" />
-                      {isEvaluatingThis ? "Avaliando..." : "Verificar com IA"}
-                    </Button>
+                      {sectionLabels[section.id]?.short || section.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Theory + Exercise */}
+                <div className="px-5 py-6 md:px-8">
+                  <div className="mb-4 flex items-start gap-3 rounded-xl bg-accent/60 p-4">
+                    <Lightbulb className="mt-0.5 size-5 shrink-0 text-primary" />
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wide text-primary mb-1">{currentSectionData.label} — teoria</p>
+                      <p className="text-sm leading-6 text-foreground">{currentSectionData.theory}</p>
+                    </div>
                   </div>
 
-                  {/* Feedback da IA para o Exercício */}
-                  {currentEval && (
-                    <div className="mt-4 rounded-xl border border-border bg-card p-4 text-xs sm:text-sm space-y-3 shadow-sm animate-in fade-in-50 duration-200">
-                      <div className="flex items-center justify-between border-b border-border/60 pb-2.5">
-                        <span className="font-bold text-foreground flex items-center gap-2">
-                          <CheckCircle2 className="size-4 text-primary" /> Avaliação da Competência
-                        </span>
-                        <span className={`px-2.5 py-0.5 rounded-full font-extrabold text-xs ${
-                          currentEval.score >= 160 ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/30" :
-                          currentEval.score >= 120 ? "bg-blue-500/10 text-blue-600 border border-blue-500/30" :
-                          "bg-amber-500/10 text-amber-600 border border-amber-500/30"
-                        }`}>
-                          {currentEval.score} / 200 pts
-                        </span>
-                      </div>
-
-                      <p className="text-foreground leading-relaxed font-medium">
-                        {currentEval.feedback}
-                      </p>
-
-                      {currentEval.strengths.length > 0 && (
-                        <div className="space-y-1">
-                          <strong className="block text-[11px] uppercase tracking-wide text-success font-bold">Acertos:</strong>
-                          <ul className="space-y-1">
-                            {currentEval.strengths.map((s, idx) => (
-                              <li key={idx} className="text-muted-foreground flex items-start gap-1.5">
-                                <span className="text-success font-bold">✓</span> {s}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {currentEval.tips.length > 0 && (
-                        <div className="space-y-1">
-                          <strong className="block text-[11px] uppercase tracking-wide text-primary font-bold">Dica para os 200 pontos:</strong>
-                          <ul className="space-y-1">
-                            {currentEval.tips.map((t, idx) => (
-                              <li key={idx} className="text-muted-foreground flex items-start gap-1.5">
-                                <span className="text-primary font-bold">💡</span> {t}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-5">
+                    <strong className="flex items-center gap-2 text-sm text-foreground">
+                      <Play className="size-4 text-primary" />
+                      Exercício — {currentSectionData.label}
+                    </strong>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{currentSectionData.exercise(currentTheme.topic)}</p>
+                    <textarea
+                      value={answers[answerKey] ?? ''}
+                      onChange={(e) => setAnswers(prev => ({ ...prev, [answerKey]: e.target.value }))}
+                      placeholder={currentSectionData.placeholder}
+                      rows={4}
+                      className="mt-4 w-full resize-none rounded-lg border border-input bg-background p-3 text-sm leading-6 outline-none transition-all focus:ring-2 focus:ring-primary"
+                    />
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <span className="text-xs text-muted-foreground">{(answers[answerKey] ?? '').length} caracteres</span>
+                      <Button
+                        size="sm"
+                        className="rounded-lg gap-1.5"
+                        disabled={isEvaluatingThis}
+                        onClick={() => handleVerifyExercise(comp.code as "C1" | "C2" | "C3" | "C4" | "C5", currentSection, answerKey)}
+                      >
+                        <Sparkles className="size-3.5" />
+                        {isEvaluatingThis ? "Avaliando..." : "Verificar com IA"}
+                      </Button>
                     </div>
-                  )}
+
+                    {/* Feedback da IA para o Exercício */}
+                    {currentEval && (
+                      <div className="mt-4 rounded-xl border border-border bg-card p-4 text-xs sm:text-sm space-y-3 shadow-sm animate-in fade-in-50 duration-200">
+                        <div className="flex items-center justify-between border-b border-border/60 pb-2.5">
+                          <span className="font-bold text-foreground flex items-center gap-2">
+                            <CheckCircle2 className="size-4 text-primary" /> Avaliação da Competência
+                          </span>
+                          <span className={`px-2.5 py-0.5 rounded-full font-extrabold text-xs ${currentEval.score >= 160 ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/30" :
+                              currentEval.score >= 120 ? "bg-blue-500/10 text-blue-600 border border-blue-500/30" :
+                                "bg-amber-500/10 text-amber-600 border border-amber-500/30"
+                            }`}>
+                            {currentEval.score} / 200 pts
+                          </span>
+                        </div>
+
+                        <p className="text-foreground leading-relaxed font-medium">
+                          {currentEval.feedback}
+                        </p>
+
+                        {currentEval.strengths.length > 0 && (
+                          <div className="space-y-1">
+                            <strong className="block text-[11px] uppercase tracking-wide text-success font-bold">Acertos:</strong>
+                            <ul className="space-y-1">
+                              {currentEval.strengths.map((s, idx) => (
+                                <li key={idx} className="text-muted-foreground flex items-start gap-1.5">
+                                  <span className="text-success font-bold">✓</span> {s}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {currentEval.tips.length > 0 && (
+                          <div className="space-y-1">
+                            <strong className="block text-[11px] uppercase tracking-wide text-primary font-bold">Dica para os 200 pontos:</strong>
+                            <ul className="space-y-1">
+                              {currentEval.tips.map((t, idx) => (
+                                <li key={idx} className="text-muted-foreground flex items-start gap-1.5">
+                                  <span className="text-primary font-bold">💡</span> {t}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-      );
-    })}
-  </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
   </>;
 }
 
 function Repertory({ filter, setFilter, currentTheme }: { filter: string; setFilter: (value: string) => void; currentTheme: typeof dailyThemes[number] }) {
   const filters = ["Todos", "Leis", "Livros", "Filmes", "Séries", "Documentários", "Fatos Históricos", "Citações", "Músicas", "Conceitos"];
   const [selectedItem, setSelectedItem] = useState<typeof currentTheme.repertories[number] | null>(null);
-  
+
   return (
     <>
       <PageTitle eyebrow="Banco de ideias" title="Repertório sociocultural" description="Referências legitimadas e explicadas para você usar com pertinência — sem decorar frases soltas." />
@@ -1149,8 +1092,8 @@ function Repertory({ filter, setFilter, currentTheme }: { filter: string; setFil
       </div>
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         {currentTheme.repertories.filter((item) => filter === "Todos" || item.category === filter).map((item) => (
-          <article 
-            key={item.title} 
+          <article
+            key={item.title}
             onClick={() => setSelectedItem(item)}
             className="overflow-hidden rounded-xl border border-border bg-card shadow-sm cursor-pointer hover:border-primary/50 transition-colors"
           >
@@ -1185,7 +1128,7 @@ function Repertory({ filter, setFilter, currentTheme }: { filter: string; setFil
   );
 }
 
-function Laboratory(props: { tab: "digital"|"photo"; setTab: (v:"digital"|"photo")=>void; text:string; setText:(v:string)=>void; stats:{words:number;chars:number;lines:number}; timer:boolean; setTimer:(v:boolean)=>void; timerSeconds:number; setTimerSeconds:(v:number)=>void; preview:string|null; fileRef:React.RefObject<HTMLInputElement|null>; setPreview:(v:string|null)=>void; correcting:boolean; error:string; handleCorrection:()=>void; result:Correction|null; setResult:(v:Correction|null)=>void; selectedDay: number; setSelectedDay: (v: number) => void }) {
+function Laboratory(props: { tab: "digital" | "photo"; setTab: (v: "digital" | "photo") => void; text: string; setText: (v: string) => void; stats: { words: number; chars: number; lines: number }; timer: boolean; setTimer: (v: boolean) => void; timerSeconds: number; setTimerSeconds: (v: number) => void; preview: string | null; fileRef: React.RefObject<HTMLInputElement | null>; setPreview: (v: string | null) => void; correcting: boolean; error: string; handleCorrection: () => void; result: Correction | null; setResult: (v: Correction | null) => void; selectedDay: number; setSelectedDay: (v: number) => void }) {
   const { preferences } = useUserPreferences();
   const { getEssayForTheme, essays } = useEssays();
   const currentTheme = dailyThemes[props.selectedDay] ?? dailyThemes[0]!;
@@ -1229,31 +1172,30 @@ function Laboratory(props: { tab: "digital"|"photo"; setTab: (v:"digital"|"photo
               key={theme.day}
               type="button"
               onClick={() => handleSelectDay(idx)}
-              className={`relative flex min-w-[76px] shrink-0 flex-col items-center justify-center gap-1.5 rounded-2xl border-2 p-3 text-center transition-all ${
-                isSelected
+              className={`relative flex min-w-[76px] shrink-0 flex-col items-center justify-center gap-1.5 rounded-2xl border-2 p-3 text-center transition-all ${isSelected
                   ? 'border-primary bg-primary text-primary-foreground shadow-lg scale-105'
                   : isDone
-                  ? 'border-success/40 bg-success/5 text-foreground hover:bg-success/10'
-                  : isHot
-                  ? 'border-orange-400/40 bg-orange-500/5 text-foreground hover:bg-orange-500/10'
-                  : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:bg-accent'
-              }`}
+                    ? 'border-success/40 bg-success/5 text-foreground hover:bg-success/10'
+                    : isHot
+                      ? 'border-orange-400/40 bg-orange-500/5 text-foreground hover:bg-orange-500/10'
+                      : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:bg-accent'
+                }`}
             >
               {isHot && !isDone && (
                 <span className="absolute -right-2 -top-2 flex size-6 items-center justify-center rounded-full bg-orange-100 text-sm shadow-sm ring-2 ring-background">🔥</span>
               )}
-              
+
               <span className={`text-[11px] font-extrabold uppercase tracking-widest ${isSelected ? 'text-primary-foreground/80' : isDone ? 'text-success' : 'opacity-70'}`}>
                 {theme.label}
               </span>
               <span className="text-2xl font-black leading-none">{String(theme.day).padStart(2, '0')}</span>
-              
+
               {isDone ? (
                 <div className={`mt-1 flex items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-bold ${isSelected ? 'bg-primary-foreground text-primary' : 'bg-success/20 text-success'}`}>
                   <CheckCircle2 className="mr-1 size-3" /> {score}
                 </div>
               ) : (
-                <div className="mt-1 h-4 w-full" /> 
+                <div className="mt-1 h-4 w-full" />
               )}
             </button>
           );
@@ -1283,8 +1225,8 @@ function Laboratory(props: { tab: "digital"|"photo"; setTab: (v:"digital"|"photo
                       {isCourseHot && currentTheme.hot
                         ? `Alta chance no ENEM e para ${preferences?.course}`
                         : isCourseHot
-                        ? `Alta chance para ${preferences?.course}`
-                        : 'Alta chance no ENEM'}
+                          ? `Alta chance para ${preferences?.course}`
+                          : 'Alta chance no ENEM'}
                     </span>
                   )}
                 </div>
@@ -1343,14 +1285,14 @@ function Laboratory(props: { tab: "digital"|"photo"; setTab: (v:"digital"|"photo
     </div>
     {props.tab === "digital" ? <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4"><div className="flex items-center gap-4 text-xs font-semibold text-muted-foreground"><span>{props.stats.words} palavras</span><span>{props.stats.chars} caracteres</span><span>{props.stats.lines}/30 linhas</span></div><div className="flex items-center gap-2">{(props.timer || props.timerSeconds < 5400) && <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); props.setTimer(false); props.setTimerSeconds(5400); }} className="rounded-lg text-xs px-2 text-destructive hover:text-destructive hover:bg-destructive/10">Resetar</Button>}{(props.timer || props.timerSeconds < 5400) && <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); props.setTimer(!props.timer); }} className="rounded-lg text-xs px-2 text-primary hover:text-primary hover:bg-primary/10">{props.timer ? <><Pause className="size-3.5 mr-1" />Pausar</> : <><Play className="size-3.5 mr-1" />Retomar</>}</Button>}<Button variant="outline" size="sm" onClick={() => { if (!props.timer && props.timerSeconds === 0) props.setTimerSeconds(5400); props.setTimer(!props.timer); }} className={`rounded-lg ${props.timer ? "border-primary text-primary" : props.timerSeconds < 5400 ? (props.timerSeconds === 0 ? "border-destructive text-destructive" : "border-orange-500 text-orange-600") : ""}`}><Clock3 /> {props.timer || props.timerSeconds < 5400 ? (() => { const h = Math.floor(props.timerSeconds / 3600); const m = Math.floor((props.timerSeconds % 3600) / 60); const s = props.timerSeconds % 60; return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`; })() : "Ativar temporizador"}</Button></div></div><textarea value={props.text} onChange={(e) => props.setText(e.target.value)} placeholder={`Tema: "${currentTheme.topic}"
 
-Comece pela sua tese. O que você defende sobre este tema?`} className="min-h-[480px] w-full resize-none bg-card p-6 text-base leading-8 outline-none md:p-10" style={{ backgroundImage: "linear-gradient(to bottom, transparent 31px, var(--line) 32px)", backgroundSize: "100% 32px" }} /><div className="flex flex-col items-end gap-2 border-t border-border p-4"><Button size="lg" onClick={props.handleCorrection} disabled={props.correcting} className="h-12 rounded-xl px-6"><Sparkles /> {props.correcting ? "Analisando com rigor adaptado..." : "Corrigir com Inteligência Artificial"}</Button>{props.error && <p className="text-sm text-destructive">{props.error}</p>}</div></div> : <div className="rounded-xl border-2 border-dashed border-border bg-card p-8 text-center shadow-sm md:p-16"><input ref={props.fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => { const file=e.target.files?.[0]; if(file) props.setPreview(URL.createObjectURL(file)); }} />{props.preview ? <img src={props.preview} alt="Prévia da redação" className="mx-auto max-h-[520px] rounded-xl object-contain shadow-sm" /> : <><span className="mx-auto grid size-16 place-items-center rounded-full bg-accent text-primary"><UploadCloud className="size-7" /></span><h2 className="mt-5 text-xl font-bold">Envie uma foto nítida da sua redação</h2><p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">Posicione a folha inteira, evite sombras e confira se o texto está legível.</p></>}<div className="mt-6 flex flex-wrap justify-center gap-2"><Button className="rounded-xl" onClick={() => props.fileRef.current?.click()}><ImagePlus /> Escolher imagem</Button><Button variant="outline" className="rounded-xl" onClick={() => props.fileRef.current?.click()}><Camera /> Usar câmera</Button></div></div>}
+Comece pela sua tese. O que você defende sobre este tema?`} className="min-h-[480px] w-full resize-none bg-card p-6 text-base leading-8 outline-none md:p-10" style={{ backgroundImage: "linear-gradient(to bottom, transparent 31px, var(--line) 32px)", backgroundSize: "100% 32px" }} /><div className="flex flex-col items-end gap-2 border-t border-border p-4"><Button size="lg" onClick={props.handleCorrection} disabled={props.correcting} className="h-12 rounded-xl px-6"><Sparkles /> {props.correcting ? "Analisando com rigor adaptado..." : "Corrigir com Inteligência Artificial"}</Button>{props.error && <p className="text-sm text-destructive">{props.error}</p>}</div></div> : <div className="rounded-xl border-2 border-dashed border-border bg-card p-8 text-center shadow-sm md:p-16"><input ref={props.fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) props.setPreview(URL.createObjectURL(file)); }} />{props.preview ? <img src={props.preview} alt="Prévia da redação" className="mx-auto max-h-[520px] rounded-xl object-contain shadow-sm" /> : <><span className="mx-auto grid size-16 place-items-center rounded-full bg-accent text-primary"><UploadCloud className="size-7" /></span><h2 className="mt-5 text-xl font-bold">Envie uma foto nítida da sua redação</h2><p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">Posicione a folha inteira, evite sombras e confira se o texto está legível.</p></>}<div className="mt-6 flex flex-wrap justify-center gap-2"><Button className="rounded-xl" onClick={() => props.fileRef.current?.click()}><ImagePlus /> Escolher imagem</Button><Button variant="outline" className="rounded-xl" onClick={() => props.fileRef.current?.click()}><Camera /> Usar câmera</Button></div></div>}
   </>;
 }
 
 function HighlightedText({ text, annotations }: { text: string; annotations: Correction['annotations'] }) {
   if (!annotations || annotations.length === 0) return <div className="whitespace-pre-wrap leading-relaxed">{text}</div>;
 
-  const matches: {start: number, end: number, type: 'acerto'|'erro'}[] = [];
+  const matches: { start: number, end: number, type: 'acerto' | 'erro' }[] = [];
   annotations.forEach(ann => {
     let index = text.indexOf(ann.excerpt);
     while (index !== -1) {
@@ -1427,7 +1369,7 @@ function Feedback({ result, text, onBack }: { result: Correction; text: string; 
                 {score >= 900 ? "Excelente desempenho!" : score >= 700 ? "Ótimo avanço!" : score >= 500 ? "Bom trabalho!" : "Continue praticando!"}
               </h2>
             </div>
-            
+
             <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
               <h2 className="text-lg font-bold">Competências</h2>
               <div className="mt-4 space-y-4">
@@ -1486,9 +1428,9 @@ function TrainingSection({ goTo }: { goTo: (section: Section) => void }) {
   const [openEssay, setOpenEssay] = useState<TrainingEssay | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filtered = trainingEssays.filter(e => 
-    !searchTerm || 
-    e.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const filtered = trainingEssays.filter(e =>
+    !searchTerm ||
+    e.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     e.theme.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
