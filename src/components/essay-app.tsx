@@ -86,7 +86,7 @@ import geografiaImage from "@/assets/repertorio-geografia.jpg";
 import cinemaImage from "@/assets/repertorio-cinema.jpg";
 import { getThemeMedia, getRepertoryImage } from "@/data/theme-media";
 
-type Section = "dashboard" | "feed" | "mural" | "competencias" | "repertorio" | "laboratorio" | "curso" | "perfil" | "mensagens" | "notificacoes" | "treinamento" | "arena";
+type Section = "dashboard" | "feed" | "arena" | "mural" | "competencias" | "repertorio" | "laboratorio" | "curso" | "perfil" | "mensagens" | "notificacoes" | "treinamento";
 type Correction = Awaited<ReturnType<typeof correctEssay>>;
 
 const mainNavItems = [
@@ -360,6 +360,7 @@ export function EssayApp() {
     const dates = new Set(
       essays.map((e) => new Date(e.created_at).toISOString().split("T")[0])
     );
+
     let streak = 0;
     const checkDate = new Date();
     const todayStr = checkDate.toISOString().split("T")[0];
@@ -422,19 +423,19 @@ export function EssayApp() {
         correction = await runCorrection({
           data: {
             essay: trimmed,
-            targetScore: preferences?.targetScore,
-            college: preferences?.college,
-            course: preferences?.course
+            ...(preferences?.targetScore ? { targetScore: preferences.targetScore } : {}),
+            ...(preferences?.college ? { college: preferences.college } : {}),
+            ...(preferences?.course ? { course: preferences.course } : {}),
           }
         });
       } catch (networkOrServerErr) {
         console.warn("[handleCorrection] Fallback local ativado para mobile/offline:", networkOrServerErr);
         // Fallback imediato: roda a avaliação oficial diretamente no navegador sem depender de rede!
-        const evalOpts: { targetScore?: string; college?: string; course?: string } = {};
-        if (preferences?.targetScore) evalOpts.targetScore = preferences.targetScore;
-        if (preferences?.college) evalOpts.college = preferences.college;
-        if (preferences?.course) evalOpts.course = preferences.course;
-        correction = evaluateEssayHeuristically(trimmed, evalOpts);
+        correction = evaluateEssayHeuristically(trimmed, {
+          ...(preferences?.targetScore ? { targetScore: preferences.targetScore } : {}),
+          ...(preferences?.college ? { college: preferences.college } : {}),
+          ...(preferences?.course ? { course: preferences.course } : {}),
+        });
       }
 
       setResult(correction);
@@ -711,7 +712,15 @@ export function EssayApp() {
               }}
             />
           )}
-          {section === "arena" && <ArenaOfArguments goTo={goTo} onStartChat={(profile) => { setChatTarget(profile); goTo("mensagens"); }} />}
+          {section === "arena" && (
+            <ArenaOfArguments
+              goTo={goTo}
+              onStartChat={(profile) => {
+                setChatTarget(profile);
+                goTo("mensagens");
+              }}
+            />
+          )}
           {section === "perfil" && (
             <StudentProfile
               targetProfile={profileTarget}

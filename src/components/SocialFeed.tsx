@@ -154,8 +154,8 @@ function getYouTubeEmbedUrl(url?: string | null): string | null {
 // ─────────────────────────────────────────────
 // Avatar com anel e iniciais
 // ─────────────────────────────────────────────
-function Avatar({ name, url, size = 10, ring = false, onClick }: { name?: string | null; url?: string | null; size?: number; ring?: boolean; onClick?: () => void }) {
-  const initials = (name ?? "?")[0].toUpperCase();
+function Avatar({ name, url, size = 10, ring = false, onClick }: { name?: string | null | undefined; url?: string | null | undefined; size?: number | undefined; ring?: boolean | undefined; onClick?: (() => void) | undefined }) {
+  const initials = ((name ?? "?")[0] || "?").toUpperCase();
   const cls = `size-${size} shrink-0 rounded-full overflow-hidden grid place-items-center bg-gradient-to-br from-primary to-primary/70 text-primary-foreground font-bold text-sm select-none ${ring ? "ring-2 ring-primary/30 ring-offset-1 ring-offset-background" : ""} ${onClick ? "cursor-pointer hover:opacity-90 transition-opacity" : ""}`;
   return (
     <div className={cls} onClick={onClick}>
@@ -221,7 +221,7 @@ function StoriesBar({ currentUserName, currentUserAvatar, onWritePost, onSelectT
           <div className="size-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border-2 border-dashed border-primary/40 group-hover:border-primary transition-colors grid place-items-center overflow-hidden">
             {currentUserAvatar
               ? <img src={currentUserAvatar} alt="" className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity" />
-              : <span className="text-xl font-bold text-primary">{(currentUserName ?? "?")[0].toUpperCase()}</span>
+              : <span className="text-xl font-bold text-primary">{((currentUserName ?? "?")[0] || "?").toUpperCase()}</span>
             }
           </div>
           <div className="absolute -bottom-0.5 -right-0.5 size-5 rounded-full bg-primary text-primary-foreground grid place-items-center border-2 border-background shadow-xs">
@@ -1081,10 +1081,10 @@ function FeedSuggestionsCarousel({
   onOpenProfile,
 }: {
   students: SuggestedStudent[];
-  onToggleFollow: (id: string, currentStatus: boolean) => void;
+  onToggleFollow: (id: string, currentStatus: boolean) => void | Promise<void>;
   onDismiss: (id: string) => void;
-  goTo?: (section: any) => void;
-  onOpenProfile?: (profile: any) => void;
+  goTo?: ((section: any) => void) | undefined;
+  onOpenProfile?: ((profile: any) => void) | undefined;
 }) {
   const visible = students.filter((s) => !s.isFollowing);
   if (visible.length === 0) return null;
@@ -1203,11 +1203,11 @@ function RightSidebar({
   trendingTags: string[];
   onHashtagClick: (tag: string) => void;
   suggestedStudents: SuggestedStudent[];
-  onToggleFollow: (id: string, currentStatus: boolean) => void;
-  onRefreshSuggestions?: () => void;
-  refreshing?: boolean;
-  goTo?: (section: any) => void;
-  onOpenProfile?: (profile: any) => void;
+  onToggleFollow: (id: string, currentStatus: boolean) => void | Promise<void>;
+  onRefreshSuggestions?: (() => void | Promise<void>) | undefined;
+  refreshing?: boolean | undefined;
+  goTo?: ((section: any) => void) | undefined;
+  onOpenProfile?: ((profile: any) => void) | undefined;
 }) {
   return (
     <div className="space-y-4 sticky top-20">
@@ -1375,7 +1375,7 @@ export function SocialFeed({
   const currentUserAvatar = preferences?.avatar_url ?? null;
 
   // Última redação concluída real
-  const latestEssay = essays.length > 0
+  const latestEssay = (essays && essays.length > 0 && essays[0])
     ? { id: essays[0].id, score: essays[0].score, theme_topic: essays[0].theme_topic }
     : null;
 
@@ -1461,7 +1461,7 @@ export function SocialFeed({
       // 6. Atividade recente na comunidade
       const recentPostersSet = new Set<string>();
       try {
-        const { data: recentPosts } = await supabase
+        const { data: recentPosts } = await (supabase as any)
           .from("posts")
           .select("user_id")
           .order("created_at", { ascending: false })
@@ -1505,11 +1505,11 @@ export function SocialFeed({
           // Sinal 2: Grafo Social de 2º Grau (Amigos em comum)
           if (mutuals.length > 0) {
             affinityScore += 60 + mutuals.length * 35;
-            if (mutuals.length === 1) {
+            if (mutuals.length === 1 && mutuals[0]) {
               connectionReason = `Seguido por ${mutuals[0].name}`;
-            } else if (mutuals.length === 2) {
+            } else if (mutuals.length === 2 && mutuals[0] && mutuals[1]) {
               connectionReason = `Seguido por ${mutuals[0].name} e ${mutuals[1].name}`;
-            } else {
+            } else if (mutuals[0]) {
               connectionReason = `Seguido por ${mutuals[0].name} e mais ${mutuals.length - 1}`;
             }
             if (!badge || badge.type !== "follows_you") {
@@ -1565,7 +1565,7 @@ export function SocialFeed({
             affinityScore -= 1000;
           }
 
-          return {
+          const student: SuggestedStudent = {
             id: p.id,
             name: p.full_name || "Estudante",
             course: [p.course, p.college].filter(Boolean).join(" • ") || "Vestibulando",
@@ -1577,9 +1577,10 @@ export function SocialFeed({
             mutualFollows: mutuals,
             connectionReason,
             affinityScore,
-            badge,
-            highestEssayScore: highestScore,
+            ...(badge ? { badge } : {}),
+            ...(highestScore !== undefined ? { highestEssayScore: highestScore } : {}),
           };
+          return student;
         });
 
         // Ordenar por afinidade decrescente
@@ -1602,7 +1603,7 @@ export function SocialFeed({
     setLoading(true);
 
     try {
-      const { data: rawPosts, error } = await supabase
+      const { data: rawPosts, error } = await (supabase as any)
         .from("posts")
         .select("*")
         .order("created_at", { ascending: false });
@@ -1610,7 +1611,7 @@ export function SocialFeed({
       if (error) {
         setDbPosts([]);
       } else if (rawPosts && rawPosts.length > 0) {
-        const userIds = [...new Set(rawPosts.map((p: any) => p.user_id))];
+        const userIds = [...new Set(rawPosts.map((p: any) => p.user_id))] as string[];
         const { data: profiles } = await supabase
           .from("profiles")
           .select("id, full_name, avatar_url, course, college")
@@ -1620,7 +1621,7 @@ export function SocialFeed({
         profiles?.forEach((p: any) => profileMap.set(p.id, p));
 
         const postIds = rawPosts.map((p: any) => p.id);
-        const { data: likes } = await supabase
+        const { data: likes } = await (supabase as any)
           .from("post_likes")
           .select("post_id")
           .eq("user_id", user.id)
@@ -1728,7 +1729,7 @@ export function SocialFeed({
   const handlePublish = async (data: any) => {
     if (!user) return;
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("posts")
         .insert({ user_id: user.id, ...data });
 
@@ -1748,9 +1749,9 @@ export function SocialFeed({
     if (!user) return;
 
     if (isLiked) {
-      await supabase.from("post_likes").delete().eq("post_id", postId).eq("user_id", user.id);
+      await (supabase as any).from("post_likes").delete().eq("post_id", postId).eq("user_id", user.id);
     } else {
-      await supabase.from("post_likes").insert({ post_id: postId, user_id: user.id });
+      await (supabase as any).from("post_likes").insert({ post_id: postId, user_id: user.id });
     }
 
     setDbPosts((prev) =>
@@ -1779,14 +1780,14 @@ export function SocialFeed({
 
     if (!post.comments_loaded) {
       try {
-        const { data: rawComments } = await supabase
+        const { data: rawComments } = await (supabase as any)
           .from("post_comments")
           .select("*")
           .eq("post_id", postId)
           .order("created_at", { ascending: true });
 
         const comments = rawComments ?? [];
-        const userIds = [...new Set(comments.map((c: any) => c.user_id))];
+        const userIds = [...new Set(comments.map((c: any) => c.user_id))] as string[];
         let profileMap = new Map<string, any>();
         if (userIds.length > 0) {
           const { data: profiles } = await supabase.from("profiles").select("id, full_name, avatar_url").in("id", userIds);
@@ -1814,7 +1815,7 @@ export function SocialFeed({
   const handleAddComment = async (postId: string, content: string) => {
     if (!user) return;
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("post_comments")
         .insert({ post_id: postId, user_id: user.id, content })
         .select()
@@ -1858,7 +1859,7 @@ export function SocialFeed({
   const handleDeleteComment = async (postId: string, commentId: string) => {
     if (!user) return;
     try {
-      await supabase.from("post_comments").delete().eq("id", commentId).eq("user_id", user.id);
+      await (supabase as any).from("post_comments").delete().eq("id", commentId).eq("user_id", user.id);
     } catch {
       // ignore
     }
@@ -1879,7 +1880,7 @@ export function SocialFeed({
   const handleDeletePost = async (postId: string) => {
     if (!user) return;
     try {
-      await supabase.from("posts").delete().eq("id", postId).eq("user_id", user.id);
+      await (supabase as any).from("posts").delete().eq("id", postId).eq("user_id", user.id);
     } catch {
       // ignore
     }
