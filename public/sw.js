@@ -61,3 +61,4 @@ self.addEventListener('push', (event) => {
     console.error('Erro ao processar push no Service Worker:', err);
   }
 });
+
