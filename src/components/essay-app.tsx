@@ -93,6 +93,8 @@ const mainNavItems = [
   { id: "dashboard" as const, label: "Visão geral", icon: LayoutDashboard },
   { id: "feed" as const, label: "Feed da Turma", icon: Sparkles },
   { id: "arena" as const, label: "Arena de Argumentos", icon: Swords },
+  { id: "notificacoes" as const, label: "Notificações", icon: Bell },
+  { id: "mensagens" as const, label: "Mensagens", icon: MessageCircle },
   { id: "curso" as const, label: "Seu Curso & Meta", icon: TrendingUp },
 ];
 
@@ -343,7 +345,7 @@ export function EssayApp() {
   const navigate = useNavigate();
   const { preferences, isLoading: isPrefsLoading } = useUserPreferences();
   const { saveEssay, essays } = useEssays();
-  const { unreadCount, refreshNotifications, notifications } = useNotifications();
+  const { unreadCount, refreshNotifications, notifications, sendCustomDeviceNotification } = useNotifications();
 
   const unreadMessagesCount = useMemo(() => {
     return notifications?.filter((n) => n.type === "message" && !n.isRead).length || 0;
@@ -358,21 +360,29 @@ export function EssayApp() {
     const dates = new Set(
       essays.map((e) => new Date(e.created_at).toISOString().split("T")[0])
     );
-    let count = 0;
-    const today = new Date();
-    for (let i = 0; i < 365; i++) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      const str = d.toISOString().split("T")[0];
-      if (dates.has(str)) {
-        count++;
-      } else if (i === 0) {
-        continue;
+
+    let streak = 0;
+    const checkDate = new Date();
+    const todayStr = checkDate.toISOString().split("T")[0];
+
+    if (!dates.has(todayStr)) {
+      checkDate.setDate(checkDate.getDate() - 1);
+      const yesterdayStr = checkDate.toISOString().split("T")[0];
+      if (!dates.has(yesterdayStr)) {
+        return 0;
+      }
+    }
+
+    while (true) {
+      const dStr = checkDate.toISOString().split("T")[0];
+      if (dates.has(dStr)) {
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1);
       } else {
         break;
       }
     }
-    return count;
+    return streak;
   }, [essays]);
 
   useEffect(() => {
