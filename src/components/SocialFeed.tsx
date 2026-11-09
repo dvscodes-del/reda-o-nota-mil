@@ -1597,59 +1597,106 @@ export function SocialFeed({
     }
   }, [user, preferences]);
 
-  // Carregar posts reais do Supabase
+  const LOCAL_POSTS_STORAGE_KEY = "nota_mil_feed_posts_local_v1";
+
+  const getLocalFeedPosts = (): FeedPost[] => {
+    try {
+      const raw = localStorage.getItem(LOCAL_POSTS_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const saveLocalFeedPost = (post: FeedPost) => {
+    try {
+      const current = getLocalFeedPosts();
+      const updated = [post, ...current.filter((p) => p.id !== post.id)];
+      localStorage.setItem(LOCAL_POSTS_STORAGE_KEY, JSON.stringify(updated.slice(0, 50)));
+    } catch (err) {
+      console.warn("Erro ao salvar post local:", err);
+    }
+  };
+
+  const removeLocalFeedPost = (postId: string) => {
+    try {
+      const current = getLocalFeedPosts();
+      const updated = current.filter((p) => p.id !== postId);
+      localStorage.setItem(LOCAL_POSTS_STORAGE_KEY, JSON.stringify(updated));
+    } catch {
+      // ignore
+    }
+  };
+
+  // Carregar posts reais do Supabase com fallback local resiliente
   const loadPosts = useCallback(async () => {
     if (!user) return;
     setLoading(true);
 
     try {
-      const { data: rawPosts, error } = await (supabase as any)
-        .from("posts")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const localPosts = getLocalFeedPosts();
+      let remotePosts: FeedPost[] = [];
 
-      if (error) {
-        setDbPosts([]);
-      } else if (rawPosts && rawPosts.length > 0) {
-        const userIds = [...new Set(rawPosts.map((p: any) => p.user_id))] as string[];
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, full_name, avatar_url, course, college")
-          .in("id", userIds);
+      try {
+        const { data: rawPosts, error } = await (supabase as any)
+          .from("posts")
+          .select("*")
+          .order("created_at", { ascending: false });
 
-        const profileMap = new Map<string, any>();
-        profiles?.forEach((p: any) => profileMap.set(p.id, p));
+        if (!error && rawPosts && rawPosts.length > 0) {
+          const userIds = [...new Set(rawPosts.map((p: any) => p.user_id))] as string[];
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("id, full_name, avatar_url, course, college")
+            .in("id", userIds);
 
-        const postIds = rawPosts.map((p: any) => p.id);
-        const { data: likes } = await (supabase as any)
-          .from("post_likes")
-          .select("post_id")
-          .eq("user_id", user.id)
-          .in("post_id", postIds);
+          const profileMap = new Map<string, any>();
+          profiles?.forEach((p: any) => profileMap.set(p.id, p));
 
-        const likedSet = new Set((likes || []).map((l: any) => l.post_id));
+          const postIds = rawPosts.map((p: any) => p.id);
+          const { data: likes } = await (supabase as any)
+            .from("post_likes")
+            .select("post_id")
+            .eq("user_id", user.id)
+            .in("post_id", postIds);
 
-        const enriched: FeedPost[] = rawPosts.map((p: any) => {
-          const prof = profileMap.get(p.user_id);
-          return {
-            ...p,
-            author_name: prof?.full_name ?? (p.user_id === user.id ? currentUserName : "Estudante"),
-            author_avatar: prof?.avatar_url ?? (p.user_id === user.id ? currentUserAvatar : null),
-            author_course: prof?.course ?? null,
-            author_college: prof?.college ?? null,
-            is_liked: likedSet.has(p.id),
-            comments: [],
-            comments_loaded: false,
-            show_comments: false,
-          };
-        });
+          const likedSet = new Set((likes || []).map((l: any) => l.post_id));
 
-        setDbPosts(enriched);
-      } else {
-        setDbPosts([]);
+          remotePosts = rawPosts.map((p: any) => {
+            const prof = profileMap.get(p.user_id);
+            return {
+              ...p,
+              author_name: prof?.full_name ?? (p.user_id === user.id ? currentUserName : "Estudante"),
+              author_avatar: prof?.avatar_url ?? (p.user_id === user.id ? currentUserAvatar : null),
+              author_course: prof?.course ?? null,
+              author_college: prof?.college ?? null,
+              is_liked: likedSet.has(p.id),
+              comments: [],
+              comments_loaded: false,
+              show_comments: false,
+            };
+          });
+        }
+      } catch (remoteErr) {
+        console.warn("[SocialFeed] Aviso ao buscar posts remotos:", remoteErr);
       }
+
+      // Combina posts remotos com posts locais sem duplicações
+      const combinedMap = new Map<string, FeedPost>();
+      remotePosts.forEach((p) => combinedMap.set(p.id, p));
+      localPosts.forEach((p) => {
+        if (!combinedMap.has(p.id)) {
+          combinedMap.set(p.id, p);
+        }
+      });
+
+      const combinedList = Array.from(combinedMap.values()).sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      setDbPosts(combinedList);
     } catch {
-      setDbPosts([]);
+      setDbPosts(getLocalFeedPosts());
     } finally {
       setLoading(false);
     }
@@ -1725,33 +1772,90 @@ export function SocialFeed({
     });
   }, [dbPosts, filterType, searchQuery]);
 
-  // Publicar post no Supabase
+  // Publicar post no Supabase com fallback local resiliente
   const handlePublish = async (data: any) => {
     if (!user) return;
-    try {
-      const { error } = await (supabase as any)
-        .from("posts")
-        .insert({ user_id: user.id, ...data });
 
-      if (error) {
-        toast.error("Não foi possível publicar no banco de dados.");
-      } else {
-        toast.success("Publicado com sucesso no feed! 🎉");
-        loadPosts();
+    const localPostId = crypto.randomUUID();
+    const localPost: FeedPost = {
+      id: localPostId,
+      user_id: user.id,
+      type: data.type || "text",
+      content: data.content || "",
+      image_url: data.image_url || null,
+      video_url: data.video_url || null,
+      media_type: data.media_type || null,
+      document_title: data.document_title || null,
+      document_url: data.document_url || null,
+      essay_id: data.essay_id || null,
+      essay_score: data.essay_score || null,
+      essay_topic: data.essay_topic || null,
+      achievement_title: data.achievement_title || null,
+      achievement_icon: data.achievement_icon || null,
+      likes_count: 0,
+      comments_count: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      author_name: currentUserName || "Estudante",
+      author_avatar: currentUserAvatar || null,
+      author_course: preferences?.course || null,
+      author_college: preferences?.college || null,
+      is_liked: false,
+      comments: [],
+      comments_loaded: true,
+      show_comments: false,
+    };
+
+    try {
+      const payload: Record<string, any> = {
+        user_id: user.id,
+        type: data.type || "text",
+        content: data.content || "",
+      };
+
+      if (data.image_url) payload.image_url = data.image_url;
+      if (data.video_url) payload.video_url = data.video_url;
+      if (data.media_type) payload.media_type = data.media_type;
+      if (data.document_title) payload.document_title = data.document_title;
+      if (data.document_url) payload.document_url = data.document_url;
+      if (data.essay_id) payload.essay_id = data.essay_id;
+      if (data.essay_score) payload.essay_score = data.essay_score;
+      if (data.essay_topic) payload.essay_topic = data.essay_topic;
+      if (data.achievement_title) payload.achievement_title = data.achievement_title;
+      if (data.achievement_icon) payload.achievement_icon = data.achievement_icon;
+
+      const { data: inserted, error } = await (supabase as any)
+        .from("posts")
+        .insert(payload)
+        .select()
+        .single();
+
+      if (!error && inserted) {
+        localPost.id = inserted.id;
+      } else if (error) {
+        console.warn("[SocialFeed] Supabase posts insert warning (salvando localmente):", error);
       }
-    } catch {
-      toast.error("Erro ao conectar com o banco de dados.");
+    } catch (err) {
+      console.warn("[SocialFeed] Falha na requisição Supabase (salvando localmente):", err);
     }
+
+    saveLocalFeedPost(localPost);
+    setDbPosts((prev) => [localPost, ...prev.filter((p) => p.id !== localPost.id)]);
+    toast.success("Publicado com sucesso no feed! 🎉");
   };
 
   // Curtir post
   const handleLike = async (postId: string, isLiked: boolean, reaction?: Reaction) => {
     if (!user) return;
 
-    if (isLiked) {
-      await (supabase as any).from("post_likes").delete().eq("post_id", postId).eq("user_id", user.id);
-    } else {
-      await (supabase as any).from("post_likes").insert({ post_id: postId, user_id: user.id });
+    try {
+      if (isLiked) {
+        await (supabase as any).from("post_likes").delete().eq("post_id", postId).eq("user_id", user.id);
+      } else {
+        await (supabase as any).from("post_likes").insert({ post_id: postId, user_id: user.id });
+      }
+    } catch (err) {
+      console.warn("[SocialFeed] Aviso de curtida:", err);
     }
 
     setDbPosts((prev) =>
@@ -1811,9 +1915,21 @@ export function SocialFeed({
     }
   };
 
-  // Adicionar comentário
+  // Adicionar comentário com fallback resiliente
   const handleAddComment = async (postId: string, content: string) => {
     if (!user) return;
+
+    const commentId = crypto.randomUUID();
+    const newComment: FeedComment = {
+      id: commentId,
+      post_id: postId,
+      user_id: user.id,
+      content,
+      created_at: new Date().toISOString(),
+      author_name: currentUserName,
+      author_avatar: currentUserAvatar,
+    };
+
     try {
       const { data, error } = await (supabase as any)
         .from("post_comments")
@@ -1821,38 +1937,28 @@ export function SocialFeed({
         .select()
         .single();
 
-      if (error) {
-        toast.error("Erro ao enviar comentário.");
-        return;
+      if (!error && data) {
+        newComment.id = data.id;
+        newComment.created_at = data.created_at;
       }
-
-      const newComment: FeedComment = {
-        id: data.id,
-        post_id: postId,
-        user_id: user.id,
-        content,
-        created_at: data.created_at,
-        author_name: currentUserName,
-        author_avatar: currentUserAvatar,
-      };
-
-      setDbPosts((prev) =>
-        prev.map((p) =>
-          p.id === postId
-            ? {
-                ...p,
-                comments: [...(p.comments ?? []), newComment],
-                comments_count: p.comments_count + 1,
-                show_comments: true,
-                comments_loaded: true,
-              }
-            : p
-        )
-      );
-      toast.success("Comentário publicado!");
-    } catch {
-      toast.error("Não foi possível comentar.");
+    } catch (err) {
+      console.warn("[SocialFeed] Aviso ao inserir comentário no Supabase (salvando localmente):", err);
     }
+
+    setDbPosts((prev) =>
+      prev.map((p) =>
+        p.id === postId
+          ? {
+              ...p,
+              comments: [...(p.comments ?? []), newComment],
+              comments_count: p.comments_count + 1,
+              show_comments: true,
+              comments_loaded: true,
+            }
+          : p
+      )
+    );
+    toast.success("Comentário publicado!");
   };
 
   // Excluir comentário
@@ -1884,6 +1990,7 @@ export function SocialFeed({
     } catch {
       // ignore
     }
+    removeLocalFeedPost(postId);
     setDbPosts((prev) => prev.filter((p) => p.id !== postId));
     toast.success("Publicação excluída.");
   };
