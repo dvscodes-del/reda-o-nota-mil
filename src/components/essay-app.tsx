@@ -744,7 +744,7 @@ export function EssayApp() {
           </div>
         </header>
 
-        <div className="mx-auto max-w-7xl p-4 md:p-8 lg:p-10">
+        <div className={`mx-auto max-w-7xl ${section === "mensagens" ? "p-0 md:p-6 lg:p-8" : "p-4 md:p-8 lg:p-10"}`}>
           {section === "dashboard" && <Dashboard goTo={goTo} />}
           {section === "feed" && (
             <SocialFeed
