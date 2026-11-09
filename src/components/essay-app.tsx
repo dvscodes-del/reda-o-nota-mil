@@ -2,7 +2,6 @@ import { StudentProfile } from "./StudentProfile";
 import { Messages } from "./Messages";
 import { Notifications } from "./Notifications";
 import { SocialFeed } from "./SocialFeed";
-import { ArenaOfArguments } from "./ArenaOfArguments";
 import { useMemo, useRef, useState, useEffect } from "react";
 import type { LucideIcon } from "lucide-react";
 import { useUserPreferences } from "@/context/UserPreferencesContext";
@@ -52,7 +51,6 @@ import {
   Star,
   ChevronRight,
   Pause,
-  Swords,
   Copy,
   Check,
   Scale,
@@ -86,13 +84,12 @@ import geografiaImage from "@/assets/repertorio-geografia.jpg";
 import cinemaImage from "@/assets/repertorio-cinema.jpg";
 import { getThemeMedia, getRepertoryImage } from "@/data/theme-media";
 
-type Section = "dashboard" | "feed" | "arena" | "mural" | "competencias" | "repertorio" | "laboratorio" | "curso" | "perfil" | "mensagens" | "notificacoes" | "treinamento";
+type Section = "dashboard" | "feed" | "mural" | "competencias" | "repertorio" | "laboratorio" | "curso" | "perfil" | "mensagens" | "notificacoes" | "treinamento";
 type Correction = Awaited<ReturnType<typeof correctEssay>>;
 
 const mainNavItems = [
   { id: "dashboard" as const, label: "Visão geral", icon: LayoutDashboard },
   { id: "feed" as const, label: "Feed da Turma", icon: Sparkles },
-  { id: "arena" as const, label: "Arena de Argumentos", icon: Swords },
   { id: "notificacoes" as const, label: "Notificações", icon: Bell },
   { id: "mensagens" as const, label: "Mensagens", icon: MessageCircle },
   { id: "curso" as const, label: "Seu Curso & Meta", icon: TrendingUp },
@@ -467,8 +464,8 @@ export function EssayApp() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {mobileOpen && <button type="button" aria-label="Fechar menu" onClick={() => setMobileOpen(false)} className="fixed inset-0 z-30 bg-foreground/20 lg:hidden" />}
-      <aside className={`fixed inset-y-0 left-0 z-40 w-72 border-r border-border/80 bg-sidebar/95 backdrop-blur-md p-4 lg:p-5 transition-transform duration-300 lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      {mobileOpen && <button type="button" aria-label="Fechar menu" onClick={() => setMobileOpen(false)} className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs lg:hidden" />}
+      <aside className={`fixed inset-y-0 left-0 z-[60] w-72 border-r border-border/80 bg-sidebar shadow-2xl p-4 lg:p-5 transition-transform duration-300 lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex h-full flex-col">
           {/* Logo & Marca */}
           <div className="mb-5 flex items-center justify-between">
@@ -760,15 +757,6 @@ export function EssayApp() {
               }}
             />
           )}
-          {section === "arena" && (
-            <ArenaOfArguments
-              goTo={goTo}
-              onStartChat={(profile) => {
-                setChatTarget(profile);
-                goTo("mensagens");
-              }}
-            />
-          )}
           {section === "perfil" && (
             <StudentProfile
               targetProfile={profileTarget}
@@ -914,14 +902,10 @@ function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
     <section className="mt-6 grid gap-4 sm:grid-cols-3">{dashboardStats.map(([value, label, Icon]) => <div key={label} className="rounded-xl border border-border bg-card p-5 shadow-sm"><div className="mb-5 flex items-center justify-between"><span className="grid size-10 place-items-center rounded-lg bg-accent text-primary"><Icon className="size-5" /></span><span className="text-xs font-semibold text-success">este mês</span></div><strong className="text-3xl">{value}</strong><p className="mt-1 text-sm text-muted-foreground">{label}</p></div>)}</section>
     <section className="mt-8">
       <h3 className="font-bold text-lg mb-4">Acesso Rápido</h3>
-      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
         <Button variant="outline" onClick={() => goTo("laboratorio")} className="h-auto flex-col gap-3 p-4 rounded-xl border-border bg-card hover:bg-accent hover:border-primary">
           <span className="grid size-12 place-items-center rounded-full bg-primary/10 text-primary"><PenLine className="size-5" /></span>
           <span className="font-semibold text-center">Escrever Redação</span>
-        </Button>
-        <Button variant="outline" onClick={() => goTo("arena")} className="h-auto flex-col gap-3 p-4 rounded-xl border-border bg-card hover:bg-accent hover:border-primary border-primary/30 bg-primary/5">
-          <span className="grid size-12 place-items-center rounded-full bg-primary text-primary-foreground shadow-xs"><Swords className="size-5" /></span>
-          <span className="font-semibold text-center text-primary">Arena de Argumentos</span>
         </Button>
         <Button variant="outline" onClick={() => goTo("competencias")} className="h-auto flex-col gap-3 p-4 rounded-xl border-border bg-card hover:bg-accent hover:border-primary">
           <span className="grid size-12 place-items-center rounded-full bg-primary/10 text-primary"><Target className="size-5" /></span>

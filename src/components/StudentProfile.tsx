@@ -312,25 +312,25 @@ export function StudentProfile({
         </div>
       )}
 
-      <div className="mb-8 relative z-50">
-        <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-2 shadow-sm">
-          <div className="flex flex-1 items-center gap-2 px-3 text-muted-foreground">
-            <Search className="size-5" />
+      <div className="mb-8 relative z-10">
+        <div className="flex items-center gap-3 sm:gap-4 rounded-xl border border-border bg-card p-2 shadow-sm">
+          <div className="flex flex-1 items-center gap-2 px-2 sm:px-3 text-muted-foreground min-w-0">
+            <Search className="size-4 sm:size-5 shrink-0" />
             <input 
               type="text" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               placeholder="Buscar estudantes por nome..." 
-              className="w-full bg-transparent p-2 text-sm text-foreground outline-none placeholder:text-muted-foreground" 
+              className="w-full bg-transparent p-1.5 sm:p-2 text-sm text-foreground outline-none placeholder:text-muted-foreground min-w-0" 
             />
           </div>
-          <Button onClick={handleSearch} className="rounded-lg">Buscar</Button>
+          <Button onClick={handleSearch} className="rounded-lg shrink-0 px-3 sm:px-4">Buscar</Button>
         </div>
         
         {/* Dropdown de resultados */}
         {searchResults.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg p-2 max-h-60 overflow-y-auto z-50">
+          <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg p-2 max-h-60 overflow-y-auto z-20">
             {searchResults.map(p => (
               <div 
                 key={p.id} 

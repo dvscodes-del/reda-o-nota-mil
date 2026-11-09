@@ -15,7 +15,6 @@ import { AuthProvider } from "../context/AuthContext";
 import { UserPreferencesProvider } from "../context/UserPreferencesContext";
 import { EssaysProvider } from "../context/EssaysContext";
 import { NotificationsProvider } from "../context/NotificationsContext";
-import { ArenaProvider } from "../context/ArenaContext";
 import { Toaster } from "../components/ui/sonner";
 
 function NotFoundComponent() {
@@ -135,11 +134,9 @@ function RootComponent() {
         <UserPreferencesProvider>
           <EssaysProvider>
             <NotificationsProvider>
-              <ArenaProvider>
-                {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-                <Outlet />
-                <Toaster />
-              </ArenaProvider>
+              {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+              <Outlet />
+              <Toaster />
             </NotificationsProvider>
           </EssaysProvider>
         </UserPreferencesProvider>
