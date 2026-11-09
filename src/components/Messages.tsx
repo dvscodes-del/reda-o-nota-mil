@@ -6,17 +6,14 @@ import {
   Check,
   CheckCheck,
   Bell,
-  Phone,
-  Video,
-  MoreVertical,
-  Smile,
-  Paperclip,
-  Camera,
-  Mic,
   Search,
   Sparkles,
-  User,
-  Users
+  Smile,
+  GraduationCap,
+  Paperclip,
+  MoreVertical,
+  Flame,
+  UserCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,7 +36,8 @@ type Message = {
   is_read: boolean;
 };
 
-const QUICK_EMOJIS = ["😀", "😂", "❤️", "👍", "👏", "🔥", "🎯", "✍️", "📚", "✨", "🙌", "💯"];
+// Emojis voltados para redação, apoio e estudo
+const STUDY_EMOJIS = ["✍️", "💡", "🎯", "🔥", "👏", "📚", "✨", "💯", "😀", "🙌", "❤️", "🚀"];
 
 function formatDateLabel(dateStr: string): string {
   try {
@@ -413,12 +411,12 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
         <img
           src={p.avatar_url}
           alt={p.full_name || ""}
-          className={`${size} object-cover rounded-full`}
+          className={`${size} object-cover rounded-full ring-1 ring-border`}
         />
       );
     }
     return (
-      <div className={`${size} rounded-full bg-[#dfe5e7] dark:bg-[#374248] text-[#54656f] dark:text-[#aebac1] grid place-items-center font-bold text-sm select-none`}>
+      <div className={`${size} rounded-full bg-primary/10 text-primary ring-1 ring-primary/20 grid place-items-center font-bold text-sm select-none`}>
         {p.full_name ? p.full_name.substring(0, 2).toUpperCase() : "ES"}
       </div>
     );
@@ -436,75 +434,60 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
 
   const displayList = searchQuery.trim().length > 0 ? searchResults : contacts;
   const onlineContacts = contacts.filter(c => onlineUsers.has(c.id));
+  const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0);
 
   return (
-    <div className="flex h-[calc(100dvh-4rem)] md:h-[calc(100vh-10rem)] w-full overflow-hidden rounded-none md:rounded-2xl border-0 md:border border-border/80 bg-[#efeae2] dark:bg-[#0b141a] shadow-md relative font-sans">
+    <div className="flex h-[calc(100dvh-4rem)] md:h-[calc(100vh-10rem)] w-full overflow-hidden rounded-none md:rounded-2xl border-0 md:border border-border bg-card shadow-sm relative font-sans">
       
       {/* ─────────────────────────────────────────────────────────── */}
-      {/* ABA ESQUERDA: LISTA DE CONVERSAS (WHATSAPP ESTILO NATIVO)   */}
+      {/* ABA ESQUERDA: LISTA DE CONVERSAS (NAVEGAÇÃO FLUIDA MOBILE)  */}
       {/* ─────────────────────────────────────────────────────────── */}
-      <div className={`w-full md:w-[380px] lg:w-[420px] md:border-r border-border/60 flex-col bg-[#ffffff] dark:bg-[#111b21] shrink-0 ${activeChat ? 'hidden md:flex' : 'flex'}`}>
+      <div className={`w-full md:w-[360px] lg:w-[400px] md:border-r border-border flex-col bg-card shrink-0 ${activeChat ? 'hidden md:flex' : 'flex'}`}>
         
-        {/* Topo estilo WhatsApp no Mobile / Header de Conversas */}
-        <div className="bg-[#008069] dark:bg-[#1f2c34] text-white p-3.5 sm:p-4 flex items-center justify-between shadow-xs select-none">
+        {/* Topo personalizado com a identidade da plataforma */}
+        <div className="p-4 border-b border-border bg-card flex items-center justify-between select-none">
           <div className="flex items-center gap-2.5">
-            <div className="size-8 rounded-full bg-white/15 grid place-items-center">
-              <MessageCircle className="size-5 text-white" />
+            <div className="size-9 rounded-xl bg-primary/15 text-primary grid place-items-center shadow-xs">
+              <GraduationCap className="size-5" />
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight leading-none text-white">WhatsApp</h1>
-              <span className="text-[11px] text-white/80 font-medium">Redação Nota Mil</span>
+              <div className="flex items-center gap-1.5">
+                <h1 className="text-base font-bold tracking-tight text-foreground">Chat da Turma</h1>
+                <span className="text-[10px] font-extrabold uppercase bg-primary/15 text-primary px-1.5 py-0.5 rounded-md">
+                  ENEM
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground font-medium">Troque ideias e repertórios</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1 sm:gap-2 text-white">
-            <button
-              onClick={() => toast.info("Câmera fotográfica em breve!")}
-              className="p-2 rounded-full hover:bg-white/10 transition-colors"
-              title="Câmera"
-            >
-              <Camera className="size-5" />
-            </button>
-            <button
-              onClick={() => {
-                const el = document.getElementById("whatsapp-search-input");
-                el?.focus();
-              }}
-              className="p-2 rounded-full hover:bg-white/10 transition-colors"
-              title="Pesquisar"
-            >
-              <Search className="size-5" />
-            </button>
-            <button
-              onClick={() => toast.info("Configurações do chat")}
-              className="p-2 rounded-full hover:bg-white/10 transition-colors"
-              title="Mais opções"
-            >
-              <MoreVertical className="size-5" />
-            </button>
-          </div>
+          {totalUnread > 0 && (
+            <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-primary text-primary-foreground shadow-xs animate-pulse">
+              <Bell className="size-3" />
+              {totalUnread}
+            </span>
+          )}
         </div>
 
-        {/* Campo de Pesquisa estilo WhatsApp */}
-        <div className="px-3 py-2 bg-[#ffffff] dark:bg-[#111b21] border-b border-black/5 dark:border-white/5">
-          <div className="flex items-center gap-2 bg-[#f0f2f5] dark:bg-[#202c33] rounded-lg px-3 py-1.5 focus-within:ring-1 focus-within:ring-[#00a884] transition-all">
-            <Search className="size-4 text-[#54656f] dark:text-[#8696a0] shrink-0" />
+        {/* Campo de Busca Rápida */}
+        <div className="p-3 bg-card border-b border-border/60">
+          <div className="flex items-center gap-2 bg-accent/50 rounded-xl px-3 py-2 border border-border/60 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+            <Search className="size-4 text-muted-foreground shrink-0" />
             <input
-              id="whatsapp-search-input"
               type="text"
-              placeholder="Pesquisar ou começar uma nova conversa"
+              placeholder="Buscar colega para conversar..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full bg-transparent text-sm text-[#111b21] dark:text-[#e9edef] placeholder:text-[#8696a0] outline-none"
+              className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
             />
           </div>
         </div>
 
-        {/* Stories / Colegas Online estilo Status do WhatsApp */}
+        {/* Trilha de Colegas Online (Estilo navegação de stories/presença rápida) */}
         {onlineContacts.length > 0 && !searchQuery && (
-          <div className="py-2.5 px-3 border-b border-black/5 dark:border-white/5 bg-[#ffffff] dark:bg-[#111b21] overflow-x-auto scrollbar-none flex items-center gap-3">
-            <div className="flex items-center gap-1 text-[11px] font-bold text-[#00a884] dark:text-[#25D366] uppercase tracking-wider shrink-0 mr-1">
-              <span className="size-2 rounded-full bg-[#25D366] animate-pulse"></span>
+          <div className="py-2.5 px-3 border-b border-border/60 bg-muted/20 overflow-x-auto scrollbar-none flex items-center gap-3">
+            <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider shrink-0 mr-1">
+              <span className="size-2 rounded-full bg-emerald-500 animate-pulse"></span>
               Online:
             </div>
             {onlineContacts.map(contact => (
@@ -514,11 +497,11 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
                 className="flex flex-col items-center gap-1 shrink-0 group focus:outline-none"
                 title={`Conversar com ${contact.full_name || 'Estudante'}`}
               >
-                <div className="relative p-0.5 rounded-full ring-2 ring-[#25D366] ring-offset-2 ring-offset-background group-hover:scale-105 transition-transform">
+                <div className="relative p-0.5 rounded-full ring-2 ring-emerald-500 ring-offset-2 ring-offset-card group-hover:scale-105 transition-transform">
                   {getAvatar(contact, "size-10")}
-                  <span className="absolute bottom-0 right-0 size-3 bg-[#25D366] border-2 border-white dark:border-[#111b21] rounded-full"></span>
+                  <span className="absolute bottom-0 right-0 size-3 bg-emerald-500 border-2 border-card rounded-full"></span>
                 </div>
-                <span className="text-[11px] font-medium text-[#111b21] dark:text-[#e9edef] max-w-[56px] truncate">
+                <span className="text-[11px] font-medium text-foreground max-w-[56px] truncate">
                   {contact.full_name?.split(' ')[0] || "Colega"}
                 </span>
               </button>
@@ -526,20 +509,20 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
           </div>
         )}
 
-        {/* Lista de Conversas */}
-        <div className="flex-1 overflow-y-auto bg-[#ffffff] dark:bg-[#111b21] divide-y divide-black/5 dark:divide-white/5">
+        {/* Lista de Conversas com Modelo de Navegação Direto */}
+        <div className="flex-1 overflow-y-auto divide-y divide-border/50">
           {displayList.length === 0 ? (
-            <div className="p-8 text-center text-sm text-[#54656f] dark:text-[#8696a0] flex flex-col items-center gap-3 mt-8">
-              <div className="size-16 rounded-full bg-[#f0f2f5] dark:bg-[#202c33] grid place-items-center text-2xl">
-                {searchQuery ? "🔍" : "💬"}
+            <div className="p-8 text-center text-sm text-muted-foreground flex flex-col items-center gap-3 mt-8">
+              <div className="size-14 rounded-2xl bg-accent grid place-items-center text-primary text-xl">
+                {searchQuery ? <Search className="size-6" /> : <MessageCircle className="size-6" />}
               </div>
-              <p className="font-semibold text-base text-[#111b21] dark:text-[#e9edef]">
-                {searchQuery ? "Nenhum estudante encontrado" : "Nenhuma conversa ainda"}
+              <p className="font-semibold text-base text-foreground">
+                {searchQuery ? "Nenhum estudante encontrado" : "Nenhuma conversa ativa"}
               </p>
-              <p className="text-xs max-w-xs text-[#54656f] dark:text-[#8696a0]">
+              <p className="text-xs max-w-xs text-muted-foreground">
                 {searchQuery
-                  ? "Verifique o nome digitado ou procure por outros colegas de turma."
-                  : "Toque em um colega online acima ou procure pelo nome para trocar argumentos e dicas de redação!"}
+                  ? "Verifique o nome digitado para encontrar seus colegas de redação."
+                  : "Toque em um colega online acima ou busque pelo nome para começar a trocar repertórios e tirar dúvidas!"}
               </p>
             </div>
           ) : (
@@ -554,44 +537,44 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
                 <div
                   key={contact.id}
                   onClick={() => openChat(contact)}
-                  className={`flex items-center gap-3 px-3.5 py-3 cursor-pointer transition-colors select-none ${
+                  className={`flex items-center gap-3 px-4 py-3.5 cursor-pointer transition-colors select-none ${
                     isSelected
-                      ? 'bg-[#f0f2f5] dark:bg-[#2a3942]'
-                      : 'hover:bg-[#f5f6f6] dark:hover:bg-[#202c33]'
+                      ? 'bg-accent/80 border-l-4 border-l-primary'
+                      : 'hover:bg-accent/40 border-l-4 border-l-transparent'
                   }`}
                 >
                   {/* Foto de Perfil com status Online */}
                   <div className="relative shrink-0">
                     {getAvatar(contact, "size-12")}
                     {isOnline && (
-                      <span className="absolute bottom-0.5 right-0.5 size-3.5 bg-[#25D366] border-2 border-white dark:border-[#111b21] rounded-full shadow-xs"></span>
+                      <span className="absolute bottom-0.5 right-0.5 size-3.5 bg-emerald-500 border-2 border-card rounded-full shadow-xs"></span>
                     )}
                   </div>
 
                   {/* Informações da conversa */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-1 mb-0.5">
-                      <span className={`text-[15px] truncate ${hasUnread ? 'font-bold text-[#111b21] dark:text-[#e9edef]' : 'font-medium text-[#111b21] dark:text-[#e9edef]'}`}>
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <span className={`text-sm truncate ${hasUnread ? 'font-bold text-foreground' : 'font-medium text-foreground/90'}`}>
                         {contact.full_name || "Estudante"}
                       </span>
 
                       {lastMsg && (
-                        <span className={`text-[11px] shrink-0 ${hasUnread ? 'text-[#25D366] font-bold' : 'text-[#667781] dark:text-[#8696a0]'}`}>
+                        <span className={`text-[11px] shrink-0 ${hasUnread ? 'text-primary font-bold' : 'text-muted-foreground'}`}>
                           {formatTime(lastMsg.created_at)}
                         </span>
                       )}
                     </div>
 
                     <div className="flex items-center justify-between gap-2">
-                      <p className={`text-xs truncate flex items-center gap-1 leading-snug ${hasUnread ? 'font-semibold text-[#111b21] dark:text-[#e9edef]' : 'text-[#667781] dark:text-[#8696a0]'}`}>
+                      <p className={`text-xs truncate flex items-center gap-1 leading-snug ${hasUnread ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
                         {lastMsg ? (
                           <>
                             {lastMsg.sender_id === user?.id && (
                               <span className="shrink-0 inline-flex items-center">
                                 {lastMsg.is_read ? (
-                                  <CheckCheck className="size-3.5 text-[#53bdeb] stroke-[2.5]" />
+                                  <CheckCheck className="size-3.5 text-primary stroke-[2.5]" />
                                 ) : (
-                                  <Check className="size-3.5 text-[#8696a0] stroke-[2]" />
+                                  <Check className="size-3.5 text-muted-foreground stroke-[2]" />
                                 )}
                               </span>
                             )}
@@ -603,7 +586,7 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
                       </p>
 
                       {hasUnread && (
-                        <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-[11px] font-bold text-white shadow-xs">
+                        <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground shadow-xs">
                           {unreadCount > 99 ? '99+' : unreadCount}
                         </span>
                       )}
@@ -617,104 +600,101 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
       </div>
 
       {/* ─────────────────────────────────────────────────────────── */}
-      {/* ABA DIREITA: JANELA DO CHAT (TELA DE CONVERSA DO WHATSAPP) */}
+      {/* ABA DIREITA: TELA DE CONVERSA COM MODELO DE NAVEGAÇÃO FLUIDA*/}
       {/* ─────────────────────────────────────────────────────────── */}
-      <div className={`flex-1 flex-col h-full bg-[#efeae2] dark:bg-[#0b141a] relative ${!activeChat ? 'hidden md:flex' : 'flex'}`}>
+      <div className={`flex-1 flex-col h-full bg-accent/20 dark:bg-background/80 relative ${!activeChat ? 'hidden md:flex' : 'flex'}`}>
         
-        {/* Papel de parede sutil do WhatsApp (Doodles) */}
+        {/* Padrão de fundo discreto e elegante */}
         <div
-          className="absolute inset-0 pointer-events-none opacity-[0.05] dark:opacity-[0.035]"
+          className="absolute inset-0 pointer-events-none opacity-[0.03] dark:opacity-[0.02]"
           style={{
-            backgroundImage: `radial-gradient(#000 1px, transparent 1px), radial-gradient(#000 1px, #efeae2 1px)`,
-            backgroundSize: `24px 24px`,
-            backgroundPosition: `0 0, 12px 12px`
+            backgroundImage: `radial-gradient(currentColor 1px, transparent 1px)`,
+            backgroundSize: `20px 20px`
           }}
         />
 
         {activeChat ? (
           <>
-            {/* Topo do Chat estilo WhatsApp */}
-            <div className="px-2 sm:px-4 py-2 bg-[#f0f2f5] dark:bg-[#202c33] border-b border-black/5 dark:border-white/5 flex items-center justify-between z-10 shadow-xs select-none">
+            {/* Topo da Conversa: Navegação fluida com botão voltar no mobile */}
+            <div className="px-3 sm:px-5 py-3 bg-card border-b border-border flex items-center justify-between z-10 shadow-xs select-none">
               
-              <div className="flex items-center gap-2 min-w-0">
+              <div className="flex items-center gap-2.5 min-w-0">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="md:hidden size-9 -ml-1 text-[#54656f] dark:text-[#aebac1] rounded-full hover:bg-black/5 dark:hover:bg-white/5"
+                  className="md:hidden size-9 -ml-1 text-muted-foreground rounded-full hover:bg-accent"
                   onClick={() => setActiveChat(null)}
-                  title="Voltar"
+                  title="Voltar para a lista"
                 >
                   <ArrowLeft className="size-5" />
                 </Button>
 
-                <div className="relative shrink-0 cursor-pointer" onClick={() => toast.info(`Perfil de ${activeChat.full_name || 'Estudante'}`)}>
-                  {getAvatar(activeChat, "size-9 sm:size-10")}
+                <div className="relative shrink-0">
+                  {getAvatar(activeChat, "size-10")}
                   {onlineUsers.has(activeChat.id) && (
-                    <span className="absolute bottom-0 right-0 size-2.5 bg-[#25D366] border-2 border-white dark:border-[#202c33] rounded-full"></span>
+                    <span className="absolute bottom-0 right-0 size-2.5 bg-emerald-500 border-2 border-card rounded-full"></span>
                   )}
                 </div>
 
-                <div className="min-w-0 cursor-pointer" onClick={() => toast.info(`Perfil de ${activeChat.full_name || 'Estudante'}`)}>
-                  <span className="font-semibold text-sm sm:text-base leading-tight text-[#111b21] dark:text-[#e9edef] block truncate max-w-[150px] sm:max-w-[280px]">
+                <div className="min-w-0">
+                  <span className="font-bold text-sm sm:text-base leading-tight text-foreground block truncate max-w-[170px] sm:max-w-[300px]">
                     {activeChat.full_name || "Estudante"}
                   </span>
                   {onlineUsers.has(activeChat.id) ? (
-                    <span className="text-[11px] sm:text-xs text-[#00a884] dark:text-[#25D366] font-medium block leading-none">
+                    <span className="text-[11px] sm:text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1 leading-none mt-0.5">
+                      <span className="size-1.5 rounded-full bg-emerald-500"></span>
                       online agora
                     </span>
                   ) : (
-                    <span className="text-[11px] sm:text-xs text-[#667781] dark:text-[#8696a0] block leading-none">
-                      visto recentemente
+                    <span className="text-[11px] sm:text-xs text-muted-foreground block leading-none mt-0.5">
+                      offline recentemente
                     </span>
                   )}
                 </div>
               </div>
 
-              {/* Botões de Ação estilo WhatsApp (Vídeo, Chamada, Menu) */}
-              <div className="flex items-center gap-0.5 sm:gap-1 text-[#54656f] dark:text-[#aebac1]">
-                <button
-                  onClick={() => toast.info("Chamadas de vídeo em tempo real disponíveis em breve!")}
-                  className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                  title="Chamada de vídeo"
+              {/* Ações Rápidas */}
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => toast.info(`Meta de estudos compartilhada com ${activeChat.full_name || 'Estudante'}!`)}
+                  className="hidden sm:inline-flex items-center gap-1 text-xs rounded-lg text-primary hover:text-primary hover:bg-primary/10 h-8 px-2.5"
                 >
-                  <Video className="size-4 sm:size-5" />
-                </button>
-                <button
-                  onClick={() => toast.info("Chamadas de voz em tempo real disponíveis em breve!")}
-                  className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                  title="Chamada de áudio"
+                  <Sparkles className="size-3.5" />
+                  <span>Dicas 900+</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => toast.info("Opções da conversa")}
+                  className="size-8 rounded-full text-muted-foreground hover:text-foreground"
                 >
-                  <Phone className="size-4 sm:size-5" />
-                </button>
-                <button
-                  onClick={() => toast.info("Mais opções da conversa")}
-                  className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                  title="Mais opções"
-                >
-                  <MoreVertical className="size-4 sm:size-5" />
-                </button>
+                  <MoreVertical className="size-4" />
+                </Button>
               </div>
             </div>
 
-            {/* Lista de Mensagens no padrão de balões do WhatsApp */}
+            {/* Histórico de Mensagens com Balões da Nossa Identidade */}
             <div
               ref={messagesContainerRef}
-              className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 space-y-2 z-10"
+              className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 space-y-2.5 z-10"
             >
-              {/* Aviso de criptografia/segurança amigável do WhatsApp */}
-              <div className="mx-auto max-w-sm text-center my-2 select-none">
-                <span className="inline-block bg-[#ffeecd] dark:bg-[#182229] text-[#54656f] dark:text-[#ffd279] text-[11px] px-3 py-1.5 rounded-lg shadow-2xs font-medium leading-relaxed border border-amber-200/50 dark:border-amber-900/30">
-                  🔒 As mensagens são protegidas entre estudantes da plataforma Redação Nota Mil.
+              {/* Notificação amigável de comunidade de estudos */}
+              <div className="mx-auto max-w-sm text-center my-1 select-none">
+                <span className="inline-flex items-center gap-1.5 bg-card/90 border border-border text-muted-foreground text-[11px] px-3 py-1 rounded-full shadow-2xs font-medium">
+                  <GraduationCap className="size-3.5 text-primary" />
+                  Comunidade de Redação ENEM • Troca colaborativa
                 </span>
               </div>
 
               {chatHistory.length === 0 && (
-                <div className="flex-1 flex flex-col items-center justify-center py-12 text-center text-[#54656f] dark:text-[#8696a0]">
-                  <div className="size-14 rounded-full bg-black/5 dark:bg-white/5 grid place-items-center mb-2">
-                    <Sparkles className="size-6 text-[#00a884]" />
+                <div className="flex-1 flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+                  <div className="size-14 rounded-2xl bg-primary/10 text-primary grid place-items-center mb-2">
+                    <Sparkles className="size-6" />
                   </div>
-                  <p className="font-semibold text-sm text-[#111b21] dark:text-[#e9edef]">Comece uma conversa!</p>
-                  <p className="text-xs max-w-xs mt-1">Diga um "Oi!" para tirar dúvidas de redação, trocar repertórios ou compartilhar temas.</p>
+                  <p className="font-semibold text-sm text-foreground">Inicie essa conversa!</p>
+                  <p className="text-xs max-w-xs mt-1">Troque argumentos, referências de repertório e debata os temas da semana para alcançar os 900+ pontos.</p>
                 </div>
               )}
 
@@ -725,38 +705,40 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
 
                 return (
                   <div key={msg.id} className="flex flex-col">
-                    {/* Chip de Data flutuante no centro (Hoje, Ontem, etc.) */}
+                    {/* Chip de Data Flutuante */}
                     {showDate && (
                       <div className="flex justify-center my-2 select-none">
-                        <span className="bg-[#ffffff]/90 dark:bg-[#182229]/90 backdrop-blur-xs text-[#54656f] dark:text-[#8696a0] text-[11px] font-semibold px-3 py-1 rounded-lg shadow-2xs uppercase tracking-wider">
+                        <span className="bg-card/90 border border-border/80 text-muted-foreground text-[11px] font-semibold px-3 py-0.5 rounded-full shadow-2xs uppercase tracking-wider">
                           {formatDateLabel(msg.created_at)}
                         </span>
                       </div>
                     )}
 
                     <div className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                      {/* Balão do WhatsApp */}
+                      {/* Balão com a identidade de cores da plataforma */}
                       <div
-                        className={`max-w-[85%] sm:max-w-[70%] px-3.5 py-1.5 shadow-2xs text-[14.5px] leading-relaxed break-words relative ${
+                        className={`max-w-[85%] sm:max-w-[70%] px-4 py-2.5 shadow-2xs text-[14.5px] leading-relaxed break-words relative ${
                           isMe
-                            ? 'bg-[#d9fdd3] dark:bg-[#005c4b] text-[#111b21] dark:text-[#e9edef] rounded-2xl rounded-tr-xs'
-                            : 'bg-[#ffffff] dark:bg-[#202c33] text-[#111b21] dark:text-[#e9edef] rounded-2xl rounded-tl-xs'
+                            ? 'bg-primary text-primary-foreground rounded-2xl rounded-tr-xs'
+                            : 'bg-card text-foreground border border-border/80 rounded-2xl rounded-tl-xs'
                         }`}
                       >
                         <span>{msg.content}</span>
 
-                        {/* Horário e confirmação de leitura no canto inferior direito */}
-                        <span className="float-right ml-3 mt-1 inline-flex items-center gap-1 select-none text-[11px] text-[#667781] dark:text-[#8696a0] align-bottom">
+                        {/* Horário e confirmação de leitura alinhados à direita */}
+                        <span className={`float-right ml-3 mt-1.5 inline-flex items-center gap-1 select-none text-[11px] align-bottom ${
+                          isMe ? 'text-primary-foreground/75' : 'text-muted-foreground'
+                        }`}>
                           <span>{formatTime(msg.created_at)}</span>
                           {isMe && (
                             msg.is_read ? (
                               <CheckCheck
-                                className="size-3.5 text-[#53bdeb] stroke-[2.5]"
-                                title="Mensagem lida"
+                                className="size-3.5 text-primary-foreground stroke-[2.5]"
+                                title="Mensagem visualizada"
                               />
                             ) : (
                               <Check
-                                className="size-3.5 text-[#8696a0] stroke-[2]"
+                                className="size-3.5 text-primary-foreground/70 stroke-[2]"
                                 title="Mensagem enviada"
                               />
                             )
@@ -770,15 +752,15 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
               <div ref={messagesEndRef} className="h-0 w-0 shrink-0" />
             </div>
 
-            {/* Barra de Reações / Emojis rápidos */}
+            {/* Barra de Reações / Emojis de Estudo */}
             {showEmojiPicker && (
-              <div className="px-3 py-2 bg-[#f0f2f5] dark:bg-[#202c33] border-t border-black/5 dark:border-white/5 flex items-center gap-2 overflow-x-auto z-10 animate-in fade-in slide-in-from-bottom-2">
-                <span className="text-xs font-semibold text-[#54656f] dark:text-[#8696a0] shrink-0 mr-1">Emojis:</span>
-                {QUICK_EMOJIS.map(emoji => (
+              <div className="px-3 py-2 bg-card border-t border-border flex items-center gap-2 overflow-x-auto z-10 animate-in fade-in slide-in-from-bottom-2">
+                <span className="text-xs font-semibold text-muted-foreground shrink-0 mr-1">Reações:</span>
+                {STUDY_EMOJIS.map(emoji => (
                   <button
                     key={emoji}
                     onClick={() => setMessage(prev => prev + emoji)}
-                    className="text-xl p-1.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition-transform active:scale-125"
+                    className="text-xl p-1.5 rounded-lg hover:bg-accent transition-transform active:scale-125"
                   >
                     {emoji}
                   </button>
@@ -786,17 +768,17 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
               </div>
             )}
 
-            {/* Barra de Digitação no padrão WhatsApp Mobile */}
-            <div className="p-2 sm:p-2.5 bg-[#f0f2f5] dark:bg-[#202c33] border-t border-black/5 dark:border-white/5 z-10">
+            {/* Barra de Envio estilo App de Mensagens (Mobile Amigável) */}
+            <div className="p-2.5 sm:p-3 bg-card border-t border-border z-10">
               <div className="flex items-center gap-2 max-w-4xl mx-auto">
                 
-                {/* Pílula de Input Branca */}
-                <div className="flex-1 bg-[#ffffff] dark:bg-[#2a3942] rounded-full px-3 py-2 flex items-center gap-2 shadow-xs border border-transparent focus-within:border-emerald-500/30">
+                {/* Pílula de Digitação */}
+                <div className="flex-1 bg-accent/40 rounded-full px-3.5 py-2 flex items-center gap-2 border border-border/60 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
                   <button
                     type="button"
                     onClick={() => setShowEmojiPicker(v => !v)}
-                    className="text-[#8696a0] hover:text-[#54656f] dark:hover:text-[#d1d7db] transition-colors shrink-0"
-                    title="Emojis"
+                    className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                    title="Adicionar emoji"
                   >
                     <Smile className="size-5" />
                   </button>
@@ -805,8 +787,8 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
                     type="text"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Mensagem"
-                    className="flex-1 bg-transparent text-sm text-[#111b21] dark:text-[#e9edef] placeholder:text-[#8696a0] outline-none"
+                    placeholder="Escreva sua mensagem..."
+                    className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && message.trim()) {
                         sendMessage();
@@ -817,55 +799,38 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
                   <button
                     type="button"
                     onClick={() => toast.info("Envio de arquivos em breve!")}
-                    className="text-[#8696a0] hover:text-[#54656f] dark:hover:text-[#d1d7db] -rotate-45 transition-colors shrink-0 hidden sm:block"
-                    title="Anexo"
+                    className="text-muted-foreground hover:text-foreground -rotate-45 transition-colors shrink-0 hidden sm:block"
+                    title="Anexar arquivo"
                   >
-                    <Paperclip className="size-5" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => toast.info("Envio de fotos em breve!")}
-                    className="text-[#8696a0] hover:text-[#54656f] dark:hover:text-[#d1d7db] transition-colors shrink-0"
-                    title="Câmera"
-                  >
-                    <Camera className="size-5" />
+                    <Paperclip className="size-4" />
                   </button>
                 </div>
 
-                {/* Botão de Envio Circular Verde WhatsApp */}
+                {/* Botão de Envio com a cor Principal da Marca */}
                 <button
-                  onClick={() => {
-                    if (message.trim()) {
-                      sendMessage();
-                    } else {
-                      toast.info("Gravação de áudio em breve!");
-                    }
-                  }}
-                  className="size-11 rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white flex items-center justify-center shadow-md shrink-0 active:scale-95 transition-all"
-                  title={message.trim() ? "Enviar mensagem" : "Gravar áudio"}
+                  onClick={sendMessage}
+                  disabled={!message.trim()}
+                  className="size-10 sm:size-11 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-40 disabled:hover:bg-primary flex items-center justify-center shadow-md shrink-0 active:scale-95 transition-all"
+                  title="Enviar mensagem"
                 >
-                  {message.trim() ? (
-                    <Send className="size-5 ml-0.5" />
-                  ) : (
-                    <Mic className="size-5" />
-                  )}
+                  <Send className="size-4 sm:size-5 ml-0.5" />
                 </button>
               </div>
             </div>
           </>
         ) : (
-          /* Estado Vazio estilo WhatsApp Web no Desktop */
+          /* Estado Vazio Personalizado da Plataforma no Desktop */
           <div className="flex-1 flex flex-col items-center justify-center text-center p-8 z-10 select-none">
-            <div className="size-28 rounded-full bg-[#dfe5e7]/50 dark:bg-[#202c33] flex items-center justify-center mb-6 shadow-xs">
-              <MessageCircle className="size-14 text-[#008069] dark:text-[#25D366]" />
+            <div className="size-24 rounded-3xl bg-primary/10 text-primary flex items-center justify-center mb-5 shadow-xs">
+              <GraduationCap className="size-12" />
             </div>
-            <h3 className="text-2xl font-bold text-[#111b21] dark:text-[#e9edef]">WhatsApp Redação</h3>
-            <p className="mt-2 text-sm text-[#667781] dark:text-[#8696a0] max-w-sm leading-relaxed">
-              Envie e receba mensagens com seus colegas de turma para tirar dúvidas, debater temas do ENEM e compartilhar repertórios socioculturais.
+            <h3 className="text-2xl font-bold text-foreground">Chat da Turma Nota Mil</h3>
+            <p className="mt-2 text-sm text-muted-foreground max-w-sm leading-relaxed">
+              Troque argumentos com outros estudantes, debata estratégias de redação e compartilhe referências socioculturais para a nota 1000.
             </p>
-            <div className="mt-6 flex items-center gap-1.5 text-xs text-[#8696a0] font-medium">
-              <span>🔒 Protegido de ponta a ponta</span>
+            <div className="mt-5 flex items-center gap-1.5 text-xs text-muted-foreground font-medium bg-card px-3 py-1.5 rounded-full border border-border">
+              <Sparkles className="size-3.5 text-primary" />
+              <span>Conexão em tempo real entre vestibulandos</span>
             </div>
           </div>
         )}
