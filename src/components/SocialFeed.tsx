@@ -39,6 +39,7 @@ export interface FeedPost {
   achievement_icon?: string | null;
   likes_count: number;
   comments_count: number;
+  shares_count?: number;
   created_at: string;
   author_name?: string | null;
   author_avatar?: string | null;
@@ -692,6 +693,7 @@ function PostCard({
   onAddComment,
   onDeleteComment,
   onDelete,
+  onShare,
   onHashtagClick,
   onOpenProfile,
   onViewImage,
@@ -705,6 +707,7 @@ function PostCard({
   onAddComment: (postId: string, content: string) => Promise<void>;
   onDeleteComment: (postId: string, commentId: string) => Promise<void>;
   onDelete: (postId: string) => Promise<void>;
+  onShare?: (postId: string) => Promise<void> | void;
   onHashtagClick: (tag: string) => void;
   onOpenProfile?: () => void;
   onViewImage?: (url: string) => void;
@@ -962,9 +965,9 @@ function PostCard({
       )}
 
       {/* ── Métricas Sociais Reais ── */}
-      {(post.likes_count > 0 || post.comments_count > 0) && (
+      {(post.likes_count > 0 || post.comments_count > 0 || (post.shares_count ?? 0) > 0) && (
         <div className="flex items-center justify-between px-5 pb-2 text-xs text-muted-foreground gap-2 flex-wrap">
-          {post.likes_count > 0 && (
+          {post.likes_count > 0 ? (
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-sm leading-none">👍</span>
               <span className="font-semibold text-foreground">{post.likes_count} {post.likes_count === 1 ? "curtida" : "curtidas"}</span>
@@ -974,18 +977,26 @@ function PostCard({
                 </span>
               )}
             </div>
-          )}
-          {post.comments_count > 0 && (
-            <button type="button" onClick={() => onToggleComments(post.id)}
-              className="hover:underline hover:text-foreground transition-colors ml-auto cursor-pointer font-medium"
-            >
-              {post.comments_count} {post.comments_count === 1 ? "comentário" : "comentários"}
-            </button>
-          )}
+          ) : <div />}
+
+          <div className="flex items-center gap-3 ml-auto flex-wrap">
+            {post.comments_count > 0 && (
+              <button type="button" onClick={() => onToggleComments(post.id)}
+                className="hover:underline hover:text-foreground transition-colors cursor-pointer font-medium"
+              >
+                {post.comments_count} {post.comments_count === 1 ? "comentário" : "comentários"}
+              </button>
+            )}
+            {(post.shares_count ?? 0) > 0 && (
+              <span className="font-medium text-muted-foreground">
+                {post.shares_count} {(post.shares_count ?? 0) === 1 ? "compartilhamento" : "compartilhamentos"}
+              </span>
+            )}
+          </div>
         </div>
       )}
 
-      {/* ── Barra de Ações ── */}
+      {/* ── Barra de Ações com Contadores Visíveis ── */}
       <div className="flex border-t border-border/50 mx-3 py-1">
         <div
           className="relative flex-1"
@@ -996,31 +1007,55 @@ function PostCard({
           <button
             type="button"
             onClick={() => onLike(post.id, post.is_liked ?? false)}
-            className={`flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition-all hover:bg-muted/60 cursor-pointer ${
+            className={`flex w-full items-center justify-center gap-1.5 sm:gap-2 rounded-xl py-2.5 text-xs sm:text-sm font-semibold transition-all hover:bg-muted/60 cursor-pointer ${
               post.is_liked ? "text-blue-500 font-bold" : "text-muted-foreground hover:text-foreground"
             }`}
+            title="Curtir publicação"
           >
-            <ThumbsUp className={`size-4 ${post.is_liked ? "fill-blue-500 text-blue-500" : ""}`} />
+            <ThumbsUp className={`size-4 shrink-0 ${post.is_liked ? "fill-blue-500 text-blue-500" : ""}`} />
             <span>Curtir</span>
+            {post.likes_count > 0 && (
+              <span className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-bold leading-none ${
+                post.is_liked ? "bg-blue-500/15 text-blue-600 dark:text-blue-400" : "bg-muted text-muted-foreground"
+              }`}>
+                {post.likes_count}
+              </span>
+            )}
           </button>
         </div>
 
         <button type="button" onClick={() => onToggleComments(post.id)}
-          className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer"
+          className="flex flex-1 items-center justify-center gap-1.5 sm:gap-2 rounded-xl py-2.5 text-xs sm:text-sm font-semibold text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer"
+          title="Ver comentários"
         >
-          <MessageCircle className="size-4" />
+          <MessageCircle className="size-4 shrink-0" />
           <span>Comentar</span>
+          {post.comments_count > 0 && (
+            <span className="inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-bold leading-none bg-muted text-muted-foreground">
+              {post.comments_count}
+            </span>
+          )}
         </button>
 
         <button type="button"
           onClick={() => {
-            navigator.clipboard.writeText(`${window.location.origin}/#post-${post.id}`);
-            toast.success("Link da publicação copiado!");
+            if (onShare) {
+              onShare(post.id);
+            } else {
+              navigator.clipboard.writeText(`${window.location.origin}/#post-${post.id}`);
+              toast.success("Link da publicação copiado!");
+            }
           }}
-          className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer"
+          className="flex flex-1 items-center justify-center gap-1.5 sm:gap-2 rounded-xl py-2.5 text-xs sm:text-sm font-semibold text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer"
+          title="Compartilhar publicação"
         >
-          <Share2 className="size-4" />
-          <span className="hidden sm:inline">Compartilhar</span>
+          <Share2 className="size-4 shrink-0" />
+          <span>Compartilhar</span>
+          {(post.shares_count ?? 0) > 0 && (
+            <span className="inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-bold leading-none bg-muted text-muted-foreground">
+              {post.shares_count}
+            </span>
+          )}
         </button>
       </div>
 
@@ -1685,6 +1720,8 @@ export function SocialFeed({
             const is_liked = postLikes.some((l: any) => l.user_id === user.id);
             const likes_count = Math.max(p.likes_count || 0, postLikes.length);
             const comments_count = Math.max(p.comments_count || 0, postComments.length);
+            const localShares = Number(localStorage.getItem(`feed_share_count_${p.id}`) || 0);
+            const shares_count = Math.max(p.shares_count || 0, localShares);
             const liked_by_names = postLikes
               .map((l: any) => (l.user_id === user.id ? "Você" : profileMap.get(l.user_id)?.full_name || "Estudante"))
               .filter(Boolean);
@@ -1699,6 +1736,7 @@ export function SocialFeed({
               ...p,
               likes_count,
               comments_count,
+              shares_count,
               liked_by_names,
               author_name: prof?.full_name ?? (p.user_id === user.id ? currentUserName : "Estudante"),
               author_avatar: prof?.avatar_url ?? (p.user_id === user.id ? currentUserAvatar : null),
@@ -1779,6 +1817,7 @@ export function SocialFeed({
                   ...p,
                   likes_count: updated.likes_count ?? p.likes_count,
                   comments_count: updated.comments_count ?? p.comments_count,
+                  shares_count: updated.shares_count ?? p.shares_count,
                   content: updated.content ?? p.content,
                 }
               : p
@@ -2145,6 +2184,66 @@ export function SocialFeed({
     toast.success("Publicação excluída.");
   };
 
+  // Compartilhar post com contagem e cópia de link/Web Share
+  const handleShare = async (postId: string) => {
+    const post = dbPosts.find((p) => p.id === postId);
+    if (!post) return;
+
+    const newSharesCount = (post.shares_count || 0) + 1;
+
+    // Atualização otimista imediata no feed
+    setDbPosts((prev) =>
+      prev.map((p) => (p.id === postId ? { ...p, shares_count: newSharesCount } : p))
+    );
+
+    // Persiste no localStorage como fallback resiliente
+    try {
+      localStorage.setItem(`feed_share_count_${postId}`, String(newSharesCount));
+    } catch {
+      // ignore
+    }
+
+    const shareUrl = `${window.location.origin}/#post-${postId}`;
+    const shareText = post.content ? post.content.slice(0, 120) : "Confira esta publicação no Escreva+!";
+
+    if (typeof navigator !== "undefined" && navigator.share && /mobile|android|iphone|ipad/i.test(navigator.userAgent)) {
+      try {
+        await navigator.share({
+          title: "Escreva+ | Redação Nota 1000",
+          text: shareText,
+          url: shareUrl,
+        });
+        toast.success("Publicação compartilhada!");
+      } catch (err: any) {
+        if (err?.name !== "AbortError") {
+          try {
+            await navigator.clipboard.writeText(shareUrl);
+            toast.success("Link copiado para a área de transferência!");
+          } catch {
+            toast.success("Compartilhado com sucesso!");
+          }
+        }
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success("Link da publicação copiado!");
+      } catch {
+        toast.success("Compartilhado com sucesso!");
+      }
+    }
+
+    // Sincroniza contador no Supabase
+    try {
+      await (supabase as any)
+        .from("posts")
+        .update({ shares_count: newSharesCount })
+        .eq("id", postId);
+    } catch (err) {
+      console.warn("[SocialFeed] Aviso de contagem de compartilhamento:", err);
+    }
+  };
+
   // Seguir / Deixar de Seguir estudante
   const handleToggleFollow = async (targetId: string, currentStatus: boolean) => {
     if (!user) return;
@@ -2350,6 +2449,7 @@ export function SocialFeed({
                     onAddComment={handleAddComment}
                     onDeleteComment={handleDeleteComment}
                     onDelete={handleDeletePost}
+                    onShare={handleShare}
                     onHashtagClick={(tag) => setSearchQuery(`#${tag}`)}
                     onOpenProfile={() =>
                       onOpenProfile

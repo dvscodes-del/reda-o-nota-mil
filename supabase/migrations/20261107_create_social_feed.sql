@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS public.posts (
   -- Métricas (cache denormalizado para performance)
   likes_count INT NOT NULL DEFAULT 0,
   comments_count INT NOT NULL DEFAULT 0,
+  shares_count INT NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -69,6 +70,7 @@ ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS video_url TEXT;
 ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS media_type TEXT;
 ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS document_url TEXT;
 ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS document_title TEXT;
+ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS shares_count INT NOT NULL DEFAULT 0;
 
 -- ============================================================
 -- 3. Tabela de curtidas em posts

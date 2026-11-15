@@ -312,7 +312,7 @@ export function StudentProfile({
         </div>
       )}
 
-      <div className="mb-8 relative z-10">
+      <div className="mb-8 relative z-0">
         <div className="flex items-center gap-3 sm:gap-4 rounded-xl border border-border bg-card p-2 shadow-sm">
           <div className="flex flex-1 items-center gap-2 px-2 sm:px-3 text-muted-foreground min-w-0">
             <Search className="size-4 sm:size-5 shrink-0" />
@@ -330,7 +330,7 @@ export function StudentProfile({
         
         {/* Dropdown de resultados */}
         {searchResults.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg p-2 max-h-60 overflow-y-auto z-20">
+          <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg p-2 max-h-60 overflow-y-auto z-10">
             {searchResults.map(p => (
               <div 
                 key={p.id} 

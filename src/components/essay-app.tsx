@@ -345,11 +345,13 @@ export function EssayApp() {
   const { unreadCount, refreshNotifications, notifications, sendCustomDeviceNotification } = useNotifications();
 
   const unreadMessagesCount = useMemo(() => {
-    return notifications?.filter((n) => n.type === "message" && !n.isRead).length || 0;
+    if (!notifications || !Array.isArray(notifications)) return 0;
+    return notifications.filter((n) => n?.type === "message" && !n?.isRead).length;
   }, [notifications]);
 
   const unreadNotifsCount = useMemo(() => {
-    return notifications?.filter((n) => n.type !== "message" && !n.isRead).length || 0;
+    if (!notifications || !Array.isArray(notifications)) return 0;
+    return notifications.filter((n) => n?.type !== "message" && !n?.isRead).length;
   }, [notifications]);
 
   const streakDays = useMemo(() => {
@@ -475,7 +477,14 @@ export function EssayApp() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {mobileOpen && <button type="button" aria-label="Fechar menu" onClick={() => setMobileOpen(false)} className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs lg:hidden" />}
+      {mobileOpen && (
+        <button
+          type="button"
+          aria-label="Fechar menu"
+          onClick={() => setMobileOpen(false)}
+          className="fixed inset-0 z-[65] bg-black/60 backdrop-blur-xs lg:hidden"
+        />
+      )}
       <aside className={`fixed inset-y-0 left-0 z-[70] w-72 border-r border-border/80 bg-sidebar shadow-2xl p-4 lg:p-5 transition-transform duration-300 lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex h-full flex-col">
           {/* Logo & Marca */}
