@@ -462,10 +462,21 @@ export function EssayApp() {
     }
   }
 
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {mobileOpen && <button type="button" aria-label="Fechar menu" onClick={() => setMobileOpen(false)} className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs lg:hidden" />}
-      <aside className={`fixed inset-y-0 left-0 z-[60] w-72 border-r border-border/80 bg-sidebar shadow-2xl p-4 lg:p-5 transition-transform duration-300 lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside className={`fixed inset-y-0 left-0 z-[70] w-72 border-r border-border/80 bg-sidebar shadow-2xl p-4 lg:p-5 transition-transform duration-300 lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex h-full flex-col">
           {/* Logo & Marca */}
           <div className="mb-5 flex items-center justify-between">

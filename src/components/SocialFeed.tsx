@@ -45,6 +45,7 @@ export interface FeedPost {
   author_course?: string | null;
   author_college?: string | null;
   is_liked?: boolean;
+  liked_by_names?: string[];
   selected_reaction?: Reaction | null;
   comments?: FeedComment[];
   comments_loaded?: boolean;
@@ -962,16 +963,21 @@ function PostCard({
 
       {/* ── Métricas Sociais Reais ── */}
       {(post.likes_count > 0 || post.comments_count > 0) && (
-        <div className="flex items-center justify-between px-5 pb-2 text-xs text-muted-foreground">
+        <div className="flex items-center justify-between px-5 pb-2 text-xs text-muted-foreground gap-2 flex-wrap">
           {post.likes_count > 0 && (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-sm leading-none">👍</span>
-              <span>{post.likes_count} {post.likes_count === 1 ? "curtida" : "curtidas"}</span>
+              <span className="font-semibold text-foreground">{post.likes_count} {post.likes_count === 1 ? "curtida" : "curtidas"}</span>
+              {post.liked_by_names && post.liked_by_names.length > 0 && (
+                <span className="text-muted-foreground truncate max-w-[200px] sm:max-w-xs">
+                  • {post.liked_by_names.slice(0, 3).join(", ")}{post.liked_by_names.length > 3 ? ` e mais ${post.liked_by_names.length - 3}` : ""}
+                </span>
+              )}
             </div>
           )}
           {post.comments_count > 0 && (
             <button type="button" onClick={() => onToggleComments(post.id)}
-              className="hover:underline hover:text-foreground transition-colors ml-auto cursor-pointer"
+              className="hover:underline hover:text-foreground transition-colors ml-auto cursor-pointer font-medium"
             >
               {post.comments_count} {post.comments_count === 1 ? "comentário" : "comentários"}
             </button>
@@ -1644,35 +1650,63 @@ export function SocialFeed({
           .order("created_at", { ascending: false });
 
         if (!error && rawPosts && rawPosts.length > 0) {
-          const userIds = [...new Set(rawPosts.map((p: any) => p.user_id))] as string[];
+          const postIds = rawPosts.map((p: any) => p.id);
+
+          // Buscar TODAS as curtidas desses posts (sem filtrar por user.id) para exibir contagem real e nomes
+          const { data: allLikes } = await (supabase as any)
+            .from("post_likes")
+            .select("id, post_id, user_id, created_at")
+            .in("post_id", postIds);
+
+          // Buscar TODOS os comentários desses posts
+          const { data: allComments } = await (supabase as any)
+            .from("post_comments")
+            .select("id, post_id, user_id, content, created_at")
+            .in("post_id", postIds)
+            .order("created_at", { ascending: true });
+
+          const postUserIds = rawPosts.map((p: any) => p.user_id);
+          const likerUserIds = (allLikes || []).map((l: any) => l.user_id);
+          const commenterUserIds = (allComments || []).map((c: any) => c.user_id);
+          const allUserIds = [...new Set([...postUserIds, ...likerUserIds, ...commenterUserIds])] as string[];
+
           const { data: profiles } = await supabase
             .from("profiles")
             .select("id, full_name, avatar_url, course, college")
-            .in("id", userIds);
+            .in("id", allUserIds);
 
           const profileMap = new Map<string, any>();
           profiles?.forEach((p: any) => profileMap.set(p.id, p));
 
-          const postIds = rawPosts.map((p: any) => p.id);
-          const { data: likes } = await (supabase as any)
-            .from("post_likes")
-            .select("post_id")
-            .eq("user_id", user.id)
-            .in("post_id", postIds);
-
-          const likedSet = new Set((likes || []).map((l: any) => l.post_id));
-
           remotePosts = rawPosts.map((p: any) => {
             const prof = profileMap.get(p.user_id);
+            const postLikes = (allLikes || []).filter((l: any) => l.post_id === p.id);
+            const postComments = (allComments || []).filter((c: any) => c.post_id === p.id);
+            const is_liked = postLikes.some((l: any) => l.user_id === user.id);
+            const likes_count = Math.max(p.likes_count || 0, postLikes.length);
+            const comments_count = Math.max(p.comments_count || 0, postComments.length);
+            const liked_by_names = postLikes
+              .map((l: any) => (l.user_id === user.id ? "Você" : profileMap.get(l.user_id)?.full_name || "Estudante"))
+              .filter(Boolean);
+
+            const enrichedComments: FeedComment[] = postComments.map((c: any) => ({
+              ...c,
+              author_name: profileMap.get(c.user_id)?.full_name ?? (c.user_id === user.id ? currentUserName : "Estudante"),
+              author_avatar: profileMap.get(c.user_id)?.avatar_url ?? (c.user_id === user.id ? currentUserAvatar : null),
+            }));
+
             return {
               ...p,
+              likes_count,
+              comments_count,
+              liked_by_names,
               author_name: prof?.full_name ?? (p.user_id === user.id ? currentUserName : "Estudante"),
               author_avatar: prof?.avatar_url ?? (p.user_id === user.id ? currentUserAvatar : null),
               author_course: prof?.course ?? null,
               author_college: prof?.college ?? null,
-              is_liked: likedSet.has(p.id),
-              comments: [],
-              comments_loaded: false,
+              is_liked,
+              comments: enrichedComments,
+              comments_loaded: true,
               show_comments: false,
             };
           });
@@ -1707,7 +1741,7 @@ export function SocialFeed({
     loadSuggestedProfiles();
   }, [loadPosts, loadSuggestedProfiles]);
 
-  // Realtime
+  // Realtime multi-tabelas: posts, curtidas e comentários
   useEffect(() => {
     if (!user) return;
     const channel = supabase
@@ -1727,12 +1761,115 @@ export function SocialFeed({
           author_course: profile?.course ?? null,
           author_college: profile?.college ?? null,
           is_liked: false,
+          liked_by_names: [],
           comments: [],
-          comments_loaded: false,
+          comments_loaded: true,
           show_comments: false,
         };
 
-        setDbPosts((prev) => [fullPost, ...prev]);
+        setDbPosts((prev) => (prev.some((p) => p.id === fullPost.id) ? prev : [fullPost, ...prev]));
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "posts" }, (payload) => {
+        const updated = payload.new as any;
+        if (!updated) return;
+        setDbPosts((prev) =>
+          prev.map((p) =>
+            p.id === updated.id
+              ? {
+                  ...p,
+                  likes_count: updated.likes_count ?? p.likes_count,
+                  comments_count: updated.comments_count ?? p.comments_count,
+                  content: updated.content ?? p.content,
+                }
+              : p
+          )
+        );
+      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "posts" }, (payload) => {
+        const oldPost = payload.old as any;
+        if (oldPost?.id) {
+          setDbPosts((prev) => prev.filter((p) => p.id !== oldPost.id));
+        }
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "post_likes" }, async (payload) => {
+        const newLike = payload.new as any;
+        if (!newLike) return;
+        const { data: likerProf } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", newLike.user_id)
+          .maybeSingle();
+
+        const likerName = newLike.user_id === user.id ? "Você" : likerProf?.full_name || "Estudante";
+
+        setDbPosts((prev) =>
+          prev.map((p) => {
+            if (p.id !== newLike.post_id) return p;
+            const alreadyLiked = p.liked_by_names?.includes(likerName);
+            const updatedNames = alreadyLiked ? p.liked_by_names : [...(p.liked_by_names || []), likerName];
+            return {
+              ...p,
+              likes_count: p.likes_count + 1,
+              is_liked: newLike.user_id === user.id ? true : p.is_liked,
+              liked_by_names: updatedNames,
+            };
+          })
+        );
+      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "post_likes" }, (payload) => {
+        const oldLike = payload.old as any;
+        if (!oldLike) return;
+        setDbPosts((prev) =>
+          prev.map((p) => {
+            if (p.id !== oldLike.post_id) return p;
+            return {
+              ...p,
+              likes_count: Math.max(0, p.likes_count - 1),
+              is_liked: oldLike.user_id === user.id ? false : p.is_liked,
+            };
+          })
+        );
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "post_comments" }, async (payload) => {
+        const newComment = payload.new as any;
+        if (!newComment) return;
+        const { data: commenterProf } = await supabase
+          .from("profiles")
+          .select("full_name, avatar_url")
+          .eq("id", newComment.user_id)
+          .maybeSingle();
+
+        const enrichedComment: FeedComment = {
+          ...newComment,
+          author_name: commenterProf?.full_name ?? (newComment.user_id === user.id ? currentUserName : "Estudante"),
+          author_avatar: commenterProf?.avatar_url ?? (newComment.user_id === user.id ? currentUserAvatar : null),
+        };
+
+        setDbPosts((prev) =>
+          prev.map((p) => {
+            if (p.id !== newComment.post_id) return p;
+            if (p.comments?.some((c) => c.id === newComment.id)) return p;
+            return {
+              ...p,
+              comments: [...(p.comments || []), enrichedComment],
+              comments_count: p.comments_count + 1,
+            };
+          })
+        );
+      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "post_comments" }, (payload) => {
+        const oldComment = payload.old as any;
+        if (!oldComment) return;
+        setDbPosts((prev) =>
+          prev.map((p) => {
+            if (p.id !== oldComment.post_id) return p;
+            return {
+              ...p,
+              comments: p.comments?.filter((c) => c.id !== oldComment.id) || [],
+              comments_count: Math.max(0, p.comments_count - 1),
+            };
+          })
+        );
       })
       .subscribe();
 
@@ -1848,15 +1985,8 @@ export function SocialFeed({
   const handleLike = async (postId: string, isLiked: boolean, reaction?: Reaction) => {
     if (!user) return;
 
-    try {
-      if (isLiked) {
-        await (supabase as any).from("post_likes").delete().eq("post_id", postId).eq("user_id", user.id);
-      } else {
-        await (supabase as any).from("post_likes").insert({ post_id: postId, user_id: user.id });
-      }
-    } catch (err) {
-      console.warn("[SocialFeed] Aviso de curtida:", err);
-    }
+    const post = dbPosts.find((p) => p.id === postId);
+    const newLikesCount = isLiked ? Math.max(0, (post?.likes_count || 1) - 1) : (post?.likes_count || 0) + 1;
 
     setDbPosts((prev) =>
       prev.map((p) =>
@@ -1865,11 +1995,26 @@ export function SocialFeed({
               ...p,
               is_liked: !isLiked,
               selected_reaction: !isLiked ? reaction || "like" : null,
-              likes_count: isLiked ? Math.max(0, p.likes_count - 1) : p.likes_count + 1,
+              likes_count: newLikesCount,
+              liked_by_names: !isLiked
+                ? [...(p.liked_by_names || []).filter((n) => n !== "Você"), "Você"]
+                : (p.liked_by_names || []).filter((n) => n !== "Você"),
             }
           : p
       )
     );
+
+    try {
+      if (isLiked) {
+        await (supabase as any).from("post_likes").delete().eq("post_id", postId).eq("user_id", user.id);
+      } else {
+        await (supabase as any).from("post_likes").insert({ post_id: postId, user_id: user.id });
+      }
+      // Sincroniza contador na linha do post no Supabase
+      await (supabase as any).from("posts").update({ likes_count: newLikesCount }).eq("id", postId);
+    } catch (err) {
+      console.warn("[SocialFeed] Aviso de curtida:", err);
+    }
   };
 
   // Abrir comentários
@@ -1930,6 +2075,9 @@ export function SocialFeed({
       author_avatar: currentUserAvatar,
     };
 
+    const post = dbPosts.find((p) => p.id === postId);
+    const newCommentsCount = (post?.comments_count || 0) + 1;
+
     try {
       const { data, error } = await (supabase as any)
         .from("post_comments")
@@ -1941,6 +2089,8 @@ export function SocialFeed({
         newComment.id = data.id;
         newComment.created_at = data.created_at;
       }
+      // Sincroniza contador de comentários na linha do post no Supabase
+      await (supabase as any).from("posts").update({ comments_count: newCommentsCount }).eq("id", postId);
     } catch (err) {
       console.warn("[SocialFeed] Aviso ao inserir comentário no Supabase (salvando localmente):", err);
     }

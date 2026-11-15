@@ -199,3 +199,22 @@ DROP TRIGGER IF EXISTS trigger_sync_comments_count ON public.post_comments;
 CREATE TRIGGER trigger_sync_comments_count
   AFTER INSERT OR DELETE ON public.post_comments
   FOR EACH ROW EXECUTE FUNCTION sync_post_comments_count();
+
+-- ============================================================
+-- 5. Habilita Realtime para todas as tabelas sociais
+-- ============================================================
+DO $$
+BEGIN
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.posts;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END;
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.post_likes;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END;
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.post_comments;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END;
+END $$;

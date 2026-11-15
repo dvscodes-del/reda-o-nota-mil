@@ -13,7 +13,7 @@ import {
   type DeviceNotificationPermission,
 } from '@/lib/device-notifications';
 
-export type NotificationType = 'follower' | 'essay' | 'message' | 'milestone';
+export type NotificationType = 'follower' | 'essay' | 'message' | 'milestone' | 'like' | 'comment';
 
 export interface AppNotification {
   id: string;
@@ -44,6 +44,7 @@ export interface NotificationsContextType {
   markAllAsRead: () => void;
   clearNotification: (id: string) => void;
   refreshNotifications: () => Promise<void>;
+  addNotification: (notif: Omit<AppNotification, 'id' | 'isRead'>) => void;
   // Notificações no eletrônico (celular, tablet, desktop)
   devicePermission: DeviceNotificationPermission;
   isDeviceSupported: boolean;
@@ -201,7 +202,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
 
         if (!followsError && Array.isArray(followsData) && followsData.length > 0) {
           const followerIds = followsData.map((f: any) => f.follower_id);
-          
+
           const { data: profilesData } = await supabase
             .from('profiles')
             .select('id, full_name, avatar_url')
@@ -245,7 +246,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
 
         if (!msgsError && Array.isArray(unreadMsgs) && unreadMsgs.length > 0) {
           const senderIds = Array.from(new Set(unreadMsgs.map((m: any) => m.sender_id)));
-          
+
           const { data: senderProfiles } = await supabase
             .from('profiles')
             .select('id, full_name, avatar_url')
@@ -298,6 +299,127 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         timestamp: user.created_at || new Date().toISOString(),
         isRead: readIds.has(welcomeId),
       });
+
+      // 5. Notificações de Curtidas e Comentários nos Posts do Usuário (Supabase)
+      try {
+        const { data: userPosts } = await (supabase as any)
+          .from('posts')
+          .select('id, content')
+          .eq('user_id', user.id);
+
+        if (userPosts && userPosts.length > 0) {
+          const userPostIds = userPosts.map((p: any) => p.id);
+          const postContentMap = new Map<string, string>(
+            userPosts.map((p: any) => [p.id, p.content || 'sua publicação'])
+          );
+
+          // Buscar curtidas de outros usuários
+          const { data: likesData } = await (supabase as any)
+            .from('post_likes')
+            .select('id, post_id, user_id, created_at')
+            .in('post_id', userPostIds)
+            .neq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(30);
+
+          // Buscar comentários de outros usuários
+          const { data: commentsData } = await (supabase as any)
+            .from('post_comments')
+            .select('id, post_id, user_id, content, created_at')
+            .in('post_id', userPostIds)
+            .neq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(30);
+
+          const actorIds = Array.from(
+            new Set([
+              ...(likesData || []).map((l: any) => l.user_id),
+              ...(commentsData || []).map((c: any) => c.user_id),
+            ])
+          );
+
+          let actorMap = new Map<string, { full_name: string | null; avatar_url: string | null }>();
+          if (actorIds.length > 0) {
+            const { data: actorProfiles } = await supabase
+              .from('profiles')
+              .select('id, full_name, avatar_url')
+              .in('id', actorIds);
+            if (actorProfiles) {
+              actorProfiles.forEach((p: any) => actorMap.set(p.id, p));
+            }
+          }
+
+          // Monta itens de curtida
+          (likesData || []).forEach((like: any) => {
+            const notifId = `like_${like.id}`;
+            const actor = actorMap.get(like.user_id);
+            const name = actor?.full_name || 'Um estudante';
+            const postSnippet = postContentMap.get(like.post_id) || '';
+            const preview = postSnippet.length > 40 ? `${postSnippet.slice(0, 40)}...` : postSnippet;
+
+            items.push({
+              id: notifId,
+              type: 'like',
+              title: `${name} curtiu sua publicação!`,
+              description: preview ? `Na postagem: "${preview}"` : 'Curtiu sua publicação no Feed da Turma.',
+              timestamp: like.created_at,
+              isRead: readIds.has(notifId),
+              actorName: name,
+              actorId: like.user_id,
+              avatarUrl: actor?.avatar_url ?? null,
+              metadata: {
+                postId: like.post_id,
+                postSnippet,
+              },
+            });
+          });
+
+          // Monta itens de comentário
+          (commentsData || []).forEach((com: any) => {
+            const notifId = `comment_${com.id}`;
+            const actor = actorMap.get(com.user_id);
+            const name = actor?.full_name || 'Um estudante';
+            const postSnippet = postContentMap.get(com.post_id) || '';
+            const commentPreview = com.content?.length > 60 ? `${com.content.slice(0, 60)}...` : com.content;
+
+            items.push({
+              id: notifId,
+              type: 'comment',
+              title: `${name} comentou no seu post!`,
+              description: `"${commentPreview}"`,
+              timestamp: com.created_at,
+              isRead: readIds.has(notifId),
+              actorName: name,
+              actorId: com.user_id,
+              avatarUrl: actor?.avatar_url ?? null,
+              metadata: {
+                postId: com.post_id,
+                postSnippet,
+              },
+            });
+          });
+        }
+      } catch (feedErr) {
+        console.warn('Erro ao carregar notificações do feed no Supabase:', feedErr);
+      }
+
+      // 6. Notificações da Comunidade e Feed (fallback local)
+      try {
+        const stored = localStorage.getItem(`custom_notifications_${user.id}`);
+        if (stored) {
+          const customList: AppNotification[] = JSON.parse(stored);
+          customList.forEach((c) => {
+            if (!items.some((it) => it.id === c.id)) {
+              items.push({
+                ...c,
+                isRead: readIds.has(c.id),
+              });
+            }
+          });
+        }
+      } catch (e) {
+        console.warn('Erro ao carregar notificações locais do feed:', e);
+      }
 
       // Ordena por data decrescente
       items.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
@@ -396,9 +518,98 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
       )
       .subscribe();
 
+    // Canal para ouvir novas curtidas e comentários nos posts
+    const feedChannel = supabase
+      .channel(`realtime-feed-notifs-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'post_likes',
+        },
+        async (payload: any) => {
+          const newLike = payload.new;
+          if (newLike && newLike.user_id !== user.id) {
+            // Verifica se o post pertence ao usuário atual
+            const { data: post } = await (supabase as any)
+              .from('posts')
+              .select('id, user_id, content')
+              .eq('id', newLike.post_id)
+              .maybeSingle();
+
+            if (post && post.user_id === user.id) {
+              const { data: actor } = await supabase
+                .from('profiles')
+                .select('full_name')
+                .eq('id', newLike.user_id)
+                .maybeSingle();
+
+              const actorName = actor?.full_name || 'Um estudante';
+              toast.info(`👍 ${actorName} curtiu seu post!`, {
+                description: 'Toque para ver no Feed da Turma.',
+              });
+
+              sendDeviceNotification({
+                title: '👍 Nova curtida no seu post!',
+                body: `${actorName} curtiu sua publicação no Feed da Turma.`,
+                tag: `like_${newLike.id}`,
+                url: '/?section=feed',
+              });
+
+              refreshNotifications();
+            }
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'post_comments',
+        },
+        async (payload: any) => {
+          const newComment = payload.new;
+          if (newComment && newComment.user_id !== user.id) {
+            // Verifica se o post pertence ao usuário atual
+            const { data: post } = await (supabase as any)
+              .from('posts')
+              .select('id, user_id, content')
+              .eq('id', newComment.post_id)
+              .maybeSingle();
+
+            if (post && post.user_id === user.id) {
+              const { data: actor } = await supabase
+                .from('profiles')
+                .select('full_name')
+                .eq('id', newComment.user_id)
+                .maybeSingle();
+
+              const actorName = actor?.full_name || 'Um estudante';
+              const snippet = newComment.content?.length > 50 ? `${newComment.content.slice(0, 50)}...` : newComment.content;
+              toast.info(`💬 ${actorName} comentou no seu post!`, {
+                description: `"${snippet}"`,
+              });
+
+              sendDeviceNotification({
+                title: '💬 Novo comentário no seu post!',
+                body: `${actorName}: "${snippet}"`,
+                tag: `comment_${newComment.id}`,
+                url: '/?section=feed',
+              });
+
+              refreshNotifications();
+            }
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(followsChannel);
       supabase.removeChannel(messagesChannel);
+      supabase.removeChannel(feedChannel);
     };
   }, [user, refreshNotifications]);
 
@@ -426,6 +637,33 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     saveReadIds(readIds);
   }, [getReadIds, saveReadIds]);
 
+  const addNotification = useCallback((notif: Omit<AppNotification, 'id' | 'isRead'>) => {
+    if (!user) return;
+    const newId = `notif_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const fullNotif: AppNotification = {
+      ...notif,
+      id: newId,
+      isRead: false,
+    };
+
+    setNotifications((prev) => [fullNotif, ...prev]);
+
+    try {
+      const stored = localStorage.getItem(`custom_notifications_${user.id}`);
+      const list: AppNotification[] = stored ? JSON.parse(stored) : [];
+      localStorage.setItem(`custom_notifications_${user.id}`, JSON.stringify([fullNotif, ...list].slice(0, 50)));
+    } catch (e) {
+      console.warn("Erro ao salvar notificação local:", e);
+    }
+
+    sendDeviceNotification({
+      title: fullNotif.title,
+      body: fullNotif.description,
+      tag: newId,
+      url: fullNotif.type === 'like' || fullNotif.type === 'comment' ? '/?section=feed' : '/',
+    });
+  }, [user]);
+
   const unreadCount = useMemo(() => {
     return notifications.filter((n) => !n.isRead).length;
   }, [notifications]);
@@ -440,6 +678,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         markAllAsRead,
         clearNotification,
         refreshNotifications,
+        addNotification,
         devicePermission,
         isDeviceSupported,
         requestDevicePermission,

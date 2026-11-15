@@ -15,7 +15,9 @@ import {
   Filter,
   Smartphone,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  ThumbsUp,
+  MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -80,6 +82,8 @@ export function Notifications({ goTo, onStartChat, onOpenEssay }: NotificationsP
 
   const countByType = {
     all: notifications.length,
+    like: notifications.filter((n) => n.type === "like").length,
+    comment: notifications.filter((n) => n.type === "comment").length,
     follower: notifications.filter((n) => n.type === "follower").length,
     essay: notifications.filter((n) => n.type === "essay").length,
     message: notifications.filter((n) => n.type === "message").length,
@@ -90,6 +94,8 @@ export function Notifications({ goTo, onStartChat, onOpenEssay }: NotificationsP
 
     if (notif.type === "follower") {
       goTo("perfil");
+    } else if (notif.type === "like" || notif.type === "comment") {
+      goTo("feed");
     } else if (notif.type === "essay") {
       if (notif.metadata?.fullEssay && onOpenEssay) {
         onOpenEssay({
@@ -231,6 +237,36 @@ export function Notifications({ goTo, onStartChat, onOpenEssay }: NotificationsP
         </Button>
 
         <Button
+          variant={activeFilter === "like" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setActiveFilter("like")}
+          className="rounded-full gap-2"
+        >
+          <ThumbsUp className="size-3.5" />
+          Curtidas
+          {countByType.like > 0 && (
+            <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-[10px]">
+              {countByType.like}
+            </Badge>
+          )}
+        </Button>
+
+        <Button
+          variant={activeFilter === "comment" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setActiveFilter("comment")}
+          className="rounded-full gap-2"
+        >
+          <MessageSquare className="size-3.5" />
+          Comentários
+          {countByType.comment > 0 && (
+            <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-[10px]">
+              {countByType.comment}
+            </Badge>
+          )}
+        </Button>
+
+        <Button
           variant={activeFilter === "follower" ? "default" : "outline"}
           size="sm"
           onClick={() => setActiveFilter("follower")}
@@ -307,6 +343,36 @@ export function Notifications({ goTo, onStartChat, onOpenEssay }: NotificationsP
                 <div className="flex items-start gap-3.5 flex-1 min-w-0">
                   {/* Icon / Avatar */}
                   <div className="relative shrink-0 mt-0.5">
+                    {notif.type === "like" && (
+                      <div className="relative">
+                        <div className="grid size-11 place-items-center rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold overflow-hidden">
+                          {notif.avatarUrl ? (
+                            <img src={notif.avatarUrl} alt={notif.actorName || "Estudante"} className="h-full w-full object-cover" />
+                          ) : (
+                            notif.actorName?.[0]?.toUpperCase() || "E"
+                          )}
+                        </div>
+                        <span className="absolute -bottom-1 -right-1 grid size-5 place-items-center rounded-full bg-blue-600 text-white text-[10px] ring-2 ring-background">
+                          <ThumbsUp className="size-3" />
+                        </span>
+                      </div>
+                    )}
+
+                    {notif.type === "comment" && (
+                      <div className="relative">
+                        <div className="grid size-11 place-items-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold overflow-hidden">
+                          {notif.avatarUrl ? (
+                            <img src={notif.avatarUrl} alt={notif.actorName || "Estudante"} className="h-full w-full object-cover" />
+                          ) : (
+                            notif.actorName?.[0]?.toUpperCase() || "E"
+                          )}
+                        </div>
+                        <span className="absolute -bottom-1 -right-1 grid size-5 place-items-center rounded-full bg-emerald-600 text-white text-[10px] ring-2 ring-background">
+                          <MessageSquare className="size-3" />
+                        </span>
+                      </div>
+                    )}
+
                     {notif.type === "follower" && (
                       <div className="relative">
                         <div className="grid size-11 place-items-center rounded-full bg-primary/10 text-primary font-bold overflow-hidden">
@@ -386,6 +452,8 @@ export function Notifications({ goTo, onStartChat, onOpenEssay }: NotificationsP
                     onClick={() => handleActionClick(notif)}
                     className="rounded-lg gap-1.5 font-semibold text-xs"
                   >
+                    {notif.type === "like" && "Ver Publicação"}
+                    {notif.type === "comment" && "Ver Comentário"}
                     {notif.type === "follower" && "Ver Perfil"}
                     {notif.type === "essay" && "Ver Feedback"}
                     {notif.type === "message" && "Responder"}
