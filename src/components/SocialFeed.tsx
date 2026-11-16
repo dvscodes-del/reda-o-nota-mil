@@ -1115,76 +1115,102 @@ function PostCard({
       </div>
 
       {/* ── Enquete Interativa ── */}
-      {post.poll_data && post.poll_data.options && post.poll_data.options.length > 0 && (
-        <div className="mx-5 mb-4 p-4 rounded-2xl border border-purple-500/25 bg-purple-500/5 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-purple-600 dark:text-purple-400 flex items-center gap-1.5">
-              <BarChart3 className="size-3.5" /> Enquete da Comunidade
-            </span>
-            <span className="text-[11px] text-muted-foreground font-medium">
-              {post.poll_data.total_votes || 0} {(post.poll_data.total_votes || 0) === 1 ? "voto" : "votos"}
-            </span>
-          </div>
+      {/* ── Enquete Interativa da Comunidade ── */}
+      {post.poll_data && post.poll_data.options && post.poll_data.options.length > 0 && (() => {
+        const hasVotedAny = Boolean(post.poll_data.user_voted_id);
+        const totalVotes = post.poll_data.total_votes || 0;
 
-          {post.poll_data.question && post.poll_data.question !== post.content && (
-            <p className="text-sm font-bold text-foreground leading-snug">{post.poll_data.question}</p>
-          )}
+        return (
+          <div className="mx-5 mb-4 p-4 rounded-2xl border border-purple-500/25 bg-purple-500/5 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-purple-600 dark:text-purple-400 flex items-center gap-1.5">
+                <BarChart3 className="size-3.5" /> Enquete da Comunidade
+              </span>
+              <span className="text-[11px] text-muted-foreground font-medium">
+                {totalVotes} {totalVotes === 1 ? "voto" : "votos"}
+              </span>
+            </div>
 
-          <div className="space-y-2">
-            {post.poll_data.options.map((opt) => {
-              const total = post.poll_data!.total_votes || 0;
-              const percent = total > 0 ? Math.round((opt.votes / total) * 100) : 0;
-              const hasVotedThis = post.poll_data!.user_voted_id === opt.id;
-              const hasVotedAny = Boolean(post.poll_data!.user_voted_id);
+            {post.poll_data.question && post.poll_data.question !== post.content && (
+              <p className="text-sm font-bold text-foreground leading-snug">{post.poll_data.question}</p>
+            )}
 
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  disabled={hasVotedAny}
-                  onClick={() => onVotePoll && onVotePoll(post.id, opt.id)}
-                  className={`relative w-full overflow-hidden rounded-xl border p-3 text-left transition-all ${
-                    hasVotedThis
-                      ? "border-purple-500 bg-purple-500/10 shadow-xs"
-                      : hasVotedAny
-                      ? "border-border/60 bg-card/60 opacity-90 cursor-default"
-                      : "border-border/80 bg-card hover:border-purple-500/50 hover:bg-purple-500/5 cursor-pointer"
-                  }`}
-                >
-                  {/* Barra de progresso visual em background */}
-                  {hasVotedAny && (
-                    <div
-                      className={`absolute inset-y-0 left-0 transition-all duration-500 ${
-                        hasVotedThis ? "bg-purple-500/20" : "bg-muted/40"
-                      }`}
-                      style={{ width: `${percent}%` }}
-                    />
-                  )}
+            <div className="space-y-2">
+              {post.poll_data.options.map((opt) => {
+                const percent = totalVotes > 0 ? Math.round((opt.votes / totalVotes) * 100) : 0;
+                const hasVotedThis = post.poll_data!.user_voted_id === opt.id;
 
-                  <div className="relative flex items-center justify-between gap-3 text-xs sm:text-sm font-semibold">
-                    <span className="flex items-center gap-2 truncate">
-                      {hasVotedThis && <CheckCircle2 className="size-4 text-purple-600 dark:text-purple-400 shrink-0" />}
-                      <span className={hasVotedThis ? "text-purple-600 dark:text-purple-400 font-bold" : "text-foreground"}>
-                        {opt.text}
-                      </span>
-                    </span>
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => onVotePoll && onVotePoll(post.id, opt.id)}
+                    className={`relative w-full overflow-hidden rounded-xl border p-3 text-left transition-all ${
+                      hasVotedThis
+                        ? "border-purple-500 bg-purple-500/15 ring-1 ring-purple-500/30 shadow-xs cursor-default"
+                        : hasVotedAny
+                        ? "border-border/70 bg-card/70 hover:border-purple-400/70 hover:bg-purple-500/5 cursor-pointer opacity-90"
+                        : "border-border/80 bg-card hover:border-purple-500/70 hover:bg-purple-500/5 cursor-pointer hover:shadow-xs active:scale-[0.99]"
+                    }`}
+                    title={
+                      hasVotedThis
+                        ? "Opção selecionada por você"
+                        : hasVotedAny
+                        ? "Clique para trocar seu voto para esta opção"
+                        : "Clique para votar nesta opção"
+                    }
+                  >
+                    {/* Barra de progresso em background — visível SOMENTE APÓS votar */}
                     {hasVotedAny && (
-                      <span className="shrink-0 text-xs font-bold text-muted-foreground">
-                        {percent}% ({opt.votes})
-                      </span>
+                      <div
+                        className={`absolute inset-y-0 left-0 transition-all duration-500 ${
+                          hasVotedThis ? "bg-purple-500/25" : "bg-muted/40"
+                        }`}
+                        style={{ width: `${percent}%` }}
+                      />
                     )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
 
-          <p className="text-[11px] text-muted-foreground/80 flex items-center justify-between pt-1">
-            <span>{post.poll_data.user_voted_id ? "✓ Seu voto foi registrado" : "Clique em uma opção para votar"}</span>
-            <span>• Aberta a todos</span>
-          </p>
-        </div>
-      )}
+                    <div className="relative flex items-center justify-between gap-3 text-xs sm:text-sm font-semibold">
+                      <span className="flex items-center gap-2 truncate">
+                        {hasVotedThis ? (
+                          <CheckCircle2 className="size-4 text-purple-600 dark:text-purple-400 shrink-0" />
+                        ) : hasVotedAny ? (
+                          <span className="size-3.5 rounded-full border border-muted-foreground/40 shrink-0 inline-block" />
+                        ) : (
+                          <span className="size-3.5 rounded-full border-2 border-purple-400/60 shrink-0 inline-block" />
+                        )}
+                        <span className={hasVotedThis ? "text-purple-700 dark:text-purple-300 font-bold" : "text-foreground"}>
+                          {opt.text}
+                        </span>
+                      </span>
+
+                      {/* Percentual e contagem — visíveis SOMENTE APÓS votar */}
+                      {hasVotedAny ? (
+                        <span className="shrink-0 text-xs font-bold text-muted-foreground">
+                          {percent}% <span className="text-[11px] font-normal opacity-80">({opt.votes})</span>
+                        </span>
+                      ) : (
+                        <span className="shrink-0 text-[11px] font-medium text-purple-600/70 dark:text-purple-400/70">
+                          Votar
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <p className="text-[11px] text-muted-foreground/80 flex items-center justify-between pt-1">
+              <span>
+                {hasVotedAny
+                  ? "✓ Seu voto foi registrado • Clique em outra opção para trocar"
+                  : "Vote em uma opção para ver o resultado"}
+              </span>
+              <span>• Aberta a todos</span>
+            </p>
+          </div>
+        );
+      })()}
 
       {/* ── Mídia Anexada (Estilo LinkedIn: Fotos, Vídeos, Documentos) ── */}
       {post.image_url && (
@@ -2123,7 +2149,14 @@ export function SocialFeed({
                   likes_count: updated.likes_count ?? p.likes_count,
                   comments_count: updated.comments_count ?? p.comments_count,
                   shares_count: updated.shares_count ?? p.shares_count,
-                  poll_data: updated.poll_data ?? p.poll_data,
+                  poll_data: updated.poll_data
+                    ? {
+                        ...updated.poll_data,
+                        user_voted_id:
+                          p.poll_data?.user_voted_id ||
+                          (user ? localStorage.getItem(`feed_poll_vote_${p.id}_${user.id}`) : null),
+                      }
+                    : p.poll_data,
                   content: updated.content ?? p.content,
                 }
               : p
@@ -2560,22 +2593,38 @@ export function SocialFeed({
     }
   };
 
-  // Votar em enquete
+  // Votar ou trocar voto em enquete
   const handleVotePoll = async (postId: string, optionId: string) => {
     if (!user) return;
     const post = dbPosts.find((p) => p.id === postId);
     if (!post || !post.poll_data) return;
 
     const currentVotedId = post.poll_data.user_voted_id || localStorage.getItem(`feed_poll_vote_${postId}_${user.id}`);
-    if (currentVotedId) {
-      toast.info("Você já votou nesta enquete!");
+    
+    // Se clicou na mesma opção em que já havia votado
+    if (currentVotedId === optionId) {
+      toast.info("Você já votou nesta opção!");
       return;
     }
 
-    const updatedOptions = post.poll_data.options.map((opt) =>
-      opt.id === optionId ? { ...opt, votes: (opt.votes || 0) + 1 } : opt
-    );
-    const updatedTotalVotes = (post.poll_data.total_votes || 0) + 1;
+    const isChangingVote = Boolean(currentVotedId);
+
+    // Atualiza opções: se estiver trocando, decrementa a anterior e incrementa a nova
+    const updatedOptions = post.poll_data.options.map((opt) => {
+      if (opt.id === optionId) {
+        return { ...opt, votes: (opt.votes || 0) + 1 };
+      }
+      if (isChangingVote && opt.id === currentVotedId) {
+        return { ...opt, votes: Math.max(0, (opt.votes || 0) - 1) };
+      }
+      return opt;
+    });
+
+    // Se estiver trocando, o total de votos permanece o mesmo; se for voto novo, incrementa 1
+    const updatedTotalVotes = isChangingVote
+      ? (post.poll_data.total_votes || 0)
+      : (post.poll_data.total_votes || 0) + 1;
+
     const updatedPollData: PollData = {
       ...post.poll_data,
       options: updatedOptions,
@@ -2596,13 +2645,22 @@ export function SocialFeed({
       // ignore
     }
 
-    toast.success("Voto computado com sucesso!");
+    if (isChangingVote) {
+      toast.success("Seu voto foi alterado com sucesso!");
+    } else {
+      toast.success("Voto computado com sucesso!");
+    }
 
-    // Sincronizar no Supabase
+    // Sincronizar no Supabase (não inclui user_voted_id para manter a contagem compartilhada)
     try {
+      const dbPayload = {
+        question: updatedPollData.question,
+        options: updatedPollData.options,
+        total_votes: updatedPollData.total_votes,
+      };
       await (supabase as any)
         .from("posts")
-        .update({ poll_data: updatedPollData })
+        .update({ poll_data: dbPayload })
         .eq("id", postId);
     } catch (err) {
       console.warn("[SocialFeed] Aviso de voto em enquete:", err);
