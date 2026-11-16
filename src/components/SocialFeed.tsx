@@ -1117,7 +1117,10 @@ function PostCard({
       {/* ── Enquete Interativa ── */}
       {/* ── Enquete Interativa da Comunidade ── */}
       {post.poll_data && post.poll_data.options && post.poll_data.options.length > 0 && (() => {
-        const hasVotedAny = Boolean(post.poll_data.user_voted_id);
+        const userVotedIdStr = post.poll_data.user_voted_id ? String(post.poll_data.user_voted_id) : null;
+        const hasVotedAny = Boolean(userVotedIdStr);
+        const isAuthor = Boolean(user && post.user_id === user.id);
+        const showResults = hasVotedAny || isAuthor;
         
         // Calcula a soma real de votos de todas as opções de todos os usuários
         const sumVotes = post.poll_data.options.reduce(
@@ -1133,7 +1136,7 @@ function PostCard({
                 <BarChart3 className="size-3.5" /> Enquete da Comunidade
               </span>
               <span className="text-[11px] text-muted-foreground font-medium">
-                {totalVotes} {totalVotes === 1 ? "voto" : "votos"}
+                {totalVotes} {totalVotes === 1 ? "voto apurado" : "votos apurados"}
               </span>
             </div>
 
@@ -1143,20 +1146,21 @@ function PostCard({
 
             <div className="space-y-2">
               {post.poll_data.options.map((opt) => {
+                const optIdStr = String(opt.id);
                 const optVotes = Math.max(0, Number(opt.votes) || 0);
                 // Dividido precisamente pela soma de todos os votos dos usuários
                 const percent = totalVotes > 0 ? Math.round((optVotes / totalVotes) * 100) : 0;
-                const hasVotedThis = post.poll_data!.user_voted_id === opt.id;
+                const hasVotedThis = userVotedIdStr ? userVotedIdStr === optIdStr : false;
 
                 return (
                   <button
-                    key={opt.id}
+                    key={optIdStr}
                     type="button"
-                    onClick={() => onVotePoll && onVotePoll(post.id, opt.id)}
+                    onClick={() => onVotePoll && onVotePoll(post.id, optIdStr)}
                     className={`relative w-full overflow-hidden rounded-xl border p-3 text-left transition-all ${
                       hasVotedThis
                         ? "border-purple-500 bg-purple-500/15 ring-1 ring-purple-500/30 shadow-xs cursor-default"
-                        : hasVotedAny
+                        : showResults
                         ? "border-border/70 bg-card/70 hover:border-purple-400/70 hover:bg-purple-500/5 cursor-pointer opacity-90"
                         : "border-border/80 bg-card hover:border-purple-500/70 hover:bg-purple-500/5 cursor-pointer hover:shadow-xs active:scale-[0.99]"
                     }`}
@@ -1168,8 +1172,8 @@ function PostCard({
                         : "Clique para votar nesta opção"
                     }
                   >
-                    {/* Barra de progresso em background — visível SOMENTE APÓS votar */}
-                    {hasVotedAny && (
+                    {/* Barra de progresso em background — visível quando tiver votado ou for autor */}
+                    {showResults && (
                       <div
                         className={`absolute inset-y-0 left-0 transition-all duration-500 ${
                           hasVotedThis ? "bg-purple-500/25" : "bg-muted/40"
@@ -1192,8 +1196,8 @@ function PostCard({
                         </span>
                       </span>
 
-                      {/* Percentual e contagem — visíveis SOMENTE APÓS votar */}
-                      {hasVotedAny ? (
+                      {/* Percentual e contagem — visíveis quando tiver votado ou for autor */}
+                      {showResults ? (
                         <span className="shrink-0 text-xs font-bold text-muted-foreground">
                           {percent}%{" "}
                           <span className="text-[11px] font-normal opacity-80">
@@ -1215,6 +1219,8 @@ function PostCard({
               <span>
                 {hasVotedAny
                   ? "✓ Seu voto foi registrado • Clique em outra opção para trocar"
+                  : isAuthor
+                  ? "Resultados visíveis para você como criador da enquete • Clique para votar também"
                   : "Vote em uma opção para ver o resultado"}
               </span>
               <span>• Aberta a todos</span>
@@ -2667,26 +2673,29 @@ export function SocialFeed({
     const post = dbPosts.find((p) => p.id === postId);
     if (!post || !post.poll_data) return;
 
-    const currentVotedId = post.poll_data.user_voted_id || localStorage.getItem(`feed_poll_vote_${postId}_${user.id}`);
+    const optIdStr = String(optionId);
+    const rawVoted = post.poll_data.user_voted_id || localStorage.getItem(`feed_poll_vote_${postId}_${user.id}`);
+    const currentVotedId = rawVoted ? String(rawVoted) : null;
     
     // Se clicou na mesma opção em que já havia votado
-    if (currentVotedId === optionId) {
+    if (currentVotedId && currentVotedId === optIdStr) {
       toast.info("Você já votou nesta opção!");
       return;
     }
 
     const isChangingVote = Boolean(currentVotedId);
 
-    // 1. Atualização otimista imediata na UI com garantia de tipos numéricos
+    // 1. Atualização otimista imediata na UI com garantia de strings e números
     const optimisticOptions = post.poll_data.options.map((opt) => {
+      const thisIdStr = String(opt.id);
       const v = Math.max(0, Number(opt.votes) || 0);
-      if (opt.id === optionId) {
-        return { ...opt, id: String(opt.id), text: opt.text, votes: v + 1 };
+      if (thisIdStr === optIdStr) {
+        return { ...opt, id: thisIdStr, text: String(opt.text || ""), votes: v + 1 };
       }
-      if (isChangingVote && opt.id === currentVotedId) {
-        return { ...opt, id: String(opt.id), text: opt.text, votes: Math.max(0, v - 1) };
+      if (isChangingVote && thisIdStr === currentVotedId) {
+        return { ...opt, id: thisIdStr, text: String(opt.text || ""), votes: Math.max(0, v - 1) };
       }
-      return { ...opt, id: String(opt.id), text: opt.text, votes: v };
+      return { ...opt, id: thisIdStr, text: String(opt.text || ""), votes: v };
     });
 
     // O divisor total de votos é a soma real de todas as opções
@@ -2696,7 +2705,7 @@ export function SocialFeed({
       ...post.poll_data,
       options: optimisticOptions,
       total_votes: optimisticTotalVotes,
-      user_voted_id: optionId,
+      user_voted_id: optIdStr,
     };
 
     setDbPosts((prev) =>
@@ -2705,7 +2714,7 @@ export function SocialFeed({
 
     // Salvar localmente
     try {
-      localStorage.setItem(`feed_poll_vote_${postId}_${user.id}`, optionId);
+      localStorage.setItem(`feed_poll_vote_${postId}_${user.id}`, optIdStr);
       localStorage.setItem(`feed_poll_data_${postId}`, JSON.stringify(optimisticPollData));
     } catch {
       // ignore
@@ -2718,93 +2727,81 @@ export function SocialFeed({
     }
 
     // 2. Persistir voto individual na tabela post_poll_votes (com permissão RLS auth.uid() = user_id)
+    let pollVotesCountMap = new Map<string, number>();
+    let totalPollVotesDb = 0;
     try {
-      await (supabase as any)
+      const { error: upsertErr } = await (supabase as any)
         .from("post_poll_votes")
         .upsert(
-          { post_id: postId, user_id: user.id, option_id: optionId, updated_at: new Date().toISOString() },
+          { post_id: postId, user_id: user.id, option_id: optIdStr, updated_at: new Date().toISOString() },
           { onConflict: "post_id,user_id" }
         );
-    } catch (e) {
-      console.warn("Aviso ao salvar voto individual em post_poll_votes:", e);
-    }
 
-    // 3. Sincronizar com o Supabase buscando contagem global mais recente
-    try {
-      let baseOptions = post.poll_data.options;
-      const { data: freshPost } = await (supabase as any)
-        .from("posts")
-        .select("poll_data")
-        .eq("id", postId)
-        .maybeSingle();
-
-      if (freshPost?.poll_data?.options && Array.isArray(freshPost.poll_data.options)) {
-        baseOptions = freshPost.poll_data.options;
-      }
-
-      // Se houver votos na tabela post_poll_votes, apura exatamente por lá
-      let finalOptions = baseOptions;
-      let finalTotal = 0;
-      try {
+      if (!upsertErr) {
         const { data: pollVotes } = await (supabase as any)
           .from("post_poll_votes")
           .select("option_id")
           .eq("post_id", postId);
 
         if (pollVotes && pollVotes.length > 0) {
-          finalOptions = baseOptions.map((opt: any) => ({
-            id: String(opt.id),
-            text: String(opt.text || ""),
-            votes: pollVotes.filter((v: any) => String(v.option_id) === String(opt.id)).length,
-          }));
-          finalTotal = pollVotes.length;
+          totalPollVotesDb = pollVotes.length;
+          pollVotes.forEach((v: any) => {
+            const key = String(v.option_id);
+            pollVotesCountMap.set(key, (pollVotesCountMap.get(key) || 0) + 1);
+          });
         }
-      } catch {
-        // fallback
       }
+    } catch (e) {
+      console.warn("Aviso ao salvar voto individual em post_poll_votes:", e);
+    }
 
-      if (finalTotal === 0) {
-        finalOptions = baseOptions.map((opt: any) => {
-          const v = Math.max(0, Number(opt.votes) || 0);
-          if (opt.id === optionId) {
-            return { ...opt, id: String(opt.id), text: String(opt.text || ""), votes: v + 1 };
-          }
-          if (isChangingVote && opt.id === currentVotedId) {
-            return { ...opt, id: String(opt.id), text: String(opt.text || ""), votes: Math.max(0, v - 1) };
-          }
-          return { ...opt, id: String(opt.id), text: String(opt.text || ""), votes: v };
-        });
-        finalTotal = finalOptions.reduce((sum: number, o: any) => sum + o.votes, 0);
-      }
-
-      const dbPayload = {
-        question: post.poll_data.question,
-        options: finalOptions,
-        total_votes: finalTotal,
+    // 3. Montar dados consolidados finais
+    const finalOptions = optimisticOptions.map((opt) => {
+      const thisIdStr = String(opt.id);
+      const dbCount = pollVotesCountMap.get(thisIdStr);
+      const votes = dbCount !== undefined ? dbCount : opt.votes;
+      return {
+        ...opt,
+        id: thisIdStr,
+        text: String(opt.text || ""),
+        votes: Math.max(0, Number(votes) || 0),
       };
+    });
 
+    const finalTotalVotes = totalPollVotesDb > 0
+      ? totalPollVotesDb
+      : finalOptions.reduce((sum, o) => sum + o.votes, 0);
+
+    const dbPayload = {
+      question: post.poll_data.question,
+      options: finalOptions,
+      total_votes: finalTotalVotes,
+    };
+
+    // Sincronizar na tabela posts (cache consolidado para todos verem)
+    try {
       await (supabase as any)
         .from("posts")
         .update({ poll_data: dbPayload })
         .eq("id", postId);
-
-      // Atualiza com dados consolidados da rede
-      setDbPosts((prev) =>
-        prev.map((p) =>
-          p.id === postId
-            ? {
-                ...p,
-                poll_data: {
-                  ...dbPayload,
-                  user_voted_id: optionId,
-                },
-              }
-            : p
-        )
-      );
     } catch (err) {
-      console.warn("[SocialFeed] Aviso de sincronização de enquete:", err);
+      console.warn("[SocialFeed] Aviso de sincronização em posts:", err);
     }
+
+    // Atualiza estado final consolidado
+    setDbPosts((prev) =>
+      prev.map((p) =>
+        p.id === postId
+          ? {
+              ...p,
+              poll_data: {
+                ...dbPayload,
+                user_voted_id: optIdStr,
+              },
+            }
+          : p
+      )
+    );
   };
 
   // Seguir / Deixar de Seguir estudante
