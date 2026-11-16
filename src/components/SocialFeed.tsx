@@ -1118,7 +1118,13 @@ function PostCard({
       {/* ── Enquete Interativa da Comunidade ── */}
       {post.poll_data && post.poll_data.options && post.poll_data.options.length > 0 && (() => {
         const hasVotedAny = Boolean(post.poll_data.user_voted_id);
-        const totalVotes = post.poll_data.total_votes || 0;
+        
+        // Calcula a soma real de votos de todas as opções de todos os usuários
+        const sumVotes = post.poll_data.options.reduce(
+          (acc, opt) => acc + Math.max(0, Number(opt.votes) || 0),
+          0
+        );
+        const totalVotes = Math.max(Number(post.poll_data.total_votes) || 0, sumVotes);
 
         return (
           <div className="mx-5 mb-4 p-4 rounded-2xl border border-purple-500/25 bg-purple-500/5 space-y-3">
@@ -1137,7 +1143,9 @@ function PostCard({
 
             <div className="space-y-2">
               {post.poll_data.options.map((opt) => {
-                const percent = totalVotes > 0 ? Math.round((opt.votes / totalVotes) * 100) : 0;
+                const optVotes = Math.max(0, Number(opt.votes) || 0);
+                // Dividido precisamente pela soma de todos os votos dos usuários
+                const percent = totalVotes > 0 ? Math.round((optVotes / totalVotes) * 100) : 0;
                 const hasVotedThis = post.poll_data!.user_voted_id === opt.id;
 
                 return (
@@ -1187,7 +1195,10 @@ function PostCard({
                       {/* Percentual e contagem — visíveis SOMENTE APÓS votar */}
                       {hasVotedAny ? (
                         <span className="shrink-0 text-xs font-bold text-muted-foreground">
-                          {percent}% <span className="text-[11px] font-normal opacity-80">({opt.votes})</span>
+                          {percent}%{" "}
+                          <span className="text-[11px] font-normal opacity-80">
+                            ({optVotes} {optVotes === 1 ? "voto" : "votos"})
+                          </span>
                         </span>
                       ) : (
                         <span className="shrink-0 text-[11px] font-medium text-purple-600/70 dark:text-purple-400/70">
@@ -2050,7 +2061,23 @@ export function SocialFeed({
             })();
             const userVotedId = localStorage.getItem(`feed_poll_vote_${p.id}_${user.id}`);
             const basePollData = p.poll_data || localPoll;
-            const poll_data = basePollData ? { ...basePollData, user_voted_id: userVotedId || basePollData.user_voted_id } : null;
+            let poll_data: PollData | null = null;
+            if (basePollData && Array.isArray(basePollData.options) && basePollData.options.length > 0) {
+              const normalizedOptions = basePollData.options.map((opt: any) => ({
+                id: String(opt.id),
+                text: String(opt.text || ""),
+                votes: Math.max(0, Number(opt.votes) || 0),
+              }));
+              const computedTotal = normalizedOptions.reduce((acc: number, curr: any) => acc + curr.votes, 0);
+              const total_votes = Math.max(Number(basePollData.total_votes) || 0, computedTotal);
+
+              poll_data = {
+                question: basePollData.question || "",
+                options: normalizedOptions,
+                total_votes,
+                user_voted_id: userVotedId || basePollData.user_voted_id || null,
+              };
+            }
 
             const liked_by_names = postLikes
               .map((l: any) => (l.user_id === user.id ? "Você" : profileMap.get(l.user_id)?.full_name || "Estudante"))
@@ -2150,12 +2177,25 @@ export function SocialFeed({
                   comments_count: updated.comments_count ?? p.comments_count,
                   shares_count: updated.shares_count ?? p.shares_count,
                   poll_data: updated.poll_data
-                    ? {
-                        ...updated.poll_data,
-                        user_voted_id:
-                          p.poll_data?.user_voted_id ||
-                          (user ? localStorage.getItem(`feed_poll_vote_${p.id}_${user.id}`) : null),
-                      }
+                    ? (() => {
+                        const base = updated.poll_data;
+                        const opts = Array.isArray(base.options)
+                          ? base.options.map((o: any) => ({
+                              id: String(o.id),
+                              text: String(o.text || ""),
+                              votes: Math.max(0, Number(o.votes) || 0),
+                            }))
+                          : [];
+                        const sum = opts.reduce((a: number, c: any) => a + c.votes, 0);
+                        return {
+                          question: base.question || "",
+                          options: opts,
+                          total_votes: Math.max(Number(base.total_votes) || 0, sum),
+                          user_voted_id:
+                            p.poll_data?.user_voted_id ||
+                            (user ? localStorage.getItem(`feed_poll_vote_${p.id}_${user.id}`) : null),
+                        };
+                      })()
                     : p.poll_data,
                   content: updated.content ?? p.content,
                 }
@@ -2609,38 +2649,36 @@ export function SocialFeed({
 
     const isChangingVote = Boolean(currentVotedId);
 
-    // Atualiza opções: se estiver trocando, decrementa a anterior e incrementa a nova
-    const updatedOptions = post.poll_data.options.map((opt) => {
+    // 1. Atualização otimista imediata na UI com garantia de tipos numéricos
+    const optimisticOptions = post.poll_data.options.map((opt) => {
+      const v = Math.max(0, Number(opt.votes) || 0);
       if (opt.id === optionId) {
-        return { ...opt, votes: (opt.votes || 0) + 1 };
+        return { ...opt, id: String(opt.id), text: opt.text, votes: v + 1 };
       }
       if (isChangingVote && opt.id === currentVotedId) {
-        return { ...opt, votes: Math.max(0, (opt.votes || 0) - 1) };
+        return { ...opt, id: String(opt.id), text: opt.text, votes: Math.max(0, v - 1) };
       }
-      return opt;
+      return { ...opt, id: String(opt.id), text: opt.text, votes: v };
     });
 
-    // Se estiver trocando, o total de votos permanece o mesmo; se for voto novo, incrementa 1
-    const updatedTotalVotes = isChangingVote
-      ? (post.poll_data.total_votes || 0)
-      : (post.poll_data.total_votes || 0) + 1;
+    // O divisor total de votos é a soma real de todas as opções
+    const optimisticTotalVotes = optimisticOptions.reduce((acc, curr) => acc + curr.votes, 0);
 
-    const updatedPollData: PollData = {
+    const optimisticPollData: PollData = {
       ...post.poll_data,
-      options: updatedOptions,
-      total_votes: updatedTotalVotes,
+      options: optimisticOptions,
+      total_votes: optimisticTotalVotes,
       user_voted_id: optionId,
     };
 
-    // Atualização otimista imediata
     setDbPosts((prev) =>
-      prev.map((p) => (p.id === postId ? { ...p, poll_data: updatedPollData } : p))
+      prev.map((p) => (p.id === postId ? { ...p, poll_data: optimisticPollData } : p))
     );
 
     // Salvar localmente
     try {
       localStorage.setItem(`feed_poll_vote_${postId}_${user.id}`, optionId);
-      localStorage.setItem(`feed_poll_data_${postId}`, JSON.stringify(updatedPollData));
+      localStorage.setItem(`feed_poll_data_${postId}`, JSON.stringify(optimisticPollData));
     } catch {
       // ignore
     }
@@ -2651,19 +2689,59 @@ export function SocialFeed({
       toast.success("Voto computado com sucesso!");
     }
 
-    // Sincronizar no Supabase (não inclui user_voted_id para manter a contagem compartilhada)
+    // 2. Sincronizar com o Supabase buscando contagem global mais recente
     try {
+      let baseOptions = post.poll_data.options;
+      const { data: freshPost } = await (supabase as any)
+        .from("posts")
+        .select("poll_data")
+        .eq("id", postId)
+        .maybeSingle();
+
+      if (freshPost?.poll_data?.options && Array.isArray(freshPost.poll_data.options)) {
+        baseOptions = freshPost.poll_data.options;
+      }
+
+      const mergedOptions = baseOptions.map((opt: any) => {
+        const v = Math.max(0, Number(opt.votes) || 0);
+        if (opt.id === optionId) {
+          return { ...opt, id: String(opt.id), text: String(opt.text || ""), votes: v + 1 };
+        }
+        if (isChangingVote && opt.id === currentVotedId) {
+          return { ...opt, id: String(opt.id), text: String(opt.text || ""), votes: Math.max(0, v - 1) };
+        }
+        return { ...opt, id: String(opt.id), text: String(opt.text || ""), votes: v };
+      });
+
+      const mergedTotalVotes = mergedOptions.reduce((sum: number, o: any) => sum + o.votes, 0);
+
       const dbPayload = {
-        question: updatedPollData.question,
-        options: updatedPollData.options,
-        total_votes: updatedPollData.total_votes,
+        question: post.poll_data.question,
+        options: mergedOptions,
+        total_votes: mergedTotalVotes,
       };
+
       await (supabase as any)
         .from("posts")
         .update({ poll_data: dbPayload })
         .eq("id", postId);
+
+      // Atualiza com dados consolidados da rede
+      setDbPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId
+            ? {
+                ...p,
+                poll_data: {
+                  ...dbPayload,
+                  user_voted_id: optionId,
+                },
+              }
+            : p
+        )
+      );
     } catch (err) {
-      console.warn("[SocialFeed] Aviso de voto em enquete:", err);
+      console.warn("[SocialFeed] Aviso de sincronização de enquete:", err);
     }
   };
 
