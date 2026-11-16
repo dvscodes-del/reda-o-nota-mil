@@ -1114,12 +1114,11 @@ function PostCard({
         )}
       </div>
 
-      {/* ── Enquete Interativa ── */}
       {/* ── Enquete Interativa da Comunidade ── */}
       {post.poll_data && post.poll_data.options && post.poll_data.options.length > 0 && (() => {
         const userVotedIdStr = post.poll_data.user_voted_id ? String(post.poll_data.user_voted_id) : null;
         const hasVotedAny = Boolean(userVotedIdStr);
-        const isAuthor = Boolean(user && post.user_id === user.id);
+        const isAuthor = Boolean(currentUserId && post.user_id === currentUserId);
         const showResults = hasVotedAny || isAuthor;
         
         // Calcula a soma real de votos de todas as opções de todos os usuários
