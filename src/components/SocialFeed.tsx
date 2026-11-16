@@ -2029,6 +2029,20 @@ export function SocialFeed({
             .in("post_id", postIds)
             .order("created_at", { ascending: true });
 
+          // Buscar TODOS os votos de enquetes desses posts para apuração exata por usuário
+          let allPollVotes: any[] = [];
+          try {
+            const { data: pollVotesData } = await (supabase as any)
+              .from("post_poll_votes")
+              .select("post_id, user_id, option_id")
+              .in("post_id", postIds);
+            if (pollVotesData) {
+              allPollVotes = pollVotesData;
+            }
+          } catch {
+            // Tabela pode ainda não existir se a migration não foi executada
+          }
+
           const postUserIds = rawPosts.map((p: any) => p.user_id);
           const likerUserIds = (allLikes || []).map((l: any) => l.user_id);
           const commenterUserIds = (allComments || []).map((c: any) => c.user_id);
@@ -2059,17 +2073,28 @@ export function SocialFeed({
                 return null;
               }
             })();
-            const userVotedId = localStorage.getItem(`feed_poll_vote_${p.id}_${user.id}`);
+            const postPollVotes = (allPollVotes || []).filter((v: any) => v.post_id === p.id);
+            const userVotedIdFromDb = postPollVotes.find((v: any) => v.user_id === user.id)?.option_id;
+            const userVotedId = userVotedIdFromDb || localStorage.getItem(`feed_poll_vote_${p.id}_${user.id}`);
             const basePollData = p.poll_data || localPoll;
             let poll_data: PollData | null = null;
             if (basePollData && Array.isArray(basePollData.options) && basePollData.options.length > 0) {
-              const normalizedOptions = basePollData.options.map((opt: any) => ({
-                id: String(opt.id),
-                text: String(opt.text || ""),
-                votes: Math.max(0, Number(opt.votes) || 0),
-              }));
+              const normalizedOptions = basePollData.options.map((opt: any) => {
+                const optIdStr = String(opt.id);
+                // Se temos votos na tabela post_poll_votes, usa a contagem real
+                const dbCount = postPollVotes.filter((v: any) => String(v.option_id) === optIdStr).length;
+                const baseVote = Math.max(0, Number(opt.votes) || 0);
+                const votes = postPollVotes.length > 0 ? dbCount : baseVote;
+                return {
+                  id: optIdStr,
+                  text: String(opt.text || ""),
+                  votes,
+                };
+              });
               const computedTotal = normalizedOptions.reduce((acc: number, curr: any) => acc + curr.votes, 0);
-              const total_votes = Math.max(Number(basePollData.total_votes) || 0, computedTotal);
+              const total_votes = postPollVotes.length > 0
+                ? postPollVotes.length
+                : Math.max(Number(basePollData.total_votes) || 0, computedTotal);
 
               poll_data = {
                 question: basePollData.question || "",
@@ -2288,6 +2313,9 @@ export function SocialFeed({
             };
           })
         );
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "post_poll_votes" }, () => {
+        loadPosts();
       })
       .subscribe();
 
@@ -2689,7 +2717,19 @@ export function SocialFeed({
       toast.success("Voto computado com sucesso!");
     }
 
-    // 2. Sincronizar com o Supabase buscando contagem global mais recente
+    // 2. Persistir voto individual na tabela post_poll_votes (com permissão RLS auth.uid() = user_id)
+    try {
+      await (supabase as any)
+        .from("post_poll_votes")
+        .upsert(
+          { post_id: postId, user_id: user.id, option_id: optionId, updated_at: new Date().toISOString() },
+          { onConflict: "post_id,user_id" }
+        );
+    } catch (e) {
+      console.warn("Aviso ao salvar voto individual em post_poll_votes:", e);
+    }
+
+    // 3. Sincronizar com o Supabase buscando contagem global mais recente
     try {
       let baseOptions = post.poll_data.options;
       const { data: freshPost } = await (supabase as any)
@@ -2702,23 +2742,45 @@ export function SocialFeed({
         baseOptions = freshPost.poll_data.options;
       }
 
-      const mergedOptions = baseOptions.map((opt: any) => {
-        const v = Math.max(0, Number(opt.votes) || 0);
-        if (opt.id === optionId) {
-          return { ...opt, id: String(opt.id), text: String(opt.text || ""), votes: v + 1 };
-        }
-        if (isChangingVote && opt.id === currentVotedId) {
-          return { ...opt, id: String(opt.id), text: String(opt.text || ""), votes: Math.max(0, v - 1) };
-        }
-        return { ...opt, id: String(opt.id), text: String(opt.text || ""), votes: v };
-      });
+      // Se houver votos na tabela post_poll_votes, apura exatamente por lá
+      let finalOptions = baseOptions;
+      let finalTotal = 0;
+      try {
+        const { data: pollVotes } = await (supabase as any)
+          .from("post_poll_votes")
+          .select("option_id")
+          .eq("post_id", postId);
 
-      const mergedTotalVotes = mergedOptions.reduce((sum: number, o: any) => sum + o.votes, 0);
+        if (pollVotes && pollVotes.length > 0) {
+          finalOptions = baseOptions.map((opt: any) => ({
+            id: String(opt.id),
+            text: String(opt.text || ""),
+            votes: pollVotes.filter((v: any) => String(v.option_id) === String(opt.id)).length,
+          }));
+          finalTotal = pollVotes.length;
+        }
+      } catch {
+        // fallback
+      }
+
+      if (finalTotal === 0) {
+        finalOptions = baseOptions.map((opt: any) => {
+          const v = Math.max(0, Number(opt.votes) || 0);
+          if (opt.id === optionId) {
+            return { ...opt, id: String(opt.id), text: String(opt.text || ""), votes: v + 1 };
+          }
+          if (isChangingVote && opt.id === currentVotedId) {
+            return { ...opt, id: String(opt.id), text: String(opt.text || ""), votes: Math.max(0, v - 1) };
+          }
+          return { ...opt, id: String(opt.id), text: String(opt.text || ""), votes: v };
+        });
+        finalTotal = finalOptions.reduce((sum: number, o: any) => sum + o.votes, 0);
+      }
 
       const dbPayload = {
         question: post.poll_data.question,
-        options: mergedOptions,
-        total_votes: mergedTotalVotes,
+        options: finalOptions,
+        total_votes: finalTotal,
       };
 
       await (supabase as any)

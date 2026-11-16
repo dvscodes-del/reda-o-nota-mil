@@ -116,6 +116,9 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'posts' AND policyname = 'Usuários podem atualizar seus próprios posts') THEN
     CREATE POLICY "Usuários podem atualizar seus próprios posts" ON public.posts FOR UPDATE USING (auth.uid() = user_id);
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'posts' AND policyname = 'Usuários autenticados podem atualizar enquetes e metricas') THEN
+    CREATE POLICY "Usuários autenticados podem atualizar enquetes e metricas" ON public.posts FOR UPDATE USING (auth.uid() IS NOT NULL);
+  END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'posts' AND policyname = 'Usuários podem deletar seus próprios posts') THEN
     CREATE POLICY "Usuários podem deletar seus próprios posts" ON public.posts FOR DELETE USING (auth.uid() = user_id);
   END IF;
@@ -150,6 +153,34 @@ BEGIN
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'post_comments' AND policyname = 'Usuários podem deletar seus próprios comentários') THEN
     CREATE POLICY "Usuários podem deletar seus próprios comentários" ON public.post_comments FOR DELETE USING (auth.uid() = user_id);
+  END IF;
+END $$;
+
+-- ============================================================
+-- 4.5. Tabela de votos em enquetes da comunidade
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.post_poll_votes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id UUID REFERENCES public.posts(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  option_id TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(post_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_post_poll_votes_post_id ON public.post_poll_votes(post_id);
+CREATE INDEX IF NOT EXISTS idx_post_poll_votes_user_id ON public.post_poll_votes(user_id);
+
+ALTER TABLE public.post_poll_votes ENABLE ROW LEVEL SECURITY;
+
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'post_poll_votes' AND policyname = 'Usuários autenticados podem ver votos da enquete') THEN
+    CREATE POLICY "Usuários autenticados podem ver votos da enquete" ON public.post_poll_votes FOR SELECT USING (auth.uid() IS NOT NULL);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'post_poll_votes' AND policyname = 'Usuários podem registrar ou alterar seu voto') THEN
+    CREATE POLICY "Usuários podem registrar ou alterar seu voto" ON public.post_poll_votes FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
   END IF;
 END $$;
 
@@ -218,6 +249,10 @@ BEGIN
   END;
   BEGIN
     ALTER PUBLICATION supabase_realtime ADD TABLE public.post_comments;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END;
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.post_poll_votes;
   EXCEPTION WHEN duplicate_object THEN NULL;
   END;
 END $$;
