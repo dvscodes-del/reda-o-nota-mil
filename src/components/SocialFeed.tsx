@@ -7,6 +7,7 @@ import {
   Globe, Lock, Users, ChevronRight, Bookmark, Bell, Award,
   Medal, Eye, Repeat2, Check, RotateCw, GraduationCap, MapPin,
   Image as ImageIcon, Video, Paperclip, Play, ExternalLink, Maximize2, Link as LinkIcon,
+  BarChart3, Plus, CheckCircle2, MessageSquare,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -19,8 +20,21 @@ import { ptBR } from "date-fns/locale";
 // ─────────────────────────────────────────────
 // Tipos
 // ─────────────────────────────────────────────
-export type PostType = "text" | "essay_share" | "achievement" | "question";
+export type PostType = "text" | "opinion" | "poll" | "question" | "essay_share" | "achievement";
 export type Reaction = "like" | "love" | "celebrate" | "insightful" | "funny";
+
+export interface PollOption {
+  id: string;
+  text: string;
+  votes: number;
+}
+
+export interface PollData {
+  question: string;
+  options: PollOption[];
+  total_votes: number;
+  user_voted_id?: string | null;
+}
 
 export interface FeedPost {
   id: string;
@@ -37,6 +51,7 @@ export interface FeedPost {
   essay_topic?: string | null;
   achievement_title?: string | null;
   achievement_icon?: string | null;
+  poll_data?: PollData | null;
   likes_count: number;
   comments_count: number;
   shares_count?: number;
@@ -268,6 +283,7 @@ function CreatePostModal({
   currentUserName,
   currentUserAvatar,
   latestEssay,
+  initialType = "text",
 }: {
   open: boolean;
   onClose: () => void;
@@ -275,9 +291,12 @@ function CreatePostModal({
   currentUserName: string | null;
   currentUserAvatar: string | null;
   latestEssay: { id: string; score: number; theme_topic: string } | null;
+  initialType?: PostType;
 }) {
-  const [postType, setPostType] = useState<PostType>("text");
+  const [postType, setPostType] = useState<PostType>(initialType);
   const [content, setContent] = useState("");
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
   const [imageUrl, setImageUrl] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [documentTitle, setDocumentTitle] = useState("");
@@ -332,6 +351,48 @@ function CreatePostModal({
   };
 
   const handlePublish = async () => {
+    if (postType === "poll") {
+      const question = pollQuestion.trim() || content.trim();
+      if (!question) {
+        toast.error("Escreva a pergunta da enquete!");
+        return;
+      }
+      const validOptions = pollOptions.map((o) => o.trim()).filter(Boolean);
+      if (validOptions.length < 2) {
+        toast.error("A enquete precisa de pelo menos 2 opções preenchidas!");
+        return;
+      }
+
+      setPublishing(true);
+      await onPublish({
+        type: "poll",
+        content: content.trim() || question,
+        poll_data: {
+          question,
+          options: validOptions.map((text, i) => ({ id: String(i + 1), text, votes: 0 })),
+          total_votes: 0,
+        },
+        image_url: imageUrl.trim() || null,
+        video_url: videoUrl.trim() || null,
+        media_type: activeMedia !== "none" ? activeMedia : (imageUrl ? "image" : videoUrl ? "video" : null),
+        document_title: documentTitle.trim() || null,
+        document_url: documentUrl.trim() || null,
+      });
+
+      setPollQuestion("");
+      setPollOptions(["", ""]);
+      setContent("");
+      setImageUrl("");
+      setVideoUrl("");
+      setDocumentTitle("");
+      setDocumentUrl("");
+      setActiveMedia("none");
+      setPostType("text");
+      onClose();
+      setPublishing(false);
+      return;
+    }
+
     if (!content.trim() && !imageUrl && !videoUrl && !documentTitle) {
       toast.error("Escreva algo ou anexe uma foto/vídeo antes de publicar!");
       return;
@@ -343,7 +404,7 @@ function CreatePostModal({
 
     setPublishing(true);
     await onPublish({
-      type: postType,
+      type: postType === "opinion" ? "text" : postType,
       content: content.trim(),
       image_url: imageUrl.trim() || null,
       video_url: videoUrl.trim() || null,
@@ -367,8 +428,11 @@ function CreatePostModal({
   };
 
   useEffect(() => {
-    if (open) setTimeout(() => textareaRef.current?.focus(), 100);
-  }, [open]);
+    if (open) {
+      setPostType(initialType || "text");
+      setTimeout(() => textareaRef.current?.focus(), 100);
+    }
+  }, [open, initialType]);
 
   if (!open) return null;
 
@@ -395,8 +459,138 @@ function CreatePostModal({
           </button>
         </div>
 
+        {/* Seletor Rápido de Tipo de Publicação */}
+        <div className="flex items-center gap-1.5 px-5 pt-3 pb-2 border-b border-border/40 overflow-x-auto no-scrollbar bg-muted/10">
+          <button
+            type="button"
+            onClick={() => setPostType("text")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-all cursor-pointer ${
+              postType === "text" || postType === "opinion"
+                ? "bg-primary text-primary-foreground shadow-xs"
+                : "bg-card border border-border/60 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            }`}
+          >
+            <span>💭</span>
+            <span>Opinião / Relato</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setPostType("poll")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-all cursor-pointer ${
+              postType === "poll"
+                ? "bg-purple-600 text-white shadow-xs"
+                : "bg-card border border-border/60 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            }`}
+          >
+            <span>📊</span>
+            <span>Enquete</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setPostType("question")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-all cursor-pointer ${
+              postType === "question"
+                ? "bg-sky-500 text-white shadow-xs"
+                : "bg-card border border-border/60 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            }`}
+          >
+            <span>❓</span>
+            <span>Dúvida</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setPostType("achievement")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-all cursor-pointer ${
+              postType === "achievement"
+                ? "bg-amber-500 text-white shadow-xs"
+                : "bg-card border border-border/60 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            }`}
+          >
+            <span>🏆</span>
+            <span>Conquista</span>
+          </button>
+
+          {latestEssay && (
+            <button
+              type="button"
+              onClick={() => setPostType("essay_share")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-all cursor-pointer ${
+                postType === "essay_share"
+                  ? "bg-emerald-600 text-white shadow-xs"
+                  : "bg-card border border-border/60 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              }`}
+            >
+              <span>📝</span>
+              <span>Redação</span>
+            </button>
+          )}
+        </div>
+
         {/* Corpo com scroll */}
         <div className="p-5 overflow-y-auto space-y-3 flex-1">
+          {/* Seção de Enquete */}
+          {postType === "poll" && (
+            <div className="space-y-3 p-4 rounded-2xl border border-purple-500/25 bg-purple-500/5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-purple-600 dark:text-purple-400 flex items-center gap-1.5">
+                  <BarChart3 className="size-4" /> Pergunta da Enquete
+                </span>
+                <span className="text-[11px] text-muted-foreground">Mín. 2 opções</span>
+              </div>
+
+              <input
+                type="text"
+                value={pollQuestion}
+                onChange={(e) => setPollQuestion(e.target.value)}
+                placeholder="Ex: Qual tema de redação você acha mais provável este ano?"
+                className="w-full rounded-xl border border-border/70 bg-card px-3.5 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+              />
+
+              <div className="space-y-2 pt-1">
+                <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">Opções de Voto</label>
+                {pollOptions.map((opt, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-muted-foreground w-5 text-center">{idx + 1}.</span>
+                    <input
+                      type="text"
+                      value={opt}
+                      onChange={(e) => {
+                        const updated = [...pollOptions];
+                        updated[idx] = e.target.value;
+                        setPollOptions(updated);
+                      }}
+                      placeholder={`Opção ${idx + 1} (ex: ${idx === 0 ? "Meio Ambiente" : idx === 1 ? "Tecnologia & IA" : "Saúde Mental"})`}
+                      className="flex-1 rounded-xl border border-border/60 bg-card px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                    />
+                    {pollOptions.length > 2 && (
+                      <button
+                        type="button"
+                        onClick={() => setPollOptions(pollOptions.filter((_, i) => i !== idx))}
+                        className="text-muted-foreground hover:text-destructive p-1 rounded-lg"
+                        title="Remover opção"
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {pollOptions.length < 5 && (
+                <button
+                  type="button"
+                  onClick={() => setPollOptions([...pollOptions, ""])}
+                  className="w-full rounded-xl border border-dashed border-purple-500/40 py-2 text-xs font-bold text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <Plus className="size-3.5" /> Adicionar opção
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Preview redação real */}
           {postType === "essay_share" && latestEssay && (() => {
             const grade = getScoreGrade(latestEssay.score);
@@ -443,10 +637,15 @@ function CreatePostModal({
             onChange={(e) => setContent(e.target.value)}
             rows={4}
             placeholder={
-              postType === "text" ? "No que você está pensando? Compartilhe dicas, ideias ou fotos..."
-              : postType === "essay_share" ? "Conte como foi escrever essa redação! Quais repertórios você usou?"
-              : postType === "achievement" ? "Descreva sua conquista! Como foi sua evolução de estudos?"
-              : "Qual a sua dúvida sobre redação? Descreva a competência ou parágrafo!"
+              postType === "poll"
+                ? "Adicione algum comentário, contexto ou opinião sobre a enquete (opcional)..."
+                : postType === "question"
+                ? "Qual é a sua dúvida? Descreva onde está sua dificuldade (argumentação, repertório, tese)..."
+                : postType === "achievement"
+                ? "Conte como foi essa conquista nos seus estudos! O que você fez diferente?"
+                : postType === "essay_share"
+                ? "Conte como foi escrever essa redação! Quais repertórios você usou?"
+                : "No que você está pensando hoje? Compartilhe uma opinião, um acontecimento dos seus estudos, uma dica ou reflexão..."
             }
             className="w-full resize-none bg-transparent text-sm md:text-base text-foreground placeholder:text-muted-foreground/60 focus:outline-none leading-relaxed"
           />
@@ -694,6 +893,7 @@ function PostCard({
   onDeleteComment,
   onDelete,
   onShare,
+  onVotePoll,
   onHashtagClick,
   onOpenProfile,
   onViewImage,
@@ -708,6 +908,7 @@ function PostCard({
   onDeleteComment: (postId: string, commentId: string) => Promise<void>;
   onDelete: (postId: string) => Promise<void>;
   onShare?: (postId: string) => Promise<void> | void;
+  onVotePoll?: (postId: string, optionId: string) => Promise<void> | void;
   onHashtagClick: (tag: string) => void;
   onOpenProfile?: () => void;
   onViewImage?: (url: string) => void;
@@ -779,8 +980,18 @@ function PostCard({
               </div>
             )}
             {post.type === "question" && (
-              <div className="absolute -bottom-1 -right-1 size-5 rounded-full bg-sky-500 border-2 border-card grid place-items-center">
+              <div className="absolute -bottom-1 -right-1 size-5 rounded-full bg-sky-500 border-2 border-card grid place-items-center" title="Dúvida">
                 <HelpCircle className="size-2.5 text-white" />
+              </div>
+            )}
+            {post.type === "poll" && (
+              <div className="absolute -bottom-1 -right-1 size-5 rounded-full bg-purple-600 border-2 border-card grid place-items-center" title="Enquete">
+                <BarChart3 className="size-2.5 text-white" />
+              </div>
+            )}
+            {(post.type === "opinion" || post.type === "text") && (
+              <div className="absolute -bottom-1 -right-1 size-5 rounded-full bg-emerald-500 border-2 border-card grid place-items-center" title="Opinião / Relato">
+                <MessageSquare className="size-2.5 text-white" />
               </div>
             )}
           </div>
@@ -881,6 +1092,14 @@ function PostCard({
         </div>
       )}
 
+      {/* ── Badge de Enquete ── */}
+      {post.type === "poll" && (
+        <div className="mx-5 mb-2.5 flex items-center gap-2 text-purple-600 dark:text-purple-400">
+          <BarChart3 className="size-4 shrink-0" />
+          <span className="text-xs font-bold uppercase tracking-wider">Enquete da Comunidade</span>
+        </div>
+      )}
+
       {/* ── Conteúdo Textual ── */}
       <div className="px-5 pb-4">
         <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap break-words">
@@ -894,6 +1113,78 @@ function PostCard({
           </button>
         )}
       </div>
+
+      {/* ── Enquete Interativa ── */}
+      {post.poll_data && post.poll_data.options && post.poll_data.options.length > 0 && (
+        <div className="mx-5 mb-4 p-4 rounded-2xl border border-purple-500/25 bg-purple-500/5 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-purple-600 dark:text-purple-400 flex items-center gap-1.5">
+              <BarChart3 className="size-3.5" /> Enquete da Comunidade
+            </span>
+            <span className="text-[11px] text-muted-foreground font-medium">
+              {post.poll_data.total_votes || 0} {(post.poll_data.total_votes || 0) === 1 ? "voto" : "votos"}
+            </span>
+          </div>
+
+          {post.poll_data.question && post.poll_data.question !== post.content && (
+            <p className="text-sm font-bold text-foreground leading-snug">{post.poll_data.question}</p>
+          )}
+
+          <div className="space-y-2">
+            {post.poll_data.options.map((opt) => {
+              const total = post.poll_data!.total_votes || 0;
+              const percent = total > 0 ? Math.round((opt.votes / total) * 100) : 0;
+              const hasVotedThis = post.poll_data!.user_voted_id === opt.id;
+              const hasVotedAny = Boolean(post.poll_data!.user_voted_id);
+
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  disabled={hasVotedAny}
+                  onClick={() => onVotePoll && onVotePoll(post.id, opt.id)}
+                  className={`relative w-full overflow-hidden rounded-xl border p-3 text-left transition-all ${
+                    hasVotedThis
+                      ? "border-purple-500 bg-purple-500/10 shadow-xs"
+                      : hasVotedAny
+                      ? "border-border/60 bg-card/60 opacity-90 cursor-default"
+                      : "border-border/80 bg-card hover:border-purple-500/50 hover:bg-purple-500/5 cursor-pointer"
+                  }`}
+                >
+                  {/* Barra de progresso visual em background */}
+                  {hasVotedAny && (
+                    <div
+                      className={`absolute inset-y-0 left-0 transition-all duration-500 ${
+                        hasVotedThis ? "bg-purple-500/20" : "bg-muted/40"
+                      }`}
+                      style={{ width: `${percent}%` }}
+                    />
+                  )}
+
+                  <div className="relative flex items-center justify-between gap-3 text-xs sm:text-sm font-semibold">
+                    <span className="flex items-center gap-2 truncate">
+                      {hasVotedThis && <CheckCircle2 className="size-4 text-purple-600 dark:text-purple-400 shrink-0" />}
+                      <span className={hasVotedThis ? "text-purple-600 dark:text-purple-400 font-bold" : "text-foreground"}>
+                        {opt.text}
+                      </span>
+                    </span>
+                    {hasVotedAny && (
+                      <span className="shrink-0 text-xs font-bold text-muted-foreground">
+                        {percent}% ({opt.votes})
+                      </span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <p className="text-[11px] text-muted-foreground/80 flex items-center justify-between pt-1">
+            <span>{post.poll_data.user_voted_id ? "✓ Seu voto foi registrado" : "Clique em uma opção para votar"}</span>
+            <span>• Aberta a todos</span>
+          </p>
+        </div>
+      )}
 
       {/* ── Mídia Anexada (Estilo LinkedIn: Fotos, Vídeos, Documentos) ── */}
       {post.image_url && (
@@ -1407,6 +1698,7 @@ export function SocialFeed({
   const [filterType, setFilterType] = useState<PostType | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [modalInitialType, setModalInitialType] = useState<PostType>("text");
   const [suggestedStudents, setSuggestedStudents] = useState<SuggestedStudent[]>([]);
   const [refreshingSuggestions, setRefreshingSuggestions] = useState(false);
   const [dismissedSuggestionIds, setDismissedSuggestionIds] = useState<Set<string>>(new Set());
@@ -1722,6 +2014,18 @@ export function SocialFeed({
             const comments_count = Math.max(p.comments_count || 0, postComments.length);
             const localShares = Number(localStorage.getItem(`feed_share_count_${p.id}`) || 0);
             const shares_count = Math.max(p.shares_count || 0, localShares);
+            const localPoll = (() => {
+              try {
+                const raw = localStorage.getItem(`feed_poll_data_${p.id}`);
+                return raw ? JSON.parse(raw) : null;
+              } catch {
+                return null;
+              }
+            })();
+            const userVotedId = localStorage.getItem(`feed_poll_vote_${p.id}_${user.id}`);
+            const basePollData = p.poll_data || localPoll;
+            const poll_data = basePollData ? { ...basePollData, user_voted_id: userVotedId || basePollData.user_voted_id } : null;
+
             const liked_by_names = postLikes
               .map((l: any) => (l.user_id === user.id ? "Você" : profileMap.get(l.user_id)?.full_name || "Estudante"))
               .filter(Boolean);
@@ -1737,6 +2041,7 @@ export function SocialFeed({
               likes_count,
               comments_count,
               shares_count,
+              poll_data,
               liked_by_names,
               author_name: prof?.full_name ?? (p.user_id === user.id ? currentUserName : "Estudante"),
               author_avatar: prof?.avatar_url ?? (p.user_id === user.id ? currentUserAvatar : null),
@@ -1818,6 +2123,7 @@ export function SocialFeed({
                   likes_count: updated.likes_count ?? p.likes_count,
                   comments_count: updated.comments_count ?? p.comments_count,
                   shares_count: updated.shares_count ?? p.shares_count,
+                  poll_data: updated.poll_data ?? p.poll_data,
                   content: updated.content ?? p.content,
                 }
               : p
@@ -1968,6 +2274,7 @@ export function SocialFeed({
       essay_topic: data.essay_topic || null,
       achievement_title: data.achievement_title || null,
       achievement_icon: data.achievement_icon || null,
+      poll_data: data.poll_data || null,
       likes_count: 0,
       comments_count: 0,
       created_at: new Date().toISOString(),
@@ -1999,6 +2306,7 @@ export function SocialFeed({
       if (data.essay_topic) payload.essay_topic = data.essay_topic;
       if (data.achievement_title) payload.achievement_title = data.achievement_title;
       if (data.achievement_icon) payload.achievement_icon = data.achievement_icon;
+      if (data.poll_data) payload.poll_data = data.poll_data;
 
       const { data: inserted, error } = await (supabase as any)
         .from("posts")
@@ -2013,6 +2321,14 @@ export function SocialFeed({
       }
     } catch (err) {
       console.warn("[SocialFeed] Falha na requisição Supabase (salvando localmente):", err);
+    }
+
+    if (data.poll_data) {
+      try {
+        localStorage.setItem(`feed_poll_data_${localPost.id}`, JSON.stringify(data.poll_data));
+      } catch {
+        // ignore
+      }
     }
 
     saveLocalFeedPost(localPost);
@@ -2244,6 +2560,55 @@ export function SocialFeed({
     }
   };
 
+  // Votar em enquete
+  const handleVotePoll = async (postId: string, optionId: string) => {
+    if (!user) return;
+    const post = dbPosts.find((p) => p.id === postId);
+    if (!post || !post.poll_data) return;
+
+    const currentVotedId = post.poll_data.user_voted_id || localStorage.getItem(`feed_poll_vote_${postId}_${user.id}`);
+    if (currentVotedId) {
+      toast.info("Você já votou nesta enquete!");
+      return;
+    }
+
+    const updatedOptions = post.poll_data.options.map((opt) =>
+      opt.id === optionId ? { ...opt, votes: (opt.votes || 0) + 1 } : opt
+    );
+    const updatedTotalVotes = (post.poll_data.total_votes || 0) + 1;
+    const updatedPollData: PollData = {
+      ...post.poll_data,
+      options: updatedOptions,
+      total_votes: updatedTotalVotes,
+      user_voted_id: optionId,
+    };
+
+    // Atualização otimista imediata
+    setDbPosts((prev) =>
+      prev.map((p) => (p.id === postId ? { ...p, poll_data: updatedPollData } : p))
+    );
+
+    // Salvar localmente
+    try {
+      localStorage.setItem(`feed_poll_vote_${postId}_${user.id}`, optionId);
+      localStorage.setItem(`feed_poll_data_${postId}`, JSON.stringify(updatedPollData));
+    } catch {
+      // ignore
+    }
+
+    toast.success("Voto computado com sucesso!");
+
+    // Sincronizar no Supabase
+    try {
+      await (supabase as any)
+        .from("posts")
+        .update({ poll_data: updatedPollData })
+        .eq("id", postId);
+    } catch (err) {
+      console.warn("[SocialFeed] Aviso de voto em enquete:", err);
+    }
+  };
+
   // Seguir / Deixar de Seguir estudante
   const handleToggleFollow = async (targetId: string, currentStatus: boolean) => {
     if (!user) return;
@@ -2265,10 +2630,11 @@ export function SocialFeed({
 
   const FILTERS: { key: PostType | "all"; label: string; emoji: string }[] = [
     { key: "all", label: "Tudo", emoji: "✨" },
+    { key: "text", label: "Opiniões & Relatos", emoji: "💭" },
+    { key: "poll", label: "Enquetes", emoji: "📊" },
+    { key: "question", label: "Dúvidas", emoji: "💡" },
     { key: "essay_share", label: "Redações", emoji: "📝" },
     { key: "achievement", label: "Conquistas", emoji: "🏆" },
-    { key: "question", label: "Dúvidas", emoji: "💡" },
-    { key: "text", label: "Textos", emoji: "💬" },
   ];
 
   return (
@@ -2281,6 +2647,7 @@ export function SocialFeed({
         currentUserName={currentUserName}
         currentUserAvatar={currentUserAvatar}
         latestEssay={latestEssay}
+        initialType={modalInitialType}
       />
 
       <div className="flex gap-6 items-start max-w-6xl mx-auto">
@@ -2291,7 +2658,7 @@ export function SocialFeed({
             <StoriesBar
               currentUserName={currentUserName}
               currentUserAvatar={currentUserAvatar}
-              onWritePost={() => setCreateModalOpen(true)}
+              onWritePost={() => { setModalInitialType("text"); setCreateModalOpen(true); }}
               onSelectTheme={(tag) => setSearchQuery(`#${tag}`)}
             />
           </div>
@@ -2302,44 +2669,48 @@ export function SocialFeed({
               <Avatar name={currentUserName} url={currentUserAvatar} size={11} ring onClick={() => goTo && goTo("perfil")} />
               <button
                 type="button"
-                onClick={() => setCreateModalOpen(true)}
+                onClick={() => { setModalInitialType("text"); setCreateModalOpen(true); }}
                 className="flex-1 text-left rounded-full border border-border/80 bg-muted/40 px-4 py-2.5 text-sm text-muted-foreground hover:bg-muted/70 hover:border-primary/40 transition-all cursor-pointer"
               >
-                O que você quer compartilhar, {currentUserName?.split(" ")[0]}?
+                No que você está pensando hoje, {currentUserName?.split(" ")[0]}? Opinião, dúvida ou enquete...
               </button>
             </div>
-            <div className="flex items-center gap-1 pt-1 border-t border-border/40">
+            <div className="flex items-center gap-1.5 pt-1.5 border-t border-border/40 overflow-x-auto no-scrollbar">
               <button
                 type="button"
-                onClick={() => setCreateModalOpen(true)}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2 px-2 text-xs font-semibold text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer"
+                onClick={() => { setModalInitialType("text"); setCreateModalOpen(true); }}
+                className="flex flex-1 min-w-[95px] items-center justify-center gap-1.5 rounded-xl py-2 px-2 text-xs font-semibold text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer"
+                title="Compartilhar Opinião ou Acontecimento"
               >
-                <FileText className="size-4 text-primary" />
-                <span className="hidden sm:inline">Compartilhar Redação</span>
+                <MessageSquare className="size-4 text-emerald-500" />
+                <span>Opinião</span>
               </button>
               <button
                 type="button"
-                onClick={() => setCreateModalOpen(true)}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2 px-2 text-xs font-semibold text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer"
+                onClick={() => { setModalInitialType("poll"); setCreateModalOpen(true); }}
+                className="flex flex-1 min-w-[95px] items-center justify-center gap-1.5 rounded-xl py-2 px-2 text-xs font-semibold text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer"
+                title="Criar Enquete"
               >
-                <Trophy className="size-4 text-amber-500" />
-                <span className="hidden sm:inline">Conquista</span>
+                <BarChart3 className="size-4 text-purple-600 dark:text-purple-400" />
+                <span>Enquete</span>
               </button>
               <button
                 type="button"
-                onClick={() => setCreateModalOpen(true)}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2 px-2 text-xs font-semibold text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer"
+                onClick={() => { setModalInitialType("question"); setCreateModalOpen(true); }}
+                className="flex flex-1 min-w-[95px] items-center justify-center gap-1.5 rounded-xl py-2 px-2 text-xs font-semibold text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer"
+                title="Tirar Dúvida"
               >
                 <HelpCircle className="size-4 text-sky-500" />
-                <span className="hidden sm:inline">Dúvida</span>
+                <span>Dúvida</span>
               </button>
               <button
                 type="button"
-                onClick={() => setCreateModalOpen(true)}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2 px-2 text-xs font-semibold text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer"
+                onClick={() => { setModalInitialType("achievement"); setCreateModalOpen(true); }}
+                className="flex flex-1 min-w-[95px] items-center justify-center gap-1.5 rounded-xl py-2 px-2 text-xs font-semibold text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer"
+                title="Celebrar Conquista"
               >
-                <PenLine className="size-4 text-emerald-500" />
-                <span className="hidden sm:inline">Texto</span>
+                <Trophy className="size-4 text-amber-500" />
+                <span>Conquista</span>
               </button>
             </div>
           </div>
@@ -2450,6 +2821,7 @@ export function SocialFeed({
                     onDeleteComment={handleDeleteComment}
                     onDelete={handleDeletePost}
                     onShare={handleShare}
+                    onVotePoll={handleVotePoll}
                     onHashtagClick={(tag) => setSearchQuery(`#${tag}`)}
                     onOpenProfile={() =>
                       onOpenProfile

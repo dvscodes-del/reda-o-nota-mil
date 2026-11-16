@@ -71,6 +71,7 @@ ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS media_type TEXT;
 ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS document_url TEXT;
 ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS document_title TEXT;
 ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS shares_count INT NOT NULL DEFAULT 0;
+ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS poll_data JSONB;
 
 -- ============================================================
 -- 3. Tabela de curtidas em posts
