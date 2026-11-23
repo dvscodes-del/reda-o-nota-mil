@@ -659,9 +659,9 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
                   variant="ghost"
                   size="sm"
                   onClick={() => toast.info(`Meta de estudos compartilhada com ${activeChat.full_name || 'Estudante'}!`)}
-                  className="hidden sm:inline-flex items-center gap-1 text-xs rounded-lg text-primary hover:text-primary hover:bg-primary/10 h-8 px-2.5"
+                  className="hidden sm:inline-flex items-center gap-1.5 text-xs rounded-lg text-primary hover:text-primary hover:bg-accent h-8 px-2.5"
                 >
-                  <Sparkles className="size-3.5" />
+                  <GraduationCap className="size-3.5" />
                   <span>Dicas 900+</span>
                 </Button>
                 <Button
@@ -690,11 +690,11 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
 
               {chatHistory.length === 0 && (
                 <div className="flex-1 flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
-                  <div className="size-14 rounded-2xl bg-primary/10 text-primary grid place-items-center mb-2">
-                    <Sparkles className="size-6" />
+                  <div className="size-14 rounded-2xl bg-secondary text-primary grid place-items-center mb-3">
+                    <MessageCircle className="size-6" />
                   </div>
-                  <p className="font-semibold text-sm text-foreground">Inicie essa conversa!</p>
-                  <p className="text-xs max-w-xs mt-1">Troque argumentos, referências de repertório e debata os temas da semana para alcançar os 900+ pontos.</p>
+                  <p className="font-display font-semibold text-lg text-foreground">Inicie esta conversa</p>
+                  <p className="text-xs max-w-xs mt-1">Troque argumentos, referências de repertório e debata os temas da semana.</p>
                 </div>
               )}
 
@@ -821,16 +821,16 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
         ) : (
           /* Estado Vazio Personalizado da Plataforma no Desktop */
           <div className="flex-1 flex flex-col items-center justify-center text-center p-8 z-10 select-none">
-            <div className="size-24 rounded-3xl bg-primary/10 text-primary flex items-center justify-center mb-5 shadow-xs">
-              <GraduationCap className="size-12" />
+            <div className="size-20 rounded-2xl bg-card border border-border text-primary flex items-center justify-center mb-5 shadow-2xs">
+              <GraduationCap className="size-10" />
             </div>
-            <h3 className="text-2xl font-bold text-foreground">Chat da Turma Nota Mil</h3>
+            <h3 className="font-display text-2xl font-semibold text-foreground">Conversas · Aprova Red</h3>
             <p className="mt-2 text-sm text-muted-foreground max-w-sm leading-relaxed">
-              Troque argumentos com outros estudantes, debata estratégias de redação e compartilhe referências socioculturais para a nota 1000.
+              Troque argumentos com outros estudantes, debata estratégias de redação e compartilhe repertórios socioculturais.
             </p>
-            <div className="mt-5 flex items-center gap-1.5 text-xs text-muted-foreground font-medium bg-card px-3 py-1.5 rounded-full border border-border">
-              <Sparkles className="size-3.5 text-primary" />
-              <span>Conexão em tempo real entre vestibulandos</span>
+            <div className="mt-5 flex items-center gap-1.5 text-xs text-muted-foreground font-medium bg-card px-3.5 py-1.5 rounded-full border border-border">
+              <MessageCircle className="size-3.5 text-primary" />
+              <span>Troca em tempo real entre estudantes</span>
             </div>
           </div>
         )}

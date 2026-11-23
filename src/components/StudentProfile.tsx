@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { useUserPreferences } from "@/context/UserPreferencesContext";
+import { useEssays } from "@/context/EssaysContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -41,6 +42,7 @@ export function StudentProfile({
 }) {
   const { preferences, updateAvatar } = useUserPreferences();
   const { user } = useAuth();
+  const { stats: essayStats } = useEssays();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Profile[]>([]);
@@ -353,20 +355,20 @@ export function StudentProfile({
         )}
       </div>
 
-      <div className="relative mb-10 overflow-hidden rounded-2xl bg-primary p-6 md:p-10 text-primary-foreground shadow-sm">
-        <div className="absolute right-0 top-0 opacity-20"><Award className="size-64 -translate-y-10 translate-x-10" /></div>
+      <div className="relative mb-10 overflow-hidden rounded-2xl bg-[#171412] p-6 md:p-10 text-[#faf6ef] border border-black/15 editorial-grid-dark">
+        <div className="absolute inset-y-0 left-0 w-1.5 bg-[#C82838]" />
         <div className="relative z-10 flex flex-col md:flex-row gap-6 items-center md:items-end">
           {/* Avatar com ação de troca de foto */}
           <div className="relative group shrink-0">
             <div 
               onClick={() => isOwnProfile && !isUploading && fileInputRef.current?.click()}
-              className={`relative grid size-32 place-items-center rounded-full bg-background text-primary text-4xl font-black border-4 border-primary-foreground/20 shadow-lg overflow-hidden transition-all ${
-                isOwnProfile ? 'cursor-pointer hover:ring-4 hover:ring-primary-foreground/40' : ''
+              className={`relative grid size-28 sm:size-32 place-items-center rounded-full bg-[#24201d] text-[#faf6ef] text-3xl sm:text-4xl font-display font-semibold border-4 border-white/15 shadow-lg overflow-hidden transition-all ${
+                isOwnProfile ? 'cursor-pointer hover:ring-4 hover:ring-[#C82838]/40' : ''
               }`}
               title={isOwnProfile ? "Clique para mudar a foto de perfil" : undefined}
             >
               {isUploading ? (
-                <div className="flex flex-col items-center justify-center gap-1 text-primary">
+                <div className="flex flex-col items-center justify-center gap-1 text-[#f25c69]">
                   <Loader2 className="size-8 animate-spin" />
                   <span className="text-[10px] font-bold">Salvando...</span>
                 </div>
@@ -378,7 +380,7 @@ export function StudentProfile({
 
               {/* Overlay suave ao passar o mouse */}
               {isOwnProfile && !isUploading && (
-                <div className="absolute inset-0 bg-black/45 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute inset-0 bg-black/55 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                   <Camera className="size-6 mb-1" />
                   <span className="text-[11px] font-bold uppercase tracking-wider">Alterar</span>
                 </div>
@@ -398,7 +400,7 @@ export function StudentProfile({
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="absolute bottom-1 right-1 size-9 rounded-full bg-background text-primary shadow-md hover:bg-accent border-2 border-primary-foreground/30 flex items-center justify-center transition-transform hover:scale-110 active:scale-95"
+                  className="absolute bottom-1 right-1 size-9 rounded-full bg-[#faf6ef] text-[#171412] shadow-md hover:bg-white border-2 border-[#171412] flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
                   title="Mudar foto de perfil"
                   aria-label="Mudar foto de perfil"
                   disabled={isUploading}
@@ -411,14 +413,14 @@ export function StudentProfile({
 
           <div className="flex-1 text-center md:text-left">
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-              <h2 className="text-3xl font-bold md:text-4xl capitalize">{name}</h2>
+              <h2 className="font-display text-3xl font-semibold md:text-4xl capitalize text-[#faf6ef]">{name}</h2>
               {isOwnProfile && (
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isUploading}
-                    className="text-xs bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground px-2.5 py-1 rounded-full font-medium inline-flex items-center gap-1.5 transition-colors"
+                    className="text-xs bg-white/10 hover:bg-white/20 text-[#faf6ef] px-2.5 py-1 rounded-full font-medium inline-flex items-center gap-1.5 transition-colors"
                   >
                     <Camera className="size-3.5" />
                     {viewingProfile.avatar_url ? "Mudar foto" : "Adicionar foto"}
@@ -428,7 +430,7 @@ export function StudentProfile({
                       type="button"
                       onClick={handleRemovePhoto}
                       disabled={isUploading}
-                      className="text-xs text-primary-foreground/70 hover:text-white underline flex items-center gap-1 transition-colors"
+                      className="text-xs text-white/60 hover:text-white underline flex items-center gap-1 transition-colors"
                       title="Remover foto de perfil"
                     >
                       <Trash2 className="size-3" /> Remover
@@ -437,12 +439,12 @@ export function StudentProfile({
                 </div>
               )}
             </div>
-            <div className="mt-2 flex flex-wrap items-center justify-center md:justify-start gap-4 text-primary-foreground/80 font-medium">
-              <span className="flex items-center gap-1"><MapPin className="size-4" /> {viewingProfile.state}, Brasil</span>
-              {viewingProfile.age && <span className="flex items-center gap-1"><Calendar className="size-4" /> {viewingProfile.age} anos</span>}
-              {viewingProfile.gender && <span className="flex items-center gap-1 bg-primary-foreground/15 px-2.5 py-0.5 rounded-full text-xs font-semibold">{viewingProfile.gender}</span>}
-              <span className="flex items-center gap-1"><Target className="size-4" /> Foco: {viewingProfile.course} ({viewingProfile.college})</span>
-              <span className="flex items-center gap-1 bg-primary-foreground/20 px-3 py-1 rounded-full"><UserPlus className="size-4" /> {followersCount} seguidores</span>
+            <div className="mt-3 flex flex-wrap items-center justify-center md:justify-start gap-3 text-sm text-white/75 font-medium">
+              <span className="flex items-center gap-1.5"><MapPin className="size-3.5 text-[#f25c69]" /> {viewingProfile.state}, Brasil</span>
+              {viewingProfile.age && <span className="flex items-center gap-1.5"><Calendar className="size-3.5 text-[#f25c69]" /> {viewingProfile.age} anos</span>}
+              {viewingProfile.gender && <span className="flex items-center gap-1 bg-white/10 px-2.5 py-0.5 rounded-full text-xs font-semibold text-white/90">{viewingProfile.gender}</span>}
+              <span className="flex items-center gap-1.5"><Target className="size-3.5 text-[#f25c69]" /> {viewingProfile.course} ({viewingProfile.college})</span>
+              <span className="font-mono-num flex items-center gap-1.5 bg-white/10 border border-white/10 px-3 py-0.5 rounded-full text-xs text-white"><UserPlus className="size-3.5" /> {followersCount} seguidores</span>
             </div>
             
             {!isOwnProfile && (
@@ -451,18 +453,20 @@ export function StudentProfile({
                   size="sm" 
                   variant={isFollowing ? "outline" : "secondary"}
                   onClick={toggleFollow}
-                  className={`rounded-full ${isFollowing ? 'border-primary-foreground/30 bg-transparent text-primary-foreground' : 'bg-background text-primary hover:bg-background/90'}`}
+                  className={`rounded-xl font-semibold ${isFollowing ? 'border-white/25 bg-transparent text-white hover:bg-white/10' : 'bg-[#C82838] text-white hover:bg-[#b22130]'}`}
                 >
                   {isFollowing ? <CheckCircle2 className="mr-2 size-4" /> : <UserPlus className="mr-2 size-4" />} 
                   {isFollowing ? "Seguindo" : "Seguir"}
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => onStartChat(viewingProfile)} className="rounded-full border-primary-foreground/30 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20"><MessageCircle className="mr-2 size-4" /> Mensagem</Button>
+                <Button size="sm" variant="outline" onClick={() => onStartChat(viewingProfile)} className="rounded-xl border-white/25 bg-white/10 text-white hover:bg-white/20"><MessageCircle className="mr-2 size-4" /> Mensagem</Button>
               </div>
             )}
           </div>
-          <div className="mt-4 md:mt-0 px-5 py-3 rounded-xl bg-background text-foreground text-center shadow-sm">
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Média Atual</p>
-            <p className="text-3xl font-black text-primary">900</p>
+          <div className="mt-4 md:mt-0 px-5 py-3.5 rounded-xl bg-[#faf6ef] text-[#171412] text-center min-w-[120px] border border-white/20">
+            <p className="font-mono-num text-[10px] font-bold text-[#78716c] uppercase tracking-wider">Média Atual</p>
+            <p className="font-display text-3xl font-semibold tabular-nums text-[#C82838] mt-0.5">
+              {isOwnProfile ? (essayStats.totalCompleted > 0 ? essayStats.averageScore : "—") : "900+"}
+            </p>
           </div>
         </div>
       </div>

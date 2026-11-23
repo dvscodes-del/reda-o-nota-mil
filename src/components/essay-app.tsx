@@ -2,6 +2,7 @@ import { StudentProfile } from "./StudentProfile";
 import { Messages } from "./Messages";
 import { Notifications } from "./Notifications";
 import { SocialFeed } from "./SocialFeed";
+import { BrandMark } from "./BrandMark";
 import { useMemo, useRef, useState, useEffect } from "react";
 import type { LucideIcon } from "lucide-react";
 import { useUserPreferences } from "@/context/UserPreferencesContext";
@@ -21,6 +22,7 @@ import {
   CheckCircle2,
   ChevronDown,
   Clock3,
+  FileCheck2,
   FileText,
   Flame,
   ImagePlus,
@@ -31,11 +33,11 @@ import {
   PenLine,
   Play,
   Quote,
-
   Sparkles,
   Target,
   TrendingUp,
   UploadCloud,
+  Users,
   X,
   User,
   MapPin,
@@ -60,6 +62,7 @@ import {
   Landmark,
   Music,
   Brain,
+  Bookmark,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -89,11 +92,25 @@ type Correction = Awaited<ReturnType<typeof correctEssay>>;
 
 const mainNavItems = [
   { id: "dashboard" as const, label: "Visão geral", icon: LayoutDashboard },
-  { id: "feed" as const, label: "Feed da Turma", icon: Sparkles },
+  { id: "feed" as const, label: "Feed da Turma", icon: Users },
   { id: "notificacoes" as const, label: "Notificações", icon: Bell },
   { id: "mensagens" as const, label: "Mensagens", icon: MessageCircle },
   { id: "curso" as const, label: "Seu Curso & Meta", icon: TrendingUp },
 ];
+
+const sectionHeaderTitles: Record<Section, string> = {
+  dashboard: "Visão geral",
+  feed: "Feed da Turma",
+  notificacoes: "Notificações",
+  mensagens: "Mensagens",
+  curso: "Curso & Meta",
+  treinamento: "Treinamento 900+",
+  mural: "Mural Nota Mil",
+  repertorio: "Repertório Sociocultural",
+  competencias: "Competências do ENEM",
+  laboratorio: "Laboratório de Redação",
+  perfil: "Perfil do Estudante",
+};
 
 const studyNavItems = [
   { id: "treinamento" as const, label: "Treinamento 900+", icon: GraduationCap },
@@ -485,63 +502,49 @@ export function EssayApp() {
           className="fixed inset-0 z-[65] bg-black/60 backdrop-blur-xs lg:hidden"
         />
       )}
-      <aside className={`fixed inset-y-0 left-0 z-[70] w-72 border-r border-border/80 bg-sidebar shadow-2xl p-4 lg:p-5 transition-transform duration-300 lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside className={`fixed inset-y-0 left-0 z-[70] w-72 border-r border-sidebar-border bg-sidebar shadow-2xl lg:shadow-none p-4 lg:p-5 transition-transform duration-300 lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex h-full flex-col">
-          {/* Logo & Marca */}
+          {/* Logo & Marca Aprova Red */}
           <div className="mb-5 flex items-center justify-between">
             <button
               type="button"
               onClick={() => goTo("dashboard")}
-              className="group flex items-center gap-3 text-left transition-opacity hover:opacity-90"
-              aria-label="Ir para o início"
+              className="group text-left transition-opacity hover:opacity-90"
+              aria-label="Ir para o início do Aprova Red"
             >
-              <span className="grid size-10 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm shadow-primary/25 transition-transform duration-200 group-hover:scale-105">
-                <PenLine className="size-5" />
-              </span>
-              <div>
-                <strong className="block text-lg font-bold leading-tight tracking-tight">Escreva<span className="text-primary">+</span></strong>
-                <small className="text-xs font-medium text-muted-foreground">Plataforma Nota 1000</small>
-              </div>
+              <BrandMark size="md" subtitle="Redação ENEM" />
             </button>
             <Button variant="ghost" size="icon" className="lg:hidden rounded-lg" onClick={() => setMobileOpen(false)} aria-label="Fechar menu">
               <X className="size-5" />
             </Button>
           </div>
 
-          {/* Destaque Principal: Laboratório */}
-          <div className="mb-4">
+          {/* Ação Principal: Laboratório */}
+          <div className="mb-5">
             <button
               type="button"
               onClick={() => goTo("laboratorio")}
-              className={`group flex w-full items-center justify-between rounded-xl px-3.5 py-3 text-sm font-semibold transition-all duration-200 shadow-sm ${section === "laboratorio"
-                  ? "bg-primary text-primary-foreground shadow-md shadow-primary/30 ring-2 ring-primary/40"
-                  : "bg-primary/10 text-primary border border-primary/25 hover:bg-primary/15 hover:border-primary/45 hover:shadow-xs"
+              className={`group flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all duration-150 ${section === "laboratorio"
+                  ? "bg-[#171412] text-[#faf6ef] shadow-xs ring-1 ring-black/10 dark:bg-primary dark:text-primary-foreground"
+                  : "bg-primary text-primary-foreground hover:bg-primary/92 shadow-xs"
                 }`}
             >
               <span className="flex items-center gap-2.5">
-                <span className={`grid size-7 place-items-center rounded-lg transition-transform group-hover:scale-110 ${section === "laboratorio" ? "bg-primary-foreground/20 text-primary-foreground" : "bg-primary text-primary-foreground"
-                  }`}>
-                  <PenLine className="size-3.5" />
-                </span>
-                <span className="font-bold">Laboratório</span>
+                <PenLine className="size-4 shrink-0" />
+                <span>Escrever redação</span>
               </span>
-              <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full ${section === "laboratorio"
-                  ? "bg-primary-foreground/20 text-primary-foreground"
-                  : "bg-primary/20 text-primary"
-                }`}>
-                Escrever
-              </span>
+              <ArrowRight className="size-3.5 opacity-75 transition-transform group-hover:translate-x-0.5" />
             </button>
           </div>
 
           {/* Navegação Principal em Categorias */}
-          <div className="flex-1 space-y-4 overflow-y-auto pr-1 -mr-1">
+          <div className="flex-1 space-y-5 overflow-y-auto pr-1 -mr-1">
             {/* Seção Principal */}
             <div>
-              <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
-                Principal
+              <p className="px-3 pb-1.5 font-mono-num text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/75">
+                Estúdio
               </p>
-              <nav className="space-y-1" aria-label="Navegação principal">
+              <nav className="space-y-0.5" aria-label="Navegação principal">
                 {mainNavItems.map((item) => {
                   const isActive = section === item.id;
                   return (
@@ -549,13 +552,15 @@ export function EssayApp() {
                       key={item.id}
                       type="button"
                       onClick={() => goTo(item.id)}
-                      className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${isActive
-                          ? "bg-primary text-primary-foreground font-semibold shadow-xs"
-                          : "text-muted-foreground hover:bg-accent/60 hover:text-foreground hover:translate-x-0.5"
+                      className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-150 ${isActive
+                          ? "bg-card text-foreground font-semibold border border-border/80 shadow-2xs"
+                          : "text-muted-foreground font-medium border border-transparent hover:bg-card/60 hover:text-foreground"
                         }`}
                     >
-                      <item.icon className={`size-4 transition-transform group-hover:scale-110 ${isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground"
-                        }`} />
+                      {isActive && (
+                        <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-primary" />
+                      )}
+                      <item.icon className={`size-4 shrink-0 ${isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"}`} />
                       <span>{item.label}</span>
                     </button>
                   );
@@ -565,10 +570,10 @@ export function EssayApp() {
 
             {/* Seção de Estudo & Prática */}
             <div>
-              <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
-                Estudo & Prática
+              <p className="px-3 pb-1.5 font-mono-num text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/75">
+                Estudo & Acervo
               </p>
-              <nav className="space-y-1" aria-label="Navegação de estudos">
+              <nav className="space-y-0.5" aria-label="Navegação de estudos">
                 {studyNavItems.map((item) => {
                   const isActive = section === item.id;
                   return (
@@ -576,16 +581,16 @@ export function EssayApp() {
                       key={item.id}
                       type="button"
                       onClick={() => goTo(item.id)}
-                      className={`group flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${isActive
-                          ? "bg-primary text-primary-foreground font-semibold shadow-xs"
-                          : "text-muted-foreground hover:bg-accent/60 hover:text-foreground hover:translate-x-0.5"
+                      className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-150 ${isActive
+                          ? "bg-card text-foreground font-semibold border border-border/80 shadow-2xs"
+                          : "text-muted-foreground font-medium border border-transparent hover:bg-card/60 hover:text-foreground"
                         }`}
                     >
-                      <span className="flex items-center gap-3">
-                        <item.icon className={`size-4 transition-transform group-hover:scale-110 ${isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground"
-                          }`} />
-                        <span>{item.label}</span>
-                      </span>
+                      {isActive && (
+                        <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-primary" />
+                      )}
+                      <item.icon className={`size-4 shrink-0 ${isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"}`} />
+                      <span>{item.label}</span>
                     </button>
                   );
                 })}
@@ -593,20 +598,19 @@ export function EssayApp() {
             </div>
 
             {/* Atalhos Rápidos Compactos (Chat e Notificações) */}
-            <div className="rounded-xl border border-border/70 bg-card/60 p-2.5">
+            <div className="rounded-xl border border-border/75 bg-card/70 p-2.5">
               <div className="mb-2 flex items-center justify-between px-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
-                  Atalhos Rápidos
+                <span className="font-mono-num text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/75">
+                  Comunidade
                 </span>
-                <span className="text-[10px] text-muted-foreground">Social</span>
               </div>
               <div className="grid grid-cols-2 gap-1.5">
                 <button
                   type="button"
                   onClick={() => goTo("mensagens")}
                   className={`flex items-center justify-between gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-all ${section === "mensagens"
-                      ? "bg-primary text-primary-foreground font-semibold shadow-xs"
-                      : "bg-background text-muted-foreground hover:text-foreground hover:bg-accent border border-border/50"
+                      ? "bg-[#171412] text-[#faf6ef] font-semibold dark:bg-primary dark:text-primary-foreground"
+                      : "bg-background text-muted-foreground hover:text-foreground hover:bg-secondary border border-border/60"
                     }`}
                   title="Abrir Mensagens"
                 >
@@ -615,8 +619,8 @@ export function EssayApp() {
                     <span>Chat</span>
                   </span>
                   {unreadMessagesCount > 0 && (
-                    <span className={`flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold ${section === "mensagens"
-                        ? "bg-primary-foreground text-primary"
+                    <span className={`font-mono-num flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold ${section === "mensagens"
+                        ? "bg-primary text-primary-foreground"
                         : "bg-primary text-primary-foreground"
                       }`}>
                       {unreadMessagesCount > 9 ? "9+" : unreadMessagesCount}
@@ -628,8 +632,8 @@ export function EssayApp() {
                   type="button"
                   onClick={() => goTo("notificacoes")}
                   className={`flex items-center justify-between gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-all ${section === "notificacoes"
-                      ? "bg-primary text-primary-foreground font-semibold shadow-xs"
-                      : "bg-background text-muted-foreground hover:text-foreground hover:bg-accent border border-border/50"
+                      ? "bg-[#171412] text-[#faf6ef] font-semibold dark:bg-primary dark:text-primary-foreground"
+                      : "bg-background text-muted-foreground hover:text-foreground hover:bg-secondary border border-border/60"
                     }`}
                   title="Abrir Notificações"
                 >
@@ -638,10 +642,7 @@ export function EssayApp() {
                     <span>Avisos</span>
                   </span>
                   {unreadNotifsCount > 0 && (
-                    <span className={`flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold ${section === "notificacoes"
-                        ? "bg-primary-foreground text-primary"
-                        : "bg-primary text-primary-foreground"
-                      }`}>
+                    <span className="font-mono-num flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
                       {unreadNotifsCount > 9 ? "9+" : unreadNotifsCount}
                     </span>
                   )}
@@ -651,24 +652,25 @@ export function EssayApp() {
           </div>
 
           {/* Rodapé: Sequência & Logout */}
-          <div className="mt-4 pt-3 border-t border-border/60 space-y-3">
-            <div className="rounded-xl border border-border/60 bg-sidebar-accent/40 p-3 shadow-2xs">
-              <div className="mb-1.5 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-bold text-foreground">
-                  <span className="grid size-6 place-items-center rounded-md bg-amber-500/15 text-amber-500">
+          <div className="mt-4 pt-3 border-t border-sidebar-border space-y-2.5">
+            <div className="rounded-xl border border-border/75 bg-card p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                  <span className="grid size-6 place-items-center rounded-md bg-amber-600/12 text-amber-700 dark:text-amber-400">
                     <Flame className="size-3.5" />
                   </span>
-                  <span>{streakDays} {streakDays === 1 ? 'dia' : 'dias'} de sequência</span>
+                  <span className="font-mono-num">{streakDays} {streakDays === 1 ? 'dia' : 'dias'}</span>
+                  <span className="text-muted-foreground font-normal">seguidos</span>
                 </div>
                 {streakDays > 0 && (
-                  <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">Ativo</span>
+                  <span className="font-mono-num text-[10px] font-bold text-success uppercase">Ativo</span>
                 )}
               </div>
-              <Progress value={streakDays > 0 ? Math.min(100, streakDays * 20) : 0} className="h-1.5 bg-background" />
-              <p className="mt-2 text-[11px] leading-tight text-muted-foreground">
+              <Progress value={streakDays > 0 ? Math.min(100, streakDays * 20) : 0} className="h-1.5 bg-secondary" />
+              <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
                 {streakDays > 0
-                  ? "Excelente ritmo! Continue escrevendo para não perder a sequência."
-                  : "Escreva hoje no laboratório para iniciar sua sequência de estudos."}
+                  ? "Ritmo firme. Mantenha a constância semanal."
+                  : "Escreva no laboratório hoje para abrir sua sequência."}
               </p>
             </div>
 
@@ -677,48 +679,60 @@ export function EssayApp() {
               onClick={async () => { await signOut(); navigate({ to: '/login' }); }}
               className="w-full justify-start rounded-xl px-3 py-2 text-xs text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
             >
-              <LogOut className="mr-2 size-3.5" /> Sair do Perfil
+              <LogOut className="mr-2 size-3.5" /> Sair da conta
             </Button>
           </div>
         </div>
       </aside>
 
       <main className="lg:ml-72">
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border/80 bg-background/90 px-4 backdrop-blur md:px-8">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMobileOpen(true)} aria-label="Abrir menu">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border/80 bg-background/92 px-4 backdrop-blur-md md:px-8">
+          <div className="flex items-center gap-3 min-w-0">
+            <Button variant="ghost" size="icon" className="lg:hidden shrink-0" onClick={() => setMobileOpen(true)} aria-label="Abrir menu">
               <Menu className="size-5" />
             </Button>
-            <div className="hidden text-sm font-medium text-muted-foreground sm:flex sm:items-center sm:gap-2">
-              <span className="inline-block size-2 rounded-full bg-emerald-500" />
-              <span>Foco no seu objetivo ENEM</span>
+            <div className="lg:hidden">
+              <BrandMark size="sm" subtitle={null} />
+            </div>
+            <div className="hidden lg:flex items-center gap-2.5 text-sm min-w-0">
+              <span className="font-semibold text-foreground">{sectionHeaderTitles[section]}</span>
+              {preferences?.course && (
+                <>
+                  <span className="text-border">/</span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    {preferences.course}{preferences.college ? ` · ${preferences.college}` : ""}
+                  </span>
+                </>
+              )}
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-2.5">
             {/* Atalho Desktop: Escrever Redação */}
-            <Button
-              onClick={() => goTo("laboratorio")}
-              size="sm"
-              className="hidden md:inline-flex items-center gap-2 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-xs h-9 px-3.5"
-            >
-              <PenLine className="size-3.5" />
-              <span>Escrever Redação</span>
-            </Button>
+            {section !== "laboratorio" && (
+              <Button
+                onClick={() => goTo("laboratorio")}
+                size="sm"
+                className="hidden md:inline-flex items-center gap-2 rounded-xl bg-primary text-primary-foreground hover:bg-primary/92 font-semibold h-9 px-3.5"
+              >
+                <PenLine className="size-3.5" />
+                <span>Nova redação</span>
+              </Button>
+            )}
 
             {/* Atalho Rápido: Mensagens */}
             <Button
               variant="ghost"
               size="icon"
               onClick={() => goTo("mensagens")}
-              className={`relative size-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors ${section === "mensagens" ? "bg-accent text-primary ring-2 ring-primary/20" : ""
+              className={`relative size-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors ${section === "mensagens" ? "bg-card text-primary border border-border" : ""
                 }`}
               title="Mensagens"
               aria-label="Abrir mensagens"
             >
               <MessageCircle className="size-4" />
               {unreadMessagesCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground shadow-sm animate-pulse">
+                <span className="font-mono-num absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
                   {unreadMessagesCount > 9 ? "9+" : unreadMessagesCount}
                 </span>
               )}
@@ -729,35 +743,45 @@ export function EssayApp() {
               variant="ghost"
               size="icon"
               onClick={() => goTo("notificacoes")}
-              className={`relative size-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors ${section === "notificacoes" ? "bg-accent text-primary ring-2 ring-primary/20" : ""
+              className={`relative size-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors ${section === "notificacoes" ? "bg-card text-primary border border-border" : ""
                 }`}
               title="Notificações"
               aria-label="Abrir notificações"
             >
               <Bell className="size-4" />
               {unreadNotifsCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground shadow-sm">
+                <span className="font-mono-num absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
                   {unreadNotifsCount > 9 ? "9+" : unreadNotifsCount}
                 </span>
               )}
             </Button>
 
-            <div className="h-4 w-px bg-border/80 mx-1 hidden sm:block" />
+            <div className="h-5 w-px bg-border/80 mx-1 hidden sm:block" />
 
             {/* Dados do usuário e Avatar */}
-            <div className="hidden text-right sm:block">
-              <strong className="block text-sm font-semibold leading-tight">{preferences?.full_name || user?.email?.split('@')[0] || 'Estudante'}</strong>
-              <small className="text-xs text-muted-foreground">Meta: {preferences?.targetScore ? `${preferences.targetScore} pts` : '900+ pts'}</small>
-            </div>
-            <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0" onClick={() => { setProfileTarget(null); goTo("perfil"); }} aria-label="Ir para meu perfil" title="Meu perfil">
-              <div className="grid h-full w-full place-items-center rounded-full bg-accent font-bold text-accent-foreground ring-2 ring-transparent transition-all hover:ring-primary overflow-hidden">
+            <button
+              type="button"
+              onClick={() => { setProfileTarget(null); goTo("perfil"); }}
+              className="flex items-center gap-2.5 rounded-xl p-1 pr-2 hover:bg-secondary/70 transition-colors text-left"
+              aria-label="Ir para meu perfil"
+              title="Meu perfil"
+            >
+              <div className="hidden text-right sm:block">
+                <strong className="block text-xs font-semibold leading-tight text-foreground">
+                  {preferences?.full_name || user?.email?.split('@')[0] || 'Estudante'}
+                </strong>
+                <small className="font-mono-num text-[11px] text-muted-foreground">
+                  Meta {preferences?.targetScore ? `${preferences.targetScore}` : '900+'}
+                </small>
+              </div>
+              <div className="grid size-9 place-items-center rounded-full bg-[#171412] text-[#faf6ef] text-xs font-bold ring-1 ring-border overflow-hidden dark:bg-primary dark:text-primary-foreground">
                 {preferences?.avatar_url ? (
                   <img src={preferences.avatar_url} alt="Foto de perfil" className="w-full h-full object-cover" />
                 ) : (
-                  user?.email?.[0]?.toUpperCase() || 'ES'
+                  (preferences?.full_name?.[0] || user?.email?.[0] || 'A').toUpperCase()
                 )}
               </div>
-            </Button>
+            </button>
           </div>
         </header>
 
@@ -818,8 +842,8 @@ export function EssayApp() {
             const firstSentence = sentences[0] + (sentences.length > 1 ? '.' : '');
             const restOfText = sentences.length > 1 ? ' ' + sentences.slice(1).join('. ') : '';
 
-            const highlightColor = i === 0 ? "bg-blue-200/60 text-blue-900 dark:bg-blue-900/40 dark:text-blue-100" : i === 1 ? "bg-green-200/60 text-green-900 dark:bg-green-900/40 dark:text-green-100" : "bg-purple-200/60 text-purple-900 dark:bg-purple-900/40 dark:text-purple-100";
-            const tipColorClass = i === 0 ? "border-blue-500 bg-blue-100 text-blue-900 dark:bg-blue-900/60 dark:text-blue-50" : i === 1 ? "border-green-500 bg-green-100 text-green-900 dark:bg-green-900/60 dark:text-green-50" : "border-purple-500 bg-purple-100 text-purple-900 dark:bg-purple-900/60 dark:text-purple-50";
+            const highlightColor = i === 0 ? "bg-sky-200/55 text-sky-950 dark:bg-sky-900/40 dark:text-sky-100" : i === 1 ? "bg-emerald-200/55 text-emerald-950 dark:bg-emerald-900/40 dark:text-emerald-100" : "bg-rose-200/55 text-rose-950 dark:bg-rose-900/40 dark:text-rose-100";
+            const tipColorClass = i === 0 ? "border-sky-600 bg-sky-50 text-sky-950 dark:bg-sky-900/40 dark:text-sky-50" : i === 1 ? "border-emerald-600 bg-emerald-50 text-emerald-950 dark:bg-emerald-900/40 dark:text-emerald-50" : "border-primary bg-accent text-foreground dark:bg-primary/20 dark:text-rose-50";
             const label = i === 0 ? "Ponto Positivo: Tese clara e repertório bem conectado." : i === 1 ? "Ponto Positivo: Argumentação progressiva, mantendo o recorte temático." : "Ponto Positivo: Intervenção completa (agente, ação, meio e finalidade).";
 
             return (
@@ -842,7 +866,20 @@ export function EssayApp() {
 }
 
 function PageTitle({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
-  return <div className="mb-8"><p className="mb-2 text-xs font-bold uppercase tracking-widest text-primary">{eyebrow}</p><h1 className="text-3xl font-bold md:text-4xl">{title}</h1><p className="mt-2 max-w-2xl text-muted-foreground">{description}</p></div>;
+  return (
+    <div className="mb-8">
+      <p className="mb-2 inline-flex items-center gap-2 font-mono-num text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+        <span className="inline-block h-px w-5 bg-primary" />
+        {eyebrow}
+      </p>
+      <h1 className="font-display text-3xl font-semibold tracking-[-0.02em] text-foreground md:text-[2.45rem] md:leading-[1.1]">
+        {title}
+      </h1>
+      <p className="mt-2.5 max-w-2xl text-sm leading-relaxed text-muted-foreground md:text-[15px]">
+        {description}
+      </p>
+    </div>
+  );
 }
 
 function CourseTarget({ goTo }: { goTo: (section: Section) => void }) {
@@ -859,43 +896,51 @@ function CourseTarget({ goTo }: { goTo: (section: Section) => void }) {
 
   return (
     <>
-      <PageTitle eyebrow="Seu Alvo" title={`Meta: ${course} na ${college}`} description="Entenda os números e o esforço necessário para alcançar sua vaga." />
+      <PageTitle eyebrow="Plano de aprovação" title={`Meta: ${course} na ${college}`} description="Entenda os números e o ritmo semanal necessários para chegar com folga na sua vaga." />
 
-      <div className="grid gap-6 md:grid-cols-3 mb-8">
-        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-          <div className="mb-4 text-primary"><Target className="size-8" /></div>
-          <h3 className="text-lg font-bold">Nota de Corte Estimada</h3>
-          <p className="mt-2 text-3xl font-black">{targetScoreNum}</p>
-          <p className="mt-2 text-sm text-muted-foreground">Essa é a meta que você deve buscar na redação para garantir uma margem segura.</p>
+      <div className="grid gap-5 md:grid-cols-3 mb-7">
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <span className="font-mono-num text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Nota alvo</span>
+            <Target className="size-4 text-primary" />
+          </div>
+          <p className="font-display text-4xl font-semibold tabular-nums text-foreground">{targetScoreNum}</p>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Pontuação de referência para manter margem segura na redação.</p>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-          <div className="mb-4 text-primary"><TrendingUp className="size-8" /></div>
-          <h3 className="text-lg font-bold">Média dos Aprovados</h3>
-          <p className="mt-2 text-3xl font-black">{avgRequired}</p>
-          <p className="mt-2 text-sm text-muted-foreground">A maioria dos aprovados neste curso tirou notas próximas a essa.</p>
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <span className="font-mono-num text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Média dos aprovados</span>
+            <TrendingUp className="size-4 text-success" />
+          </div>
+          <p className="font-display text-4xl font-semibold tabular-nums text-foreground">{avgRequired}</p>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Faixa habitual dos candidatos selecionados neste curso.</p>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-          <div className="mb-4 text-primary"><Clock3 className="size-8" /></div>
-          <h3 className="text-lg font-bold">Carga Horária Ideal</h3>
-          <p className="mt-2 text-3xl font-black">{hoursPerWeek}h / semana</p>
-          <p className="mt-2 text-sm text-muted-foreground">Tempo recomendado focado apenas em redação (prática e correção) para o seu nível de meta.</p>
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <span className="font-mono-num text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Ritmo sugerido</span>
+            <Clock3 className="size-4 text-highlight" />
+          </div>
+          <p className="font-display text-4xl font-semibold tabular-nums text-foreground">{hoursPerWeek}h<span className="text-lg font-normal text-muted-foreground">/sem</span></p>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Tempo dedicado à escrita, leitura de repertório e revisão.</p>
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-card p-8 shadow-sm">
-        <h3 className="text-xl font-bold mb-4">Onde você está vs. Onde precisa chegar</h3>
-        <p className="mb-6 text-muted-foreground">Sua média atual nas últimas redações é de <strong>{currentAvg}</strong> pontos. Você precisa de mais <strong>{distance}</strong> pontos para atingir sua meta com segurança.</p>
-        <Progress value={targetScoreNum > 0 ? Math.min(100, Math.round((currentAvg / targetScoreNum) * 100)) : 0} className="mb-4 h-3" />
-        <div className="flex justify-between text-sm font-semibold">
-          <span>Atual: {currentAvg}</span>
+      <div className="rounded-2xl border border-border bg-card p-6 sm:p-8">
+        <h3 className="font-display text-2xl font-semibold mb-2">Onde você está vs. onde precisa chegar</h3>
+        <p className="mb-6 text-sm text-muted-foreground">
+          Sua média atual nas últimas redações é de <strong className="font-mono-num text-foreground">{currentAvg}</strong> pontos. Faltam <strong className="font-mono-num text-foreground">{distance}</strong> pontos para alcançar sua meta.
+        </p>
+        <Progress value={targetScoreNum > 0 ? Math.min(100, Math.round((currentAvg / targetScoreNum) * 100)) : 0} className="mb-3 h-2.5" />
+        <div className="flex justify-between font-mono-num text-xs font-semibold">
+          <span className="text-muted-foreground">Atual: {currentAvg}</span>
           <span className="text-primary">Meta: {targetScoreNum}</span>
         </div>
 
-        <div className="mt-8">
-          <Button onClick={() => goTo("laboratorio")} className="rounded-xl w-full md:w-auto">
-            Começar a treinar <ArrowRight className="ml-2 size-4" />
+        <div className="mt-7">
+          <Button onClick={() => goTo("laboratorio")} className="rounded-xl w-full md:w-auto h-11 px-5 font-semibold">
+            Abrir laboratório de redação <ArrowRight className="ml-2 size-4" />
           </Button>
         </div>
       </div>
@@ -909,49 +954,286 @@ function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
   const { stats: essayStats } = useEssays();
   const targetScoreNum = preferences?.targetScore ? parseInt(preferences.targetScore, 10) : 900;
 
-  const dashboardStats: Array<[string, string, LucideIcon]> = [
-    [essayStats.totalCompleted.toString(), "Redações enviadas", FileText],
-    [essayStats.totalCompleted > 0 ? essayStats.averageScore.toString() : "-", "Média atual", TrendingUp],
-    [essayStats.totalCompleted > 1 ? `${essayStats.evolutionPercent >= 0 ? '+' : ''}${essayStats.evolutionPercent}%` : (essayStats.totalCompleted === 1 ? "1ª concluída" : "-"), "Evolução recente", BrainCircuit],
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+  const rawName = preferences?.full_name || (user?.user_metadata?.['full_name'] as string | undefined) || user?.email?.split('@')[0] || 'Estudante';
+  const firstName = rawName.trim().split(/\s+/)[0] || 'Estudante';
+
+  const dayOfWeek = new Date().getDay();
+  const todayIdx = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const featuredTheme = dailyThemes[todayIdx < dailyThemes.length ? todayIdx : 0] || dailyThemes[0]!;
+
+  const progressPct = targetScoreNum > 0 ? Math.min(100, Math.round((essayStats.averageScore / targetScoreNum) * 100)) : 0;
+  const ringRadius = 54;
+  const ringCircumference = 2 * Math.PI * ringRadius;
+  const ringOffset = ringCircumference * (1 - progressPct / 100);
+
+  const dashboardStats: Array<{ value: string; label: string; meta: string; Icon: LucideIcon }> = [
+    {
+      value: essayStats.totalCompleted.toString(),
+      label: "Redações corrigidas",
+      meta: "no histórico",
+      Icon: FileText,
+    },
+    {
+      value: essayStats.totalCompleted > 0 ? essayStats.averageScore.toString() : "—",
+      label: "Média atual",
+      meta: `meta ${targetScoreNum}`,
+      Icon: TrendingUp,
+    },
+    {
+      value:
+        essayStats.totalCompleted > 1
+          ? `${essayStats.evolutionPercent >= 0 ? "+" : ""}${essayStats.evolutionPercent}%`
+          : essayStats.totalCompleted === 1
+          ? "1ª nota"
+          : "—",
+      label: "Evolução recente",
+      meta: "comparativo",
+      Icon: Award,
+    },
   ];
-  return <><PageTitle eyebrow="Seu espaço de evolução" title={`Boa tarde, ${user?.email?.split('@')[0] || 'Estudante'}!`} description={preferences ? `Seu foco: ${preferences.course} na ${preferences.college}` : "Cada parágrafo é um passo. Continue construindo sua melhor nota."} />
-    <section className="relative overflow-hidden rounded-2xl bg-primary p-6 text-primary-foreground shadow-sm md:p-10">
-      <div className="absolute right-8 top-1/2 hidden -translate-y-1/2 opacity-15 md:block"><Quote className="size-52" /></div>
-      <div className="relative max-w-3xl"><span className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary-foreground/15 px-3 py-1 text-xs font-bold uppercase"><Sparkles className="size-3" /> Desafio do dia · +120 XP</span><h2 className="text-2xl font-bold leading-tight md:text-4xl">Desafios para o enfrentamento da insegurança alimentar no Brasil contemporâneo</h2><p className="mt-4 text-primary-foreground/75">Pratique repertório produtivo, construção de tese e proposta de intervenção completa.</p><Button onClick={() => goTo("laboratorio")} className="mt-7 rounded-xl bg-background text-foreground hover:bg-background/90">Começar a escrever <ArrowRight /></Button></div>
-    </section>
-    <section className="mt-6 grid gap-4 sm:grid-cols-3">{dashboardStats.map(([value, label, Icon]) => <div key={label} className="rounded-xl border border-border bg-card p-5 shadow-sm"><div className="mb-5 flex items-center justify-between"><span className="grid size-10 place-items-center rounded-lg bg-accent text-primary"><Icon className="size-5" /></span><span className="text-xs font-semibold text-success">este mês</span></div><strong className="text-3xl">{value}</strong><p className="mt-1 text-sm text-muted-foreground">{label}</p></div>)}</section>
-    <section className="mt-8">
-      <h3 className="font-bold text-lg mb-4">Acesso Rápido</h3>
-      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
-        <Button variant="outline" onClick={() => goTo("laboratorio")} className="h-auto flex-col gap-3 p-4 rounded-xl border-border bg-card hover:bg-accent hover:border-primary">
-          <span className="grid size-12 place-items-center rounded-full bg-primary/10 text-primary"><PenLine className="size-5" /></span>
-          <span className="font-semibold text-center">Escrever Redação</span>
-        </Button>
-        <Button variant="outline" onClick={() => goTo("competencias")} className="h-auto flex-col gap-3 p-4 rounded-xl border-border bg-card hover:bg-accent hover:border-primary">
-          <span className="grid size-12 place-items-center rounded-full bg-primary/10 text-primary"><Target className="size-5" /></span>
-          <span className="font-semibold text-center">Competências</span>
-        </Button>
-        <Button variant="outline" onClick={() => goTo("repertorio")} className="h-auto flex-col gap-3 p-4 rounded-xl border-border bg-card hover:bg-accent hover:border-primary">
-          <span className="grid size-12 place-items-center rounded-full bg-primary/10 text-primary"><BookOpen className="size-5" /></span>
-          <span className="font-semibold text-center">Repertórios</span>
-        </Button>
-        <Button variant="outline" onClick={() => goTo("mural")} className="h-auto flex-col gap-3 p-4 rounded-xl border-border bg-card hover:bg-accent hover:border-primary">
-          <span className="grid size-12 place-items-center rounded-full bg-primary/10 text-primary"><Award className="size-5" /></span>
-          <span className="font-semibold text-center">Mural Nota 1000</span>
-        </Button>
-        <Button variant="outline" onClick={() => goTo("treinamento")} className="h-auto flex-col gap-3 p-4 rounded-xl border-border bg-card hover:bg-accent hover:border-primary">
-          <span className="grid size-12 place-items-center rounded-full bg-primary/10 text-primary"><GraduationCap className="size-5" /></span>
-          <span className="font-semibold text-center">Treinamento 900+</span>
-        </Button>
-      </div>
-    </section>
-    <section className="mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]"><div className="rounded-xl border border-border bg-card p-6 shadow-sm"><div className="mb-8 flex items-center justify-between"><div><h3 className="font-bold">Sua evolução</h3><p className="text-sm text-muted-foreground">Últimas cinco redações</p></div><span className="rounded-lg bg-accent px-3 py-1 text-xs font-semibold text-primary">{essayStats.totalCompleted > 1 ? `${essayStats.evolutionPercent >= 0 ? '+' : ''}${essayStats.evolutionPercent}%` : `${essayStats.totalCompleted} concluída(s)`}</span></div><div className="flex h-44 items-end justify-between gap-3 border-b border-border px-2">{essayStats.recentScores.map((score, i) => <div key={i} className="flex h-full flex-1 flex-col justify-end gap-2 text-center"><span className="text-xs font-bold">{score > 0 ? score : "-"}</span><div className="rounded-t-md bg-primary/20 transition-colors hover:bg-primary" style={{ height: `${score > 0 ? score / 10 : 0}%` }} /><span className="pb-2 text-xs text-muted-foreground">R{i + 1}</span></div>)}</div></div><div className="rounded-xl border border-border bg-card p-6 shadow-sm"><h3 className="font-bold">Sua Meta (Target)</h3><p className="mt-1 text-sm text-muted-foreground">Chegue à média {targetScoreNum}</p><div className="my-6 grid place-items-center"><div className="grid size-32 place-items-center rounded-full border-[12px] border-accent"><div className="text-center"><strong className="text-2xl">{essayStats.averageScore}</strong><small className="block text-muted-foreground">de {targetScoreNum}</small></div></div></div><Progress value={targetScoreNum > 0 ? Math.min(100, Math.round((essayStats.averageScore / targetScoreNum) * 100)) : 0} /><p className="mt-3 text-center text-xs text-muted-foreground">{essayStats.totalCompleted === 0 ? "Envie sua primeira redação para começar a medir a distância da meta." : essayStats.averageScore >= targetScoreNum ? "🎉 Parabéns! Você já superou sua meta!" : `Você está a ${Math.max(0, targetScoreNum - essayStats.averageScore)} pontos da meta.`}</p></div></section>
-  </>;
+
+  return (
+    <>
+      <PageTitle
+        eyebrow="Caderno Aprova Red"
+        title={`${greeting}, ${firstName}.`}
+        description={
+          preferences?.course
+            ? `Foco ativo: ${preferences.course}${preferences.college ? ` na ${preferences.college}` : ""}.`
+            : "Cada rascunho revisado aproxima você da nota máxima."
+        }
+      />
+
+      {/* Proposta do Dia — Cartão Editorial em Tinta Grafite */}
+      <section className="relative overflow-hidden rounded-2xl bg-[#171412] text-[#faf6ef] border border-black/15 p-6 sm:p-8 md:p-10 editorial-grid-dark">
+        <div className="absolute inset-y-0 left-0 w-1.5 bg-[#C82838]" />
+        <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl space-y-3.5">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="font-mono-num rounded-md bg-[#C82838] px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-white">
+                Proposta do dia · Tema {String(featuredTheme.day).padStart(2, "0")}
+              </span>
+              <span className="font-mono-num text-xs text-white/55">
+                30 linhas · Padrão ENEM
+              </span>
+            </div>
+            <h2 className="font-display text-2xl font-semibold leading-[1.15] tracking-[-0.015em] text-[#faf6ef] sm:text-3xl md:text-[2.15rem]">
+              “{featuredTheme.topic}”
+            </h2>
+            <p className="text-sm leading-relaxed text-white/70 max-w-xl">
+              {featuredTheme.hint}
+            </p>
+          </div>
+
+          <div className="shrink-0">
+            <Button
+              onClick={() => goTo("laboratorio")}
+              className="h-11 rounded-xl bg-[#faf6ef] text-[#171412] hover:bg-white font-semibold px-5 gap-2 shadow-sm"
+            >
+              <PenLine className="size-4 text-[#C82838]" />
+              Abrir folha de redação
+              <ArrowRight className="size-4" />
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Métricas Limpas */}
+      <section className="mt-6 grid gap-4 sm:grid-cols-3">
+        {dashboardStats.map(({ value, label, meta, Icon }) => (
+          <div key={label} className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-foreground/20">
+            <div className="mb-4 flex items-center justify-between">
+              <span className="font-mono-num text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                {meta}
+              </span>
+              <span className="grid size-8 place-items-center rounded-lg bg-secondary text-foreground">
+                <Icon className="size-4" />
+              </span>
+            </div>
+            <strong className="font-display block text-4xl font-semibold tracking-tight tabular-nums text-foreground">
+              {value}
+            </strong>
+            <p className="mt-1 text-sm text-muted-foreground">{label}</p>
+          </div>
+        ))}
+      </section>
+
+      {/* Acesso Rápido — Cards Horizontais Táteis */}
+      <section className="mt-8">
+        <div className="mb-3.5 flex items-center justify-between">
+          <h3 className="font-display text-xl font-semibold text-foreground">Acesso rápido</h3>
+          <span className="font-mono-num text-[11px] uppercase tracking-wider text-muted-foreground">Ferramentas</span>
+        </div>
+        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
+          {[
+            { id: "laboratorio" as const, title: "Folha de Redação", sub: "Escrever e corrigir", Icon: PenLine },
+            { id: "competencias" as const, title: "Competências", sub: "Treino C1 a C5", Icon: Target },
+            { id: "repertorio" as const, title: "Repertórios", sub: "Leis, obras e dados", Icon: BookOpen },
+            { id: "mural" as const, title: "Mural Nota 1000", sub: "Textos comentados", Icon: Award },
+            { id: "treinamento" as const, title: "Treinamento 900+", sub: "Modelos passo a passo", Icon: GraduationCap },
+          ].map(({ id, title, sub, Icon }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => goTo(id)}
+              className="group flex items-center gap-3 rounded-xl border border-border bg-card p-3.5 text-left transition-all hover:border-primary/50 hover:bg-card hover:shadow-xs"
+            >
+              <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-secondary text-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                <Icon className="size-4" />
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-semibold text-foreground">{title}</span>
+                <span className="block truncate text-xs text-muted-foreground">{sub}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Evolução + Meta com Anel SVG Real */}
+      <section className="mt-7 grid gap-6 lg:grid-cols-[1.45fr_1fr]">
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <div className="mb-7 flex items-center justify-between gap-2">
+            <div>
+              <h3 className="font-display text-xl font-semibold text-foreground">Sua evolução</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Últimas cinco redações avaliadas</p>
+            </div>
+            <span className="font-mono-num rounded-lg border border-border bg-secondary px-2.5 py-1 text-xs font-semibold text-foreground">
+              {essayStats.totalCompleted > 1
+                ? `${essayStats.evolutionPercent >= 0 ? "+" : ""}${essayStats.evolutionPercent}%`
+                : `${essayStats.totalCompleted} concluída(s)`}
+            </span>
+          </div>
+
+          <div className="relative flex h-48 items-end justify-between gap-3 border-b border-border px-2 pt-4">
+            {/* Linha pontilhada de referência da meta */}
+            <div
+              className="pointer-events-none absolute inset-x-0 border-t border-dashed border-primary/40 flex justify-end"
+              style={{ bottom: `${Math.min(95, Math.max(15, targetScoreNum / 10))}%` }}
+            >
+              <span className="font-mono-num -mt-4 bg-card px-1.5 text-[10px] font-semibold text-primary">
+                meta {targetScoreNum}
+              </span>
+            </div>
+
+            {essayStats.recentScores.map((score, i) => (
+              <div key={i} className="relative z-10 flex h-full flex-1 flex-col justify-end gap-2 text-center">
+                <span className="font-mono-num text-xs font-bold text-foreground">
+                  {score > 0 ? score : "—"}
+                </span>
+                <div
+                  className={`mx-auto w-full max-w-[46px] rounded-t-lg transition-all ${
+                    score >= targetScoreNum
+                      ? "bg-success"
+                      : score > 0
+                      ? "bg-primary/85 hover:bg-primary"
+                      : "bg-secondary"
+                  }`}
+                  style={{ height: `${score > 0 ? Math.max(8, score / 10) : 6}%` }}
+                />
+                <span className="font-mono-num pb-2 text-[11px] font-medium text-muted-foreground">
+                  R{i + 1}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-card p-6 flex flex-col justify-between">
+          <div>
+            <h3 className="font-display text-xl font-semibold text-foreground">Distância da meta</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">Objetivo definido: {targetScoreNum} pontos</p>
+          </div>
+
+          <div className="my-5 grid place-items-center">
+            <div className="relative grid size-36 place-items-center">
+              <svg className="size-full -rotate-90" viewBox="0 0 132 132">
+                <circle
+                  cx="66"
+                  cy="66"
+                  r={ringRadius}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="10"
+                  className="text-secondary"
+                />
+                <circle
+                  cx="66"
+                  cy="66"
+                  r={ringRadius}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="10"
+                  strokeLinecap="round"
+                  strokeDasharray={ringCircumference}
+                  strokeDashoffset={ringOffset}
+                  className="text-primary transition-all duration-700"
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                <strong className="font-display text-3xl font-semibold tabular-nums text-foreground">
+                  {essayStats.averageScore}
+                </strong>
+                <small className="font-mono-num text-[11px] text-muted-foreground">
+                  de {targetScoreNum}
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <Progress value={progressPct} className="h-2" />
+            <p className="mt-3 text-center text-xs leading-relaxed text-muted-foreground">
+              {essayStats.totalCompleted === 0
+                ? "Envie sua primeira redação para medir sua distância real da meta."
+                : essayStats.averageScore >= targetScoreNum
+                ? "Meta superada! Continue praticando para manter a consistência."
+                : `Você está a ${Math.max(0, targetScoreNum - essayStats.averageScore)} pontos da meta.`}
+            </p>
+          </div>
+        </div>
+      </section>
+    </>
+  );
 }
 
 function Mural({ onOpen, currentTheme }: { onOpen: (essay: any) => void; currentTheme: typeof dailyThemes[number] }) {
   const themeEssays = currentTheme.essays || [];
-  return <><PageTitle eyebrow="Inspire-se" title="Mural nota mil" description={`Leia textos exemplares sobre o tema do dia: ${currentTheme.topic}`} /><div className="grid gap-5 md:grid-cols-3">{themeEssays.map((essay, i) => <article key={essay.title} onClick={() => onOpen(essay)} className="group cursor-pointer rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"><div className="mb-5 flex items-center justify-between"><span className="rounded-full bg-accent px-3 py-1 text-xs font-bold text-primary">NOTA 1000</span><span className="text-5xl font-black text-primary/10">0{i + 1}</span></div><h2 className="text-xl font-bold leading-snug group-hover:text-primary">{essay.title}</h2><p className="mt-2 text-xs font-semibold text-muted-foreground">{essay.author}</p><p className="mt-5 line-clamp-4 text-sm leading-6 text-muted-foreground">{essay.intro}</p><div className="mt-6 flex items-center gap-2 text-sm font-bold text-primary">Ler e analisar <ArrowRight className="size-4" /></div></article>)}</div></>;
+  return (
+    <>
+      <PageTitle
+        eyebrow="Acervo exemplar"
+        title="Mural nota mil"
+        description={`Leia textos de referência sobre o tema selecionado: ${currentTheme.topic}`}
+      />
+      <div className="grid gap-5 md:grid-cols-3">
+        {themeEssays.map((essay, i) => (
+          <article
+            key={essay.title}
+            onClick={() => onOpen(essay)}
+            className="group cursor-pointer rounded-2xl border border-border bg-card p-6 transition-all hover:-translate-y-0.5 hover:border-primary/45 hover:shadow-sm"
+          >
+            <div className="mb-5 flex items-center justify-between">
+              <span className="font-mono-num rounded-md bg-accent px-2.5 py-1 text-[11px] font-bold text-primary">
+                NOTA 1000
+              </span>
+              <span className="font-display text-4xl font-semibold text-foreground/12">0{i + 1}</span>
+            </div>
+            <h2 className="font-display text-xl font-semibold leading-snug group-hover:text-primary transition-colors">
+              {essay.title}
+            </h2>
+            <p className="mt-2 text-xs font-medium text-muted-foreground">{essay.author}</p>
+            <p className="mt-4 line-clamp-4 text-sm leading-6 text-muted-foreground">{essay.intro}</p>
+            <div className="mt-6 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary">
+              Ler e analisar <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+            </div>
+          </article>
+        ))}
+      </div>
+    </>
+  );
 }
 
 function Competencies({ active, setActive, currentTheme }: {
@@ -965,10 +1247,10 @@ function Competencies({ active, setActive, currentTheme }: {
   const [evalResults, setEvalResults] = useState<Record<string, CompetencyExerciseResult>>({});
 
   const sectionLabels: Record<string, { short: string; color: string }> = {
-    intro: { short: "Introdução", color: "bg-blue-500/10 text-blue-600 border-blue-500/30" },
-    des1: { short: "Dev. 1", color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30" },
-    des2: { short: "Dev. 2", color: "bg-amber-500/10 text-amber-600 border-amber-500/30" },
-    conc: { short: "Conclusão", color: "bg-purple-500/10 text-purple-600 border-purple-500/30" },
+    intro: { short: "Introdução", color: "bg-sky-500/10 text-sky-700 border-sky-500/30 dark:text-sky-300" },
+    des1: { short: "Dev. 1", color: "bg-emerald-500/10 text-emerald-700 border-emerald-500/30 dark:text-emerald-300" },
+    des2: { short: "Dev. 2", color: "bg-amber-500/10 text-amber-700 border-amber-500/30 dark:text-amber-300" },
+    conc: { short: "Conclusão", color: "bg-primary/10 text-primary border-primary/30" },
   };
 
   const handleVerifyExercise = async (
@@ -1088,12 +1370,12 @@ function Competencies({ active, setActive, currentTheme }: {
                       <span className="text-xs text-muted-foreground">{(answers[answerKey] ?? '').length} caracteres</span>
                       <Button
                         size="sm"
-                        className="rounded-lg gap-1.5"
+                        className="rounded-lg gap-1.5 font-semibold"
                         disabled={isEvaluatingThis}
                         onClick={() => handleVerifyExercise(comp.code as "C1" | "C2" | "C3" | "C4" | "C5", currentSection, answerKey)}
                       >
-                        <Sparkles className="size-3.5" />
-                        {isEvaluatingThis ? "Avaliando..." : "Verificar com IA"}
+                        <FileCheck2 className="size-3.5" />
+                        {isEvaluatingThis ? "Avaliando..." : "Avaliar resposta"}
                       </Button>
                     </div>
 
@@ -1211,8 +1493,8 @@ function Repertory({
       <div className="mb-8 rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-sm">
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="grid size-7 place-items-center rounded-lg bg-primary/10 text-primary">
-              <Sparkles className="size-4" />
+            <span className="grid size-7 place-items-center rounded-lg bg-secondary text-primary">
+              <Bookmark className="size-4" />
             </span>
             <div>
               <h3 className="text-sm font-bold text-foreground">
@@ -1417,7 +1699,7 @@ function Repertory({
 
                 <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs font-semibold text-primary">
                   <span className="flex items-center gap-1.5">
-                    <Sparkles className="size-3.5" />
+                    <Bookmark className="size-3.5" />
                     Ver como citar na redação
                   </span>
                   <ChevronRight className="size-4 group-hover:translate-x-1 transition-transform" />
@@ -1548,13 +1830,13 @@ function Laboratory(props: { tab: "digital" | "photo"; setTab: (v: "digital" | "
   if (props.result) return <Feedback result={props.result} text={props.text} onBack={() => props.setResult(null)} />;
 
   return <>
-    <PageTitle eyebrow="Hora de escrever" title="Laboratório de redação" description={`A Inteligência Artificial avaliará no nível de exigência para ${preferences?.course || 'o seu curso'}. Escolha o tema do dia abaixo!`} />
+    <PageTitle eyebrow="Folha oficial de treino" title="Laboratório de redação" description={`Banca calibrada para o rigor exigido em ${preferences?.course || 'seu curso'}. Escolha um tema abaixo e comece a escrever.`} />
 
     {/* Daily Themes Strip */}
-    <div className="mb-6 rounded-2xl border border-border bg-card p-4 shadow-sm">
+    <div className="mb-6 rounded-2xl border border-border bg-card p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-bold">📅 Trilha de temas — 14 dias</p>
-        <span className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-primary">{dailyThemes.filter(d => !!getEssayForTheme(d.day)).length}/{dailyThemes.length} concluídos</span>
+        <p className="text-sm font-bold text-foreground">Trilha de temas — 14 dias</p>
+        <span className="font-mono-num rounded-md border border-border bg-secondary px-2.5 py-0.5 text-xs font-semibold text-foreground">{dailyThemes.filter(d => !!getEssayForTheme(d.day)).length}/{dailyThemes.length} concluídos</span>
       </div>
       <div className="flex gap-2 overflow-x-auto pb-2">
         {dailyThemes.map((theme, idx) => {
@@ -1679,13 +1961,60 @@ function Laboratory(props: { tab: "digital" | "photo"; setTab: (v: "digital" | "
       })()}
     </div>
 
-    <div className="mb-5 inline-flex rounded-xl bg-muted p-1">
+    <div className="mb-5 inline-flex rounded-xl border border-border bg-secondary/70 p-1">
       <Button variant={props.tab === "digital" ? "default" : "ghost"} onClick={() => props.setTab("digital")} className="rounded-lg"><PenLine /> Redação digital</Button>
-      <Button variant={props.tab === "photo" ? "default" : "ghost"} onClick={() => props.setTab("photo")} className="rounded-lg"><Camera /> Redação escrita</Button>
+      <Button variant={props.tab === "photo" ? "default" : "ghost"} onClick={() => props.setTab("photo")} className="rounded-lg"><Camera /> Redação manuscrita</Button>
     </div>
-    {props.tab === "digital" ? <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4"><div className="flex items-center gap-4 text-xs font-semibold text-muted-foreground"><span>{props.stats.words} palavras</span><span>{props.stats.chars} caracteres</span><span>{props.stats.lines}/30 linhas</span></div><div className="flex items-center gap-2">{(props.timer || props.timerSeconds < 5400) && <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); props.setTimer(false); props.setTimerSeconds(5400); }} className="rounded-lg text-xs px-2 text-destructive hover:text-destructive hover:bg-destructive/10">Resetar</Button>}{(props.timer || props.timerSeconds < 5400) && <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); props.setTimer(!props.timer); }} className="rounded-lg text-xs px-2 text-primary hover:text-primary hover:bg-primary/10">{props.timer ? <><Pause className="size-3.5 mr-1" />Pausar</> : <><Play className="size-3.5 mr-1" />Retomar</>}</Button>}<Button variant="outline" size="sm" onClick={() => { if (!props.timer && props.timerSeconds === 0) props.setTimerSeconds(5400); props.setTimer(!props.timer); }} className={`rounded-lg ${props.timer ? "border-primary text-primary" : props.timerSeconds < 5400 ? (props.timerSeconds === 0 ? "border-destructive text-destructive" : "border-orange-500 text-orange-600") : ""}`}><Clock3 /> {props.timer || props.timerSeconds < 5400 ? (() => { const h = Math.floor(props.timerSeconds / 3600); const m = Math.floor((props.timerSeconds % 3600) / 60); const s = props.timerSeconds % 60; return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`; })() : "Ativar temporizador"}</Button></div></div><textarea value={props.text} onChange={(e) => props.setText(e.target.value)} placeholder={`Tema: "${currentTheme.topic}"
-
-Comece pela sua tese. O que você defende sobre este tema?`} className="min-h-[480px] w-full resize-none bg-card p-6 text-base leading-8 outline-none md:p-10" style={{ backgroundImage: "linear-gradient(to bottom, transparent 31px, var(--line) 32px)", backgroundSize: "100% 32px" }} /><div className="flex flex-col items-end gap-2 border-t border-border p-4"><Button size="lg" onClick={props.handleCorrection} disabled={props.correcting} className="h-12 rounded-xl px-6"><Sparkles /> {props.correcting ? "Analisando com rigor adaptado..." : "Corrigir com Inteligência Artificial"}</Button>{props.error && <p className="text-sm text-destructive">{props.error}</p>}</div></div> : <div className="rounded-xl border-2 border-dashed border-border bg-card p-8 text-center shadow-sm md:p-16"><input ref={props.fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) props.setPreview(URL.createObjectURL(file)); }} />{props.preview ? <img src={props.preview} alt="Prévia da redação" className="mx-auto max-h-[520px] rounded-xl object-contain shadow-sm" /> : <><span className="mx-auto grid size-16 place-items-center rounded-full bg-accent text-primary"><UploadCloud className="size-7" /></span><h2 className="mt-5 text-xl font-bold">Envie uma foto nítida da sua redação</h2><p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">Posicione a folha inteira, evite sombras e confira se o texto está legível.</p></>}<div className="mt-6 flex flex-wrap justify-center gap-2"><Button className="rounded-xl" onClick={() => props.fileRef.current?.click()}><ImagePlus /> Escolher imagem</Button><Button variant="outline" className="rounded-xl" onClick={() => props.fileRef.current?.click()}><Camera /> Usar câmera</Button></div></div>}
+    {props.tab === "digital" ? (
+      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-secondary/35 px-5 py-3.5">
+          <div className="flex items-center gap-4 font-mono-num text-xs font-semibold text-muted-foreground">
+            <span>{props.stats.words} palavras</span>
+            <span>{props.stats.chars} caracteres</span>
+            <span className={props.stats.lines >= 28 ? "text-primary font-bold" : ""}>{props.stats.lines}/30 linhas</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {(props.timer || props.timerSeconds < 5400) && (
+              <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); props.setTimer(false); props.setTimerSeconds(5400); }} className="rounded-lg text-xs px-2 text-destructive hover:text-destructive hover:bg-destructive/10">Resetar</Button>
+            )}
+            {(props.timer || props.timerSeconds < 5400) && (
+              <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); props.setTimer(!props.timer); }} className="rounded-lg text-xs px-2 text-primary hover:text-primary hover:bg-primary/10">
+                {props.timer ? <><Pause className="size-3.5 mr-1" />Pausar</> : <><Play className="size-3.5 mr-1" />Retomar</>}
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={() => { if (!props.timer && props.timerSeconds === 0) props.setTimerSeconds(5400); props.setTimer(!props.timer); }} className={`rounded-lg font-mono-num ${props.timer ? "border-primary text-primary" : props.timerSeconds < 5400 ? (props.timerSeconds === 0 ? "border-destructive text-destructive" : "border-amber-600 text-amber-700") : ""}`}>
+              <Clock3 /> {props.timer || props.timerSeconds < 5400 ? (() => { const h = Math.floor(props.timerSeconds / 3600); const m = Math.floor((props.timerSeconds % 3600) / 60); const s = props.timerSeconds % 60; return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`; })() : "Cronômetro 1h30"}
+            </Button>
+          </div>
+        </div>
+        <div className="relative">
+          {/* Margem vertical carmim sutil estilo folha oficial de redação */}
+          <div className="pointer-events-none absolute inset-y-0 left-5 md:left-9 w-px bg-primary/25" />
+          <textarea
+            value={props.text}
+            onChange={(e) => props.setText(e.target.value)}
+            placeholder={`Tema: "${currentTheme.topic}"\n\nComece pela sua tese. O que você defende sobre este tema?`}
+            className="min-h-[480px] w-full resize-none bg-card py-6 pl-9 pr-6 text-base leading-8 outline-none md:py-9 md:pl-14 md:pr-10 paper-ruled"
+          />
+        </div>
+        <div className="flex flex-col items-end gap-2 border-t border-border bg-secondary/20 px-5 py-4">
+          <Button size="lg" onClick={props.handleCorrection} disabled={props.correcting} className="h-11 rounded-xl px-6 font-semibold gap-2">
+            <FileCheck2 className="size-4" />
+            {props.correcting ? "Avaliando redação nas 5 competências..." : "Enviar para correção"}
+          </Button>
+          {props.error && <p className="text-sm text-destructive">{props.error}</p>}
+        </div>
+      </div>
+    ) : (
+      <div className="rounded-2xl border-2 border-dashed border-border bg-card p-8 text-center md:p-16">
+        <input ref={props.fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) props.setPreview(URL.createObjectURL(file)); }} />
+        {props.preview ? <img src={props.preview} alt="Prévia da redação" className="mx-auto max-h-[520px] rounded-xl object-contain shadow-sm" /> : <><span className="mx-auto grid size-16 place-items-center rounded-2xl bg-secondary text-primary"><UploadCloud className="size-7" /></span><h2 className="font-display mt-5 text-2xl font-semibold">Envie uma foto nítida da sua folha</h2><p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">Enquadre a folha inteira em local iluminado, evitando sombras sobre o texto.</p></>}
+        <div className="mt-6 flex flex-wrap justify-center gap-2.5">
+          <Button className="rounded-xl font-semibold" onClick={() => props.fileRef.current?.click()}><ImagePlus /> Escolher imagem</Button>
+          <Button variant="outline" className="rounded-xl font-semibold" onClick={() => props.fileRef.current?.click()}><Camera /> Usar câmera</Button>
+        </div>
+      </div>
+    )}
   </>;
 }
 
@@ -1758,15 +2087,30 @@ function Feedback({ result, text, onBack }: { result: Correction; text: string; 
         {/* Lado Direito: Feedback e Nota (no mobile aparece primeiro no topo) */}
         <div className="order-1 xl:order-2 space-y-6">
           <div className="grid gap-6 sm:grid-cols-[1fr_1.5fr]">
-            <div className="rounded-xl border border-border bg-card p-7 text-center shadow-sm flex flex-col items-center justify-center">
-              <div className="mx-auto grid size-32 sm:size-40 place-items-center rounded-full border-[10px] sm:border-[14px] border-primary bg-accent">
-                <div>
-                  <strong className="text-4xl sm:text-5xl text-primary">{score}</strong>
-                  <span className="block text-xs sm:text-sm text-muted-foreground">de 1000</span>
+            <div className="rounded-2xl border border-border bg-card p-7 text-center flex flex-col items-center justify-center">
+              <div className="relative mx-auto grid size-36 sm:size-40 place-items-center">
+                <svg className="size-full -rotate-90" viewBox="0 0 140 140">
+                  <circle cx="70" cy="70" r="58" fill="none" stroke="currentColor" strokeWidth="11" className="text-secondary" />
+                  <circle
+                    cx="70"
+                    cy="70"
+                    r="58"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="11"
+                    strokeLinecap="round"
+                    strokeDasharray={2 * Math.PI * 58}
+                    strokeDashoffset={2 * Math.PI * 58 * (1 - score / 1000)}
+                    className="text-primary transition-all duration-700"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <strong className="font-display text-4xl sm:text-5xl font-semibold text-foreground tabular-nums">{score}</strong>
+                  <span className="font-mono-num text-xs text-muted-foreground">de 1000</span>
                 </div>
               </div>
-              <h2 className="mt-6 text-lg sm:text-xl font-bold">
-                {score >= 900 ? "Excelente desempenho!" : score >= 700 ? "Ótimo avanço!" : score >= 500 ? "Bom trabalho!" : "Continue praticando!"}
+              <h2 className="font-display mt-5 text-xl font-semibold">
+                {score >= 900 ? "Excelente desempenho" : score >= 700 ? "Ótimo avanço" : score >= 500 ? "Bom caminho" : "Continue praticando"}
               </h2>
             </div>
 
@@ -1809,7 +2153,7 @@ function Feedback({ result, text, onBack }: { result: Correction; text: string; 
                   <div key={item.excerpt} className={`rounded-lg border-l-4 p-4 ${item.type === 'acerto' ? 'border-success bg-success/10' : 'border-highlight bg-highlight/10'}`}>
                     <p className="font-medium text-sm italic">“{item.excerpt}”</p>
                     <p className={`mt-2 text-sm font-medium ${item.type === 'acerto' ? 'text-success' : 'text-highlight'}`}>
-                      <Sparkles className="mr-1.5 inline size-4" />{item.suggestion}
+                      <PenLine className="mr-1.5 inline size-3.5" />{item.suggestion}
                     </p>
                   </div>
                 ))}
@@ -1841,10 +2185,10 @@ function TrainingSection({ goTo }: { goTo: (section: Section) => void }) {
   };
 
   const paragraphColors = [
-    { bg: "bg-blue-50 dark:bg-blue-950/30", border: "border-blue-200 dark:border-blue-800", badge: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300", label: "Introdução" },
-    { bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-200 dark:border-emerald-800", badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300", label: "Desenvolvimento 1" },
-    { bg: "bg-amber-50 dark:bg-amber-950/30", border: "border-amber-200 dark:border-amber-800", badge: "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300", label: "Desenvolvimento 2" },
-    { bg: "bg-purple-50 dark:bg-purple-950/30", border: "border-purple-200 dark:border-purple-800", badge: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300", label: "Conclusão" },
+    { bg: "bg-sky-50/70 dark:bg-sky-950/25", border: "border-sky-200/80 dark:border-sky-900", badge: "bg-sky-100 text-sky-800 dark:bg-sky-900 dark:text-sky-200", label: "Introdução" },
+    { bg: "bg-emerald-50/70 dark:bg-emerald-950/25", border: "border-emerald-200/80 dark:border-emerald-900", badge: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200", label: "Desenvolvimento 1" },
+    { bg: "bg-amber-50/70 dark:bg-amber-950/25", border: "border-amber-200/80 dark:border-amber-900", badge: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200", label: "Desenvolvimento 2" },
+    { bg: "bg-rose-50/70 dark:bg-rose-950/25", border: "border-rose-200/80 dark:border-rose-900", badge: "bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-200", label: "Conclusão" },
   ];
 
   if (openEssay) {
@@ -1960,11 +2304,11 @@ function TrainingSection({ goTo }: { goTo: (section: Section) => void }) {
           <strong className="text-2xl">{Math.round(filtered.reduce((s, e) => s + e.score, 0) / (filtered.length || 1))}</strong>
           <p className="mt-1 text-sm text-muted-foreground">Média de pontuação</p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-5 shadow-sm sm:col-span-2 lg:col-span-1">
+        <div className="rounded-2xl border border-border bg-card p-5 sm:col-span-2 lg:col-span-1">
           <div className="mb-3 flex items-center gap-2">
-            <span className="grid size-10 place-items-center rounded-lg bg-purple-500/10 text-purple-600"><Award className="size-5" /></span>
+            <span className="grid size-10 place-items-center rounded-lg bg-accent text-primary"><Award className="size-5" /></span>
           </div>
-          <strong className="text-2xl">Nota 900+</strong>
+          <strong className="font-display text-3xl font-semibold">Nota 900+</strong>
           <p className="mt-1 text-sm text-muted-foreground">Padrão de excelência</p>
         </div>
       </div>

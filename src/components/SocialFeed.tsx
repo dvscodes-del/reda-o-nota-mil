@@ -218,11 +218,11 @@ function StoriesBar({ currentUserName, currentUserAvatar, onWritePost, onSelectT
   onSelectTheme: (tag: string) => void;
 }) {
   const themes = [
-    { label: "Redações", emoji: "📝", color: "from-primary to-purple-600", tag: "Redação" },
-    { label: "Conquistas", emoji: "🏆", color: "from-amber-400 to-orange-500", tag: "Conquista" },
-    { label: "Repertório", emoji: "📚", color: "from-emerald-400 to-teal-600", tag: "Repertório" },
-    { label: "Dúvidas", emoji: "💡", color: "from-sky-400 to-blue-600", tag: "Dúvida" },
-    { label: "Dicas C5", emoji: "🎯", color: "from-red-400 to-pink-600", tag: "C5" },
+    { label: "Redações", emoji: "📝", color: "from-primary to-rose-800", tag: "Redação" },
+    { label: "Conquistas", emoji: "🏆", color: "from-amber-500 to-orange-600", tag: "Conquista" },
+    { label: "Repertório", emoji: "📚", color: "from-emerald-600 to-teal-800", tag: "Repertório" },
+    { label: "Dúvidas", emoji: "💡", color: "from-sky-600 to-slate-800", tag: "Dúvida" },
+    { label: "Dicas C5", emoji: "🎯", color: "from-rose-700 to-stone-900", tag: "C5" },
   ];
 
   return (
@@ -479,7 +479,7 @@ function CreatePostModal({
             onClick={() => setPostType("poll")}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-all cursor-pointer ${
               postType === "poll"
-                ? "bg-purple-600 text-white shadow-xs"
+                ? "bg-primary text-primary-foreground shadow-xs"
                 : "bg-card border border-border/60 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
             }`}
           >
@@ -533,9 +533,9 @@ function CreatePostModal({
         <div className="p-5 overflow-y-auto space-y-3 flex-1">
           {/* Seção de Enquete */}
           {postType === "poll" && (
-            <div className="space-y-3 p-4 rounded-2xl border border-purple-500/25 bg-purple-500/5">
+            <div className="space-y-3 p-4 rounded-2xl border border-primary/25 bg-accent/40">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-purple-600 dark:text-purple-400 flex items-center gap-1.5">
+                <span className="text-xs font-bold text-primary flex items-center gap-1.5">
                   <BarChart3 className="size-4" /> Pergunta da Enquete
                 </span>
                 <span className="text-[11px] text-muted-foreground">Mín. 2 opções</span>
@@ -546,7 +546,7 @@ function CreatePostModal({
                 value={pollQuestion}
                 onChange={(e) => setPollQuestion(e.target.value)}
                 placeholder="Ex: Qual tema de redação você acha mais provável este ano?"
-                className="w-full rounded-xl border border-border/70 bg-card px-3.5 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                className="w-full rounded-xl border border-border/70 bg-card px-3.5 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
 
               <div className="space-y-2 pt-1">
@@ -563,7 +563,7 @@ function CreatePostModal({
                         setPollOptions(updated);
                       }}
                       placeholder={`Opção ${idx + 1} (ex: ${idx === 0 ? "Meio Ambiente" : idx === 1 ? "Tecnologia & IA" : "Saúde Mental"})`}
-                      className="flex-1 rounded-xl border border-border/60 bg-card px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                      className="flex-1 rounded-xl border border-border/60 bg-card px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                     {pollOptions.length > 2 && (
                       <button
@@ -583,7 +583,7 @@ function CreatePostModal({
                 <button
                   type="button"
                   onClick={() => setPollOptions([...pollOptions, ""])}
-                  className="w-full rounded-xl border border-dashed border-purple-500/40 py-2 text-xs font-bold text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 transition-colors flex items-center justify-center gap-1.5"
+                  className="w-full rounded-xl border border-dashed border-primary/40 py-2 text-xs font-bold text-primary hover:bg-primary/10 transition-colors flex items-center justify-center gap-1.5"
                 >
                   <Plus className="size-3.5" /> Adicionar opção
                 </button>
@@ -985,8 +985,8 @@ function PostCard({
               </div>
             )}
             {post.type === "poll" && (
-              <div className="absolute -bottom-1 -right-1 size-5 rounded-full bg-purple-600 border-2 border-card grid place-items-center" title="Enquete">
-                <BarChart3 className="size-2.5 text-white" />
+              <div className="absolute -bottom-1 -right-1 size-5 rounded-full bg-primary border-2 border-card grid place-items-center" title="Enquete">
+                <BarChart3 className="size-2.5 text-primary-foreground" />
               </div>
             )}
             {(post.type === "opinion" || post.type === "text") && (
@@ -1094,9 +1094,9 @@ function PostCard({
 
       {/* ── Badge de Enquete ── */}
       {post.type === "poll" && (
-        <div className="mx-5 mb-2.5 flex items-center gap-2 text-purple-600 dark:text-purple-400">
+        <div className="mx-5 mb-2.5 flex items-center gap-2 text-primary">
           <BarChart3 className="size-4 shrink-0" />
-          <span className="text-xs font-bold uppercase tracking-wider">Enquete da Comunidade</span>
+          <span className="font-mono-num text-[11px] font-bold uppercase tracking-wider">Enquete da Comunidade</span>
         </div>
       )}
 
@@ -1129,12 +1129,12 @@ function PostCard({
         const totalVotes = Math.max(Number(post.poll_data.total_votes) || 0, sumVotes);
 
         return (
-          <div className="mx-5 mb-4 p-4 rounded-2xl border border-purple-500/25 bg-purple-500/5 space-y-3">
+          <div className="mx-5 mb-4 p-4 rounded-2xl border border-primary/20 bg-accent/35 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-purple-600 dark:text-purple-400 flex items-center gap-1.5">
+              <span className="text-xs font-bold text-primary flex items-center gap-1.5">
                 <BarChart3 className="size-3.5" /> Enquete da Comunidade
               </span>
-              <span className="text-[11px] text-muted-foreground font-medium">
+              <span className="font-mono-num text-[11px] text-muted-foreground font-medium">
                 {totalVotes} {totalVotes === 1 ? "voto apurado" : "votos apurados"}
               </span>
             </div>
@@ -1158,10 +1158,10 @@ function PostCard({
                     onClick={() => onVotePoll && onVotePoll(post.id, optIdStr)}
                     className={`relative w-full overflow-hidden rounded-xl border p-3 text-left transition-all ${
                       hasVotedThis
-                        ? "border-purple-500 bg-purple-500/15 ring-1 ring-purple-500/30 shadow-xs cursor-default"
+                        ? "border-primary bg-primary/10 ring-1 ring-primary/25 shadow-2xs cursor-default"
                         : showResults
-                        ? "border-border/70 bg-card/70 hover:border-purple-400/70 hover:bg-purple-500/5 cursor-pointer opacity-90"
-                        : "border-border/80 bg-card hover:border-purple-500/70 hover:bg-purple-500/5 cursor-pointer hover:shadow-xs active:scale-[0.99]"
+                        ? "border-border/80 bg-card/80 hover:border-primary/50 hover:bg-accent/40 cursor-pointer opacity-95"
+                        : "border-border/80 bg-card hover:border-primary/60 hover:bg-accent/40 cursor-pointer hover:shadow-2xs active:scale-[0.99]"
                     }`}
                     title={
                       hasVotedThis
@@ -1175,7 +1175,7 @@ function PostCard({
                     {showResults && (
                       <div
                         className={`absolute inset-y-0 left-0 transition-all duration-500 ${
-                          hasVotedThis ? "bg-purple-500/25" : "bg-muted/40"
+                          hasVotedThis ? "bg-primary/20" : "bg-secondary"
                         }`}
                         style={{ width: `${percent}%` }}
                       />
@@ -1184,27 +1184,27 @@ function PostCard({
                     <div className="relative flex items-center justify-between gap-3 text-xs sm:text-sm font-semibold">
                       <span className="flex items-center gap-2 truncate">
                         {hasVotedThis ? (
-                          <CheckCircle2 className="size-4 text-purple-600 dark:text-purple-400 shrink-0" />
+                          <CheckCircle2 className="size-4 text-primary shrink-0" />
                         ) : hasVotedAny ? (
                           <span className="size-3.5 rounded-full border border-muted-foreground/40 shrink-0 inline-block" />
                         ) : (
-                          <span className="size-3.5 rounded-full border-2 border-purple-400/60 shrink-0 inline-block" />
+                          <span className="size-3.5 rounded-full border-2 border-primary/50 shrink-0 inline-block" />
                         )}
-                        <span className={hasVotedThis ? "text-purple-700 dark:text-purple-300 font-bold" : "text-foreground"}>
+                        <span className={hasVotedThis ? "text-primary font-bold" : "text-foreground"}>
                           {opt.text}
                         </span>
                       </span>
 
                       {/* Percentual e contagem — visíveis quando tiver votado ou for autor */}
                       {showResults ? (
-                        <span className="shrink-0 text-xs font-bold text-muted-foreground">
+                        <span className="font-mono-num shrink-0 text-xs font-bold text-foreground/80">
                           {percent}%{" "}
-                          <span className="text-[11px] font-normal opacity-80">
+                          <span className="text-[11px] font-normal text-muted-foreground">
                             ({optVotes} {optVotes === 1 ? "voto" : "votos"})
                           </span>
                         </span>
                       ) : (
-                        <span className="shrink-0 text-[11px] font-medium text-purple-600/70 dark:text-purple-400/70">
+                        <span className="shrink-0 text-[11px] font-semibold text-primary/80">
                           Votar
                         </span>
                       )}
@@ -1538,7 +1538,7 @@ function FeedSuggestionsCarousel({
                   {student.connectionReason}
                 </span>
               ) : (
-                <span className="text-[11px] text-muted-foreground">Estudante no Escreva+</span>
+                <span className="text-[11px] text-muted-foreground">Estudante no Aprova Red</span>
               )}
             </div>
 
@@ -1867,7 +1867,7 @@ export function SocialFeed({
           const isRecentPoster = recentPostersSet.has(p.id);
 
           let affinityScore = 0;
-          let connectionReason = "Estudante no Escreva+";
+          let connectionReason = "Estudante no Aprova Red";
           let badge: SuggestedStudent["badge"] = undefined;
 
           // Sinal 1: Segue você ("Follows you" - prioridade máxima estilo Instagram)
@@ -2626,12 +2626,12 @@ export function SocialFeed({
     }
 
     const shareUrl = `${window.location.origin}/#post-${postId}`;
-    const shareText = post.content ? post.content.slice(0, 120) : "Confira esta publicação no Escreva+!";
+    const shareText = post.content ? post.content.slice(0, 120) : "Confira esta publicação no Aprova Red!";
 
     if (typeof navigator !== "undefined" && navigator.share && /mobile|android|iphone|ipad/i.test(navigator.userAgent)) {
       try {
         await navigator.share({
-          title: "Escreva+ | Redação Nota 1000",
+          title: "Aprova Red | Redação ENEM",
           text: shareText,
           url: shareUrl,
         });
@@ -2885,7 +2885,7 @@ export function SocialFeed({
                 className="flex flex-1 min-w-[95px] items-center justify-center gap-1.5 rounded-xl py-2 px-2 text-xs font-semibold text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer"
                 title="Criar Enquete"
               >
-                <BarChart3 className="size-4 text-purple-600 dark:text-purple-400" />
+                <BarChart3 className="size-4 text-primary" />
                 <span>Enquete</span>
               </button>
               <button

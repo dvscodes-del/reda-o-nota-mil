@@ -15,7 +15,7 @@ export const THEME_MEDIA: Record<number, ThemeMediaInfo> = {
   1: {
     themeImage: "https://images.unsplash.com/photo-1541199249251-f713e6145474?auto=format&fit=crop&w=1200&q=80",
     themeTag: "Saúde Mental & Juventude",
-    themeAccent: "from-blue-600/90 to-indigo-900/90",
+    themeAccent: "from-slate-800/90 to-stone-950/90",
     repertoryImages: {
       "Constituição Federal (Art. 196)": constituicaoImage,
       "A Sociedade do Cansaço": "https://images.unsplash.com/photo-1499209974431-9dddcece7f88?auto=format&fit=crop&w=800&q=80",
@@ -27,7 +27,7 @@ export const THEME_MEDIA: Record<number, ThemeMediaInfo> = {
   2: {
     themeImage: "https://images.unsplash.com/photo-1677442136019-21780efad99a?auto=format&fit=crop&w=1200&q=80",
     themeTag: "Tecnologia & Inteligência Artificial",
-    themeAccent: "from-purple-600/90 to-slate-900/90",
+    themeAccent: "from-rose-900/90 to-stone-950/90",
     repertoryImages: {
       "Marco Civil da Internet": "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80",
       "Armas de Destruição Matemática": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80",
@@ -123,7 +123,7 @@ export const THEME_MEDIA: Record<number, ThemeMediaInfo> = {
   10: {
     themeImage: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=1200&q=80",
     themeTag: "Cidadania, Política & Ética",
-    themeAccent: "from-blue-700/90 to-indigo-950/90",
+    themeAccent: "from-stone-800/90 to-neutral-950/90",
     repertoryImages: {
       "Lei de Acesso à Informação (LAI)": constituicaoImage,
       "Raízes do Brasil": "https://images.unsplash.com/photo-1457369804613-52c61a468e7d?auto=format&fit=crop&w=800&q=80",
@@ -159,7 +159,7 @@ export const THEME_MEDIA: Record<number, ThemeMediaInfo> = {
   13: {
     themeImage: "https://images.unsplash.com/photo-1581579438747-1dc8d17bbce4?auto=format&fit=crop&w=1200&q=80",
     themeTag: "Envelhecimento & Previdência",
-    themeAccent: "from-violet-700/90 to-purple-950/90",
+    themeAccent: "from-amber-900/90 to-stone-950/90",
     repertoryImages: {
       "Bônus Demográfico e Inversão da Pirâmide Etária": "https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&w=800&q=80",
       "A Velhice": "https://images.unsplash.com/photo-1516307365426-bea591f05011?auto=format&fit=crop&w=800&q=80",

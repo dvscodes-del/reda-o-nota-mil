@@ -95,8 +95,8 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
       });
       // Envia notificação de confirmação no eletrônico
       sendDeviceNotification({
-        title: '🔔 Notificações Ativadas!',
-        body: 'Você agora receberá avisos e mensagens do Escreva+ diretamente no seu eletrônico.',
+        title: 'Notificações ativadas — Aprova Red',
+        body: 'Você agora receberá avisos e mensagens do Aprova Red diretamente no seu dispositivo.',
         url: '/?section=notificacoes',
       });
     } else if (perm === 'denied') {
@@ -115,7 +115,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     const sent = await sendDeviceNotification({
-      title: '✨ Teste do Escreva+',
+      title: 'Teste do Aprova Red',
       body: 'As notificações estão funcionando perfeitamente no seu dispositivo!',
       url: '/?section=notificacoes',
     });
@@ -222,7 +222,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
               id: notifId,
               type: 'follower',
               title: 'Novo seguidor!',
-              description: `${name} começou a seguir o seu perfil no Escreva+.`,
+              description: `${name} começou a seguir o seu perfil no Aprova Red.`,
               timestamp: f.created_at,
               isRead: readIds.has(notifId),
               actorName: name,
@@ -294,8 +294,8 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
       items.push({
         id: welcomeId,
         type: 'milestone',
-        title: 'Boas-vindas ao Escreva+!',
-        description: 'Sua jornada rumo à nota mil no ENEM começa aqui. Escreva sua primeira redação no Laboratório!',
+        title: 'Boas-vindas ao Aprova Red!',
+        description: 'Sua jornada rumo à aprovação começa aqui. Escreva sua primeira redação no Laboratório.',
         timestamp: user.created_at || new Date().toISOString(),
         isRead: readIds.has(welcomeId),
       });
@@ -467,8 +467,8 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
 
             // Envia para o eletrônico do usuário
             sendDeviceNotification({
-              title: '🎉 Novo seguidor no Escreva+!',
-              body: `${name} começou a seguir o seu perfil no Escreva+.`,
+              title: 'Novo seguidor no Aprova Red',
+              body: `${name} começou a seguir o seu perfil no Aprova Red.`,
               tag: `follow_${newFollow.id}`,
               url: '/?section=perfil',
             });
@@ -506,8 +506,8 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
 
             // Dispara notificação no eletrônico do usuário (desktop / celular)
             sendDeviceNotification({
-              title: `💬 Mensagem de ${senderName}`,
-              body: preview || 'Você recebeu uma nova mensagem no Escreva+.',
+              title: `Mensagem de ${senderName}`,
+              body: preview || 'Você recebeu uma nova mensagem no Aprova Red.',
               tag: `msg_${newMsg.id}`,
               url: '/?section=mensagens',
             });

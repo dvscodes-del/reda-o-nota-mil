@@ -126,13 +126,13 @@ export function Notifications({ goTo, onStartChat, onOpenEssay }: NotificationsP
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary">
-            <Bell className="size-4" />
-            Central de Avisos
-          </div>
-          <h1 className="mt-1 text-2xl font-black md:text-3xl">Notificações</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Acompanhe seus novos seguidores, correções de redação e interações.
+          <p className="mb-1.5 inline-flex items-center gap-2 font-mono-num text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+            <span className="inline-block h-px w-5 bg-primary" />
+            Central de avisos
+          </p>
+          <h1 className="font-display text-3xl font-semibold md:text-4xl">Notificações</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            Acompanhe novos seguidores, correções de redação e interações na turma.
           </p>
         </div>
 
@@ -149,9 +149,10 @@ export function Notifications({ goTo, onStartChat, onOpenEssay }: NotificationsP
         )}
       </div>
 
-      {/* Banner de Notificações no Eletrônico (Dispositivo) */}
+      {/* Banner de Notificações no Dispositivo */}
       {isDeviceSupported && (
-        <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-accent/30 to-background p-5 shadow-sm">
+        <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-5">
+          <div className="absolute inset-y-0 left-0 w-1 bg-primary" />
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3.5">
               <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
@@ -396,22 +397,22 @@ export function Notifications({ goTo, onStartChat, onOpenEssay }: NotificationsP
 
                     {notif.type === "message" && (
                       <div className="relative">
-                        <div className="grid size-11 place-items-center rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 font-bold overflow-hidden">
+                        <div className="grid size-11 place-items-center rounded-full bg-accent text-primary font-bold overflow-hidden">
                           {notif.avatarUrl ? (
                             <img src={notif.avatarUrl} alt={notif.actorName || "Chat"} className="h-full w-full object-cover" />
                           ) : (
                             notif.actorName?.[0]?.toUpperCase() || "M"
                           )}
                         </div>
-                        <span className="absolute -bottom-1 -right-1 grid size-5 place-items-center rounded-full bg-purple-600 text-white text-[10px] ring-2 ring-background">
+                        <span className="absolute -bottom-1 -right-1 grid size-5 place-items-center rounded-full bg-primary text-primary-foreground text-[10px] ring-2 ring-background">
                           <MessageCircle className="size-3" />
                         </span>
                       </div>
                     )}
 
                     {notif.type === "milestone" && (
-                      <div className="grid size-11 place-items-center rounded-full bg-amber-500/10 text-amber-600">
-                        <Sparkles className="size-5" />
+                      <div className="grid size-11 place-items-center rounded-full bg-amber-600/12 text-amber-700 dark:text-amber-400">
+                        <Award className="size-5" />
                       </div>
                     )}
                   </div>

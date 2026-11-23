@@ -16,22 +16,30 @@ import { UserPreferencesProvider } from "../context/UserPreferencesContext";
 import { EssaysProvider } from "../context/EssaysContext";
 import { NotificationsProvider } from "../context/NotificationsContext";
 import { Toaster } from "../components/ui/sonner";
+import { BrandMark } from "../components/BrandMark";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 editorial-grid-light">
+      <div className="mb-8">
+        <BrandMark size="md" subtitle="Redação ENEM" />
+      </div>
+      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-xs">
+        <p className="font-mono-num text-xs font-semibold uppercase tracking-widest text-primary">
+          Erro 404
+        </p>
+        <h1 className="font-display mt-2 text-4xl font-semibold text-foreground">
+          Página não encontrada
+        </h1>
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+          O endereço que você tentou acessar não existe ou foi movido dentro do Aprova Red.
         </p>
         <div className="mt-6">
           <Link
             to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Go home
+            Voltar ao início
           </Link>
         </div>
       </div>
@@ -47,34 +55,40 @@ function ErrorComponent({ error, reset }: { error: any; reset: () => void }) {
   }, [error]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 editorial-grid-light">
+      <div className="mb-8">
+        <BrandMark size="md" subtitle="Redação ENEM" />
+      </div>
+      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-xs">
+        <p className="font-mono-num text-xs font-semibold uppercase tracking-widest text-destructive">
+          Algo saiu do esperado
+        </p>
+        <h1 className="font-display mt-2 text-2xl font-semibold tracking-tight text-foreground">
+          Não foi possível carregar esta página
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+          Tente recarregar agora ou retorne à tela inicial.
         </p>
         {error && (
           <div className="mt-4 max-h-40 overflow-y-auto rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-left text-xs font-mono text-destructive">
             {error.message || String(error)}
           </div>
         )}
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
+        <div className="mt-6 flex flex-wrap justify-center gap-2.5">
           <button
             onClick={() => {
               router.invalidate();
               reset();
             }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex h-10 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Try again
+            Tentar novamente
           </button>
           <a
             href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            className="inline-flex h-10 items-center justify-center rounded-xl border border-input bg-background px-4 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
-            Go home
+            Ir para o início
           </a>
         </div>
       </div>
@@ -87,17 +101,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Escreva+" },
-      { name: "description", content: "Plataforma de treino e correção de redações." },
-      { name: "author", content: "Escreva+" },
+      { title: "Aprova Red — Estúdio de Redação ENEM" },
+      { name: "description", content: "Treine redações, domine as 5 competências do ENEM e conquiste sua aprovação com o Aprova Red." },
+      { name: "author", content: "Aprova Red" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,700&family=JetBrains+Mono:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap",
+      },
       {
         rel: "stylesheet",
         href: appCss,

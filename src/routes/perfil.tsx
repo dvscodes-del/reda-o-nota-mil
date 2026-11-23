@@ -7,6 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Trophy, BookOpen, MapPin, Target, Calendar } from 'lucide-react';
 
 export const Route = createFileRoute('/perfil')({
+  head: () => ({
+    meta: [{ title: 'Perfil — Aprova Red' }],
+  }),
   component: ProfilePage,
 });
 
@@ -17,35 +20,34 @@ function ProfilePage() {
   if (!preferences || !user) {
     return (
       <div className="flex justify-center items-center h-[50vh]">
-        <p className="text-gray-500">Carregando perfil...</p>
+        <p className="text-muted-foreground">Carregando perfil...</p>
       </div>
     );
   }
 
-  // Use the name from preferences, or fallback to auth metadata, or email
   const fullName = preferences.full_name || (user.user_metadata?.['full_name'] as string | undefined) || 'Estudante';
   const initial = fullName.charAt(0).toUpperCase();
   const avatarUrl = preferences.avatar_url || (user.user_metadata?.['avatar_url'] as string | undefined);
 
   return (
-    <div className="container mx-auto p-4 max-w-4xl space-y-6">
-      
-      {/* Header / Banner Card */}
-      <Card className="overflow-hidden border-none shadow-md">
-        <div className="h-32 bg-gradient-to-r from-blue-600 to-indigo-600 w-full"></div>
+    <div className="container mx-auto p-4 sm:p-6 max-w-4xl space-y-6">
+      <Card className="overflow-hidden border border-border shadow-xs">
+        <div className="relative h-32 bg-[#171412] editorial-grid-dark w-full">
+          <div className="absolute inset-y-0 left-0 w-1.5 bg-[#C82838]" />
+        </div>
         <CardContent className="relative pt-0 pb-6 px-6">
           <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 -mt-12 sm:-mt-16">
-            <Avatar className="w-24 h-24 sm:w-32 sm:h-32 border-4 border-white shadow-lg">
+            <Avatar className="w-24 h-24 sm:w-32 sm:h-32 border-4 border-card shadow-md">
               <AvatarImage src={avatarUrl} alt={fullName} />
-              <AvatarFallback className="text-3xl bg-blue-100 text-blue-700">{initial}</AvatarFallback>
+              <AvatarFallback className="font-display text-3xl bg-accent text-primary">{initial}</AvatarFallback>
             </Avatar>
             <div className="text-center sm:text-left flex-1 pb-2">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{fullName}</h1>
-              <p className="text-gray-500 font-medium">{user.email}</p>
+              <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground">{fullName}</h1>
+              <p className="text-muted-foreground text-sm font-medium">{user.email}</p>
             </div>
             <div className="flex gap-2 pb-2">
-              <Badge variant="secondary" className="bg-indigo-100 text-indigo-800 hover:bg-indigo-100 text-sm py-1">
-                <Target className="w-4 h-4 mr-1" />
+              <Badge variant="secondary" className="bg-accent text-primary border border-primary/20 font-mono-num text-xs py-1 px-3">
+                <Target className="w-3.5 h-3.5 mr-1.5" />
                 Meta: {preferences.targetScore}
               </Badge>
             </div>
@@ -54,58 +56,56 @@ function ProfilePage() {
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
-        {/* Info Column */}
         <div className="md:col-span-1 space-y-6">
-          <Card className="shadow-sm">
+          <Card className="shadow-none border-border">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Sobre Mim</CardTitle>
+              <CardTitle className="font-display text-lg">Sobre Mim</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {preferences.age && (
-                <div className="flex items-center gap-3 text-gray-600">
-                  <div className="bg-blue-50 p-2 rounded-full text-blue-600">
+                <div className="flex items-center gap-3 text-foreground">
+                  <div className="bg-secondary p-2 rounded-lg text-primary">
                     <Calendar className="w-4 h-4" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400 font-semibold uppercase">Idade</p>
-                    <p className="font-medium">{preferences.age} anos</p>
+                    <p className="font-mono-num text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Idade</p>
+                    <p className="text-sm font-medium">{preferences.age} anos</p>
                   </div>
                 </div>
               )}
-              
+
               {preferences.state && (
-                <div className="flex items-center gap-3 text-gray-600">
-                  <div className="bg-blue-50 p-2 rounded-full text-blue-600">
+                <div className="flex items-center gap-3 text-foreground">
+                  <div className="bg-secondary p-2 rounded-lg text-primary">
                     <MapPin className="w-4 h-4" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400 font-semibold uppercase">Estado</p>
-                    <p className="font-medium">{preferences.state}</p>
+                    <p className="font-mono-num text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Estado</p>
+                    <p className="text-sm font-medium">{preferences.state}</p>
                   </div>
                 </div>
               )}
 
               {preferences.college && (
-                <div className="flex items-center gap-3 text-gray-600">
-                  <div className="bg-blue-50 p-2 rounded-full text-blue-600">
+                <div className="flex items-center gap-3 text-foreground">
+                  <div className="bg-secondary p-2 rounded-lg text-primary">
                     <BookOpen className="w-4 h-4" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400 font-semibold uppercase">Faculdade dos Sonhos</p>
-                    <p className="font-medium">{preferences.college}</p>
+                    <p className="font-mono-num text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Universidade</p>
+                    <p className="text-sm font-medium">{preferences.college}</p>
                   </div>
                 </div>
               )}
-              
+
               {preferences.course && (
-                <div className="flex items-center gap-3 text-gray-600">
-                  <div className="bg-blue-50 p-2 rounded-full text-blue-600">
+                <div className="flex items-center gap-3 text-foreground">
+                  <div className="bg-secondary p-2 rounded-lg text-primary">
                     <Trophy className="w-4 h-4" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400 font-semibold uppercase">Curso</p>
-                    <p className="font-medium">{preferences.course}</p>
+                    <p className="font-mono-num text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Curso</p>
+                    <p className="text-sm font-medium">{preferences.course}</p>
                   </div>
                 </div>
               )}
@@ -113,29 +113,27 @@ function ProfilePage() {
           </Card>
         </div>
 
-        {/* Badges / Stats Column */}
         <div className="md:col-span-2 space-y-6">
-          <Card className="shadow-sm h-full">
+          <Card className="shadow-none border-border h-full">
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-yellow-500" />
+              <CardTitle className="font-display text-lg flex items-center gap-2">
+                <Trophy className="w-4 h-4 text-primary" />
                 Minhas Conquistas
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="bg-gray-50 rounded-xl p-8 border border-dashed border-gray-200 text-center flex flex-col items-center justify-center h-48">
-                <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mb-4">
-                  <Trophy className="w-8 h-8 text-gray-400" />
+              <div className="bg-secondary/40 rounded-xl p-8 border border-dashed border-border text-center flex flex-col items-center justify-center h-48">
+                <div className="w-14 h-14 bg-secondary rounded-2xl flex items-center justify-center mb-3">
+                  <Trophy className="w-7 h-7 text-muted-foreground" />
                 </div>
-                <h3 className="text-gray-700 font-semibold text-lg">Em breve!</h3>
-                <p className="text-gray-500 text-sm max-w-sm mt-1">
-                  Suas notas de redação se transformarán em emblemas aqui. Envie sua primeira redação para começar a colecionar!
+                <h3 className="font-display text-foreground font-semibold text-lg">Em breve</h3>
+                <p className="text-muted-foreground text-sm max-w-sm mt-1">
+                  Suas notas de redação se transformarão em marcos aqui. Envie sua primeira redação no Aprova Red para começar.
                 </p>
               </div>
             </CardContent>
           </Card>
         </div>
-
       </div>
     </div>
   );
