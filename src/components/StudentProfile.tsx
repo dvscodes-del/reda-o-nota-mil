@@ -355,20 +355,23 @@ export function StudentProfile({
         )}
       </div>
 
-      <div className="relative mb-10 overflow-hidden rounded-2xl bg-[#171412] p-6 md:p-10 text-[#faf6ef] border border-black/15 editorial-grid-dark">
-        <div className="absolute inset-y-0 left-0 w-1.5 bg-[#C82838]" />
+      <div className="relative mb-8 overflow-hidden rounded-3xl bg-gradient-to-br from-[#6d28d9] via-[#7c3aed] to-[#5b21b6] p-6 md:p-9 text-white shadow-sm">
+        <div
+          className="pointer-events-none absolute -top-20 -right-16 size-64 rounded-full opacity-30 blur-3xl"
+          style={{ background: "radial-gradient(circle, #ddd6fe 0%, transparent 70%)" }}
+        />
         <div className="relative z-10 flex flex-col md:flex-row gap-6 items-center md:items-end">
           {/* Avatar com ação de troca de foto */}
           <div className="relative group shrink-0">
             <div 
               onClick={() => isOwnProfile && !isUploading && fileInputRef.current?.click()}
-              className={`relative grid size-28 sm:size-32 place-items-center rounded-full bg-[#24201d] text-[#faf6ef] text-3xl sm:text-4xl font-display font-semibold border-4 border-white/15 shadow-lg overflow-hidden transition-all ${
-                isOwnProfile ? 'cursor-pointer hover:ring-4 hover:ring-[#C82838]/40' : ''
+              className={`relative grid size-28 sm:size-32 place-items-center rounded-full bg-white text-primary text-3xl sm:text-4xl font-heading font-extrabold border-4 border-white/25 shadow-lg overflow-hidden transition-all ${
+                isOwnProfile ? 'cursor-pointer hover:ring-4 hover:ring-white/40' : ''
               }`}
               title={isOwnProfile ? "Clique para mudar a foto de perfil" : undefined}
             >
               {isUploading ? (
-                <div className="flex flex-col items-center justify-center gap-1 text-[#f25c69]">
+                <div className="flex flex-col items-center justify-center gap-1 text-primary">
                   <Loader2 className="size-8 animate-spin" />
                   <span className="text-[10px] font-bold">Salvando...</span>
                 </div>
@@ -378,16 +381,14 @@ export function StudentProfile({
                 name.substring(0, 2).toUpperCase()
               )}
 
-              {/* Overlay suave ao passar o mouse */}
               {isOwnProfile && !isUploading && (
-                <div className="absolute inset-0 bg-black/55 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute inset-0 bg-black/45 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                   <Camera className="size-6 mb-1" />
                   <span className="text-[11px] font-bold uppercase tracking-wider">Alterar</span>
                 </div>
               )}
             </div>
 
-            {/* Botão de câmera flutuante */}
             {isOwnProfile && (
               <>
                 <input 
@@ -400,7 +401,7 @@ export function StudentProfile({
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="absolute bottom-1 right-1 size-9 rounded-full bg-[#faf6ef] text-[#171412] shadow-md hover:bg-white border-2 border-[#171412] flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
+                  className="absolute bottom-1 right-1 size-9 rounded-full bg-white text-primary shadow-md hover:bg-accent border-2 border-white flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
                   title="Mudar foto de perfil"
                   aria-label="Mudar foto de perfil"
                   disabled={isUploading}
@@ -413,14 +414,14 @@ export function StudentProfile({
 
           <div className="flex-1 text-center md:text-left">
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-              <h2 className="font-display text-3xl font-semibold md:text-4xl capitalize text-[#faf6ef]">{name}</h2>
+              <h2 className="font-heading text-2xl font-extrabold md:text-3xl capitalize text-white tracking-tight">{name}</h2>
               {isOwnProfile && (
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isUploading}
-                    className="text-xs bg-white/10 hover:bg-white/20 text-[#faf6ef] px-2.5 py-1 rounded-full font-medium inline-flex items-center gap-1.5 transition-colors"
+                    className="text-xs bg-white/15 hover:bg-white/25 text-white px-3 py-1 rounded-full font-medium inline-flex items-center gap-1.5 transition-colors"
                   >
                     <Camera className="size-3.5" />
                     {viewingProfile.avatar_url ? "Mudar foto" : "Adicionar foto"}
@@ -430,7 +431,7 @@ export function StudentProfile({
                       type="button"
                       onClick={handleRemovePhoto}
                       disabled={isUploading}
-                      className="text-xs text-white/60 hover:text-white underline flex items-center gap-1 transition-colors"
+                      className="text-xs text-white/75 hover:text-white underline flex items-center gap-1 transition-colors"
                       title="Remover foto de perfil"
                     >
                       <Trash2 className="size-3" /> Remover
@@ -439,12 +440,12 @@ export function StudentProfile({
                 </div>
               )}
             </div>
-            <div className="mt-3 flex flex-wrap items-center justify-center md:justify-start gap-3 text-sm text-white/75 font-medium">
-              <span className="flex items-center gap-1.5"><MapPin className="size-3.5 text-[#f25c69]" /> {viewingProfile.state}, Brasil</span>
-              {viewingProfile.age && <span className="flex items-center gap-1.5"><Calendar className="size-3.5 text-[#f25c69]" /> {viewingProfile.age} anos</span>}
-              {viewingProfile.gender && <span className="flex items-center gap-1 bg-white/10 px-2.5 py-0.5 rounded-full text-xs font-semibold text-white/90">{viewingProfile.gender}</span>}
-              <span className="flex items-center gap-1.5"><Target className="size-3.5 text-[#f25c69]" /> {viewingProfile.course} ({viewingProfile.college})</span>
-              <span className="font-mono-num flex items-center gap-1.5 bg-white/10 border border-white/10 px-3 py-0.5 rounded-full text-xs text-white"><UserPlus className="size-3.5" /> {followersCount} seguidores</span>
+            <div className="mt-3 flex flex-wrap items-center justify-center md:justify-start gap-3 text-sm text-white/85 font-medium">
+              <span className="flex items-center gap-1.5"><MapPin className="size-3.5 text-white/75" /> {viewingProfile.state}, Brasil</span>
+              {viewingProfile.age && <span className="flex items-center gap-1.5"><Calendar className="size-3.5 text-white/75" /> {viewingProfile.age} anos</span>}
+              {viewingProfile.gender && <span className="flex items-center gap-1 bg-white/15 px-2.5 py-0.5 rounded-full text-xs font-semibold text-white">{viewingProfile.gender}</span>}
+              <span className="flex items-center gap-1.5"><Target className="size-3.5 text-white/75" /> {viewingProfile.course} ({viewingProfile.college})</span>
+              <span className="tabular-nums flex items-center gap-1.5 bg-white/15 px-3 py-0.5 rounded-full text-xs text-white"><UserPlus className="size-3.5" /> {followersCount} seguidores</span>
             </div>
             
             {!isOwnProfile && (
@@ -453,18 +454,18 @@ export function StudentProfile({
                   size="sm" 
                   variant={isFollowing ? "outline" : "secondary"}
                   onClick={toggleFollow}
-                  className={`rounded-xl font-semibold ${isFollowing ? 'border-white/25 bg-transparent text-white hover:bg-white/10' : 'bg-[#C82838] text-white hover:bg-[#b22130]'}`}
+                  className={`rounded-xl font-semibold ${isFollowing ? 'border-white/30 bg-transparent text-white hover:bg-white/15' : 'bg-white text-primary hover:bg-white/95'}`}
                 >
                   {isFollowing ? <CheckCircle2 className="mr-2 size-4" /> : <UserPlus className="mr-2 size-4" />} 
                   {isFollowing ? "Seguindo" : "Seguir"}
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => onStartChat(viewingProfile)} className="rounded-xl border-white/25 bg-white/10 text-white hover:bg-white/20"><MessageCircle className="mr-2 size-4" /> Mensagem</Button>
+                <Button size="sm" variant="outline" onClick={() => onStartChat(viewingProfile)} className="rounded-xl border-white/30 bg-white/15 text-white hover:bg-white/25"><MessageCircle className="mr-2 size-4" /> Mensagem</Button>
               </div>
             )}
           </div>
-          <div className="mt-4 md:mt-0 px-5 py-3.5 rounded-xl bg-[#faf6ef] text-[#171412] text-center min-w-[120px] border border-white/20">
-            <p className="font-mono-num text-[10px] font-bold text-[#78716c] uppercase tracking-wider">Média Atual</p>
-            <p className="font-display text-3xl font-semibold tabular-nums text-[#C82838] mt-0.5">
+          <div className="mt-4 md:mt-0 px-5 py-3.5 rounded-2xl bg-white text-foreground text-center min-w-[120px] shadow-md">
+            <p className="text-[11px] font-semibold text-muted-foreground">Média Atual</p>
+            <p className="font-heading text-3xl font-extrabold tabular-nums text-primary mt-0.5">
               {isOwnProfile ? (essayStats.totalCompleted > 0 ? essayStats.averageScore : "—") : "900+"}
             </p>
           </div>

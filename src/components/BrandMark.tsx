@@ -17,53 +17,38 @@ export function BrandLogoIcon({
   return (
     <span
       className={cn(
-        "relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-xl transition-transform duration-200",
+        "relative inline-flex shrink-0 items-center justify-center rounded-xl transition-transform duration-200",
         inverted
-          ? "bg-white/10 text-white ring-1 ring-white/15"
-          : "bg-[#1a1715] text-[#faf7f2] ring-1 ring-black/10 dark:bg-[#f5efe6] dark:text-[#1a1715]",
+          ? "bg-white text-primary shadow-sm"
+          : "bg-primary text-primary-foreground shadow-sm shadow-primary/25",
         className
       )}
       aria-hidden="true"
     >
       <svg
-        viewBox="0 0 36 36"
+        viewBox="0 0 32 32"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        className="size-[72%]"
+        className="size-[60%]"
       >
-        {/* Folha de redação com margem carmim */}
+        {/* Traço minimalista de ponta de caneta + aprovação */}
         <path
-          d="M9 5.5H22.5L27 10V30.5H9V5.5Z"
+          d="M7 23.5L11.2 9.5C11.5 8.5 12.4 7.8 13.5 7.8H14.5C15.6 7.8 16.5 8.5 16.8 9.5L21 23.5"
           stroke="currentColor"
-          strokeWidth="1.9"
+          strokeWidth="2.6"
+          strokeLinecap="round"
           strokeLinejoin="round"
         />
         <path
-          d="M22.5 5.5V10H27"
+          d="M9.6 17.5H18.4"
           stroke="currentColor"
-          strokeWidth="1.7"
-          strokeLinejoin="round"
-        />
-        {/* Margem vertical carmim clássica de folha de redação */}
-        <path
-          d="M13 8.5V27.5"
-          stroke="#C82838"
-          strokeWidth="1.9"
-          strokeLinecap="round"
-        />
-        {/* Linhas de texto */}
-        <path
-          d="M16 14H23.5M16 18.5H23.5M16 23H20.2"
-          stroke="currentColor"
-          strokeWidth="1.7"
-          strokeLinecap="round"
-          strokeOpacity="0.82"
-        />
-        {/* Visto de aprovação em carmim */}
-        <path
-          d="M20.5 24.5L23 27L28.5 20.5"
-          stroke="#E13B4B"
           strokeWidth="2.4"
+          strokeLinecap="round"
+        />
+        <path
+          d="M21 15.2L23.2 17.4L27.5 12"
+          stroke="currentColor"
+          strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
@@ -82,42 +67,37 @@ export function BrandMark({
 
   const iconSizes = {
     sm: "size-8 rounded-lg",
-    md: "size-10 rounded-xl",
-    lg: "size-11 rounded-xl",
+    md: "size-9 rounded-xl",
+    lg: "size-11 rounded-2xl",
   };
 
   const titleSizes = {
     sm: "text-base",
-    md: "text-[1.18rem]",
-    lg: "text-2xl",
+    md: "text-[1.12rem]",
+    lg: "text-[1.4rem]",
   };
 
   return (
-    <span className={cn("inline-flex items-center gap-3 text-left", className)}>
+    <span className={cn("inline-flex items-center gap-2.5 text-left", className)}>
       <BrandLogoIcon className={iconSizes[size]} inverted={isLight} />
       <span className="flex flex-col">
         <span
           className={cn(
-            "font-display font-semibold leading-none tracking-[-0.02em]",
+            "font-heading font-extrabold leading-none tracking-[-0.03em]",
             titleSizes[size],
-            isLight ? "text-[#faf7f2]" : "text-foreground"
+            isLight ? "text-white" : "text-foreground"
           )}
         >
           Aprova{" "}
-          <span
-            className={cn(
-              "italic font-bold",
-              isLight ? "text-[#f25c69]" : "text-primary"
-            )}
-          >
+          <span className={isLight ? "text-white/85 font-semibold" : "text-primary"}>
             Red
           </span>
         </span>
         {subtitle && (
           <span
             className={cn(
-              "mt-1 text-[11px] font-medium tracking-[0.04em] uppercase",
-              isLight ? "text-white/55" : "text-muted-foreground"
+              "mt-1 text-[11px] font-medium leading-none",
+              isLight ? "text-white/70" : "text-muted-foreground"
             )}
           >
             {subtitle}

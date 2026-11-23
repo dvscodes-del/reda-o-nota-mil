@@ -126,12 +126,11 @@ export function Notifications({ goTo, onStartChat, onOpenEssay }: NotificationsP
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="mb-1.5 inline-flex items-center gap-2 font-mono-num text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-            <span className="inline-block h-px w-5 bg-primary" />
+          <p className="mb-1 text-xs font-semibold text-primary">
             Central de avisos
           </p>
-          <h1 className="font-display text-3xl font-semibold md:text-4xl">Notificações</h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">
+          <h1 className="font-heading text-2xl font-extrabold tracking-tight md:text-3xl">Notificações</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             Acompanhe novos seguidores, correções de redação e interações na turma.
           </p>
         </div>
@@ -152,7 +151,6 @@ export function Notifications({ goTo, onStartChat, onOpenEssay }: NotificationsP
       {/* Banner de Notificações no Dispositivo */}
       {isDeviceSupported && (
         <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-5">
-          <div className="absolute inset-y-0 left-0 w-1 bg-primary" />
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3.5">
               <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">

@@ -693,7 +693,7 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
                   <div className="size-14 rounded-2xl bg-secondary text-primary grid place-items-center mb-3">
                     <MessageCircle className="size-6" />
                   </div>
-                  <p className="font-display font-semibold text-lg text-foreground">Inicie esta conversa</p>
+                  <p className="font-heading font-bold text-base text-foreground">Inicie esta conversa</p>
                   <p className="text-xs max-w-xs mt-1">Troque argumentos, referências de repertório e debata os temas da semana.</p>
                 </div>
               )}
@@ -824,7 +824,7 @@ export function Messages({ initialUser, onClearInitial }: { initialUser?: any, o
             <div className="size-20 rounded-2xl bg-card border border-border text-primary flex items-center justify-center mb-5 shadow-2xs">
               <GraduationCap className="size-10" />
             </div>
-            <h3 className="font-display text-2xl font-semibold text-foreground">Conversas · Aprova Red</h3>
+            <h3 className="font-heading text-xl font-extrabold text-foreground tracking-tight">Conversas · Aprova Red</h3>
             <p className="mt-2 text-sm text-muted-foreground max-w-sm leading-relaxed">
               Troque argumentos com outros estudantes, debata estratégias de redação e compartilhe repertórios socioculturais.
             </p>

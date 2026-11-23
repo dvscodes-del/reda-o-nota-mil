@@ -218,11 +218,11 @@ function StoriesBar({ currentUserName, currentUserAvatar, onWritePost, onSelectT
   onSelectTheme: (tag: string) => void;
 }) {
   const themes = [
-    { label: "Redações", emoji: "📝", color: "from-primary to-rose-800", tag: "Redação" },
-    { label: "Conquistas", emoji: "🏆", color: "from-amber-500 to-orange-600", tag: "Conquista" },
-    { label: "Repertório", emoji: "📚", color: "from-emerald-600 to-teal-800", tag: "Repertório" },
-    { label: "Dúvidas", emoji: "💡", color: "from-sky-600 to-slate-800", tag: "Dúvida" },
-    { label: "Dicas C5", emoji: "🎯", color: "from-rose-700 to-stone-900", tag: "C5" },
+    { label: "Redações", emoji: "📝", color: "from-primary to-violet-700", tag: "Redação" },
+    { label: "Conquistas", emoji: "🏆", color: "from-amber-400 to-orange-500", tag: "Conquista" },
+    { label: "Repertório", emoji: "📚", color: "from-emerald-500 to-teal-600", tag: "Repertório" },
+    { label: "Dúvidas", emoji: "💡", color: "from-sky-500 to-blue-600", tag: "Dúvida" },
+    { label: "Dicas C5", emoji: "🎯", color: "from-rose-500 to-pink-600", tag: "C5" },
   ];
 
   return (
@@ -1096,7 +1096,7 @@ function PostCard({
       {post.type === "poll" && (
         <div className="mx-5 mb-2.5 flex items-center gap-2 text-primary">
           <BarChart3 className="size-4 shrink-0" />
-          <span className="font-mono-num text-[11px] font-bold uppercase tracking-wider">Enquete da Comunidade</span>
+          <span className="text-xs font-bold uppercase tracking-wider">Enquete da Comunidade</span>
         </div>
       )}
 
@@ -1134,7 +1134,7 @@ function PostCard({
               <span className="text-xs font-bold text-primary flex items-center gap-1.5">
                 <BarChart3 className="size-3.5" /> Enquete da Comunidade
               </span>
-              <span className="font-mono-num text-[11px] text-muted-foreground font-medium">
+              <span className="tabular-nums text-[11px] text-muted-foreground font-medium">
                 {totalVotes} {totalVotes === 1 ? "voto apurado" : "votos apurados"}
               </span>
             </div>
@@ -1197,7 +1197,7 @@ function PostCard({
 
                       {/* Percentual e contagem — visíveis quando tiver votado ou for autor */}
                       {showResults ? (
-                        <span className="font-mono-num shrink-0 text-xs font-bold text-foreground/80">
+                        <span className="tabular-nums shrink-0 text-xs font-bold text-foreground/80">
                           {percent}%{" "}
                           <span className="text-[11px] font-normal text-muted-foreground">
                             ({optVotes} {optVotes === 1 ? "voto" : "votos"})

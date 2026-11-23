@@ -72,119 +72,92 @@ function OnboardingPage() {
       : [];
 
   return (
-    <div className="min-h-screen bg-background editorial-grid-light px-4 py-8 sm:py-12">
-      <div className="fixed inset-x-0 top-0 h-1 bg-primary" />
-
-      <div className="mx-auto max-w-2xl space-y-6">
-        {/* Topo da marca */}
+    <div className="min-h-screen bg-background px-4 py-8 sm:py-12">
+      <div className="mx-auto max-w-xl space-y-6">
         <div className="flex items-center justify-between">
-          <BrandMark size="md" subtitle="Configuração Inicial" />
-          <span className="font-mono-num rounded-full border border-border bg-card px-3 py-1 text-[11px] font-semibold text-muted-foreground">
-            Passo 1 de 1
+          <BrandMark size="md" subtitle={null} />
+          <span className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-primary">
+            Configuração rápida
           </span>
         </div>
 
-        {/* Cartão Editorial */}
-        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
-          {/* Cabeçalho escuro de alto contraste */}
-          <div className="relative bg-[#171412] px-6 py-7 sm:px-8 text-[#faf6ef] border-b border-border">
-            <div className="absolute inset-y-0 left-0 w-1.5 bg-[#C82838]" />
-            <p className="font-mono-num text-[11px] font-semibold uppercase tracking-[0.16em] text-[#f25c69]">
-              Boas-vindas ao Aprova Red
-            </p>
-            <h1 className="font-display mt-1.5 text-2xl sm:text-3xl font-semibold leading-tight">
-              Vamos calibrar seu plano de redação
+        <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm">
+          <div className="mb-7 space-y-1.5">
+            <h1 className="font-heading text-2xl sm:text-3xl font-extrabold tracking-[-0.03em] text-foreground">
+              Personalize seus estudos
             </h1>
-            <p className="mt-2 text-sm text-white/68 max-w-lg">
-              Com base no seu curso e meta de nota, ajustamos o nível de rigor da correção e os temas prioritários.
+            <p className="text-sm text-muted-foreground">
+              Conte um pouco sobre você e qual curso você quer alcançar no ENEM.
             </p>
           </div>
 
-          <form onSubmit={handleFinish} className="p-6 sm:p-8 space-y-8">
-            {/* Bloco 01: Sobre você */}
+          <form onSubmit={handleFinish} className="space-y-6">
             <div className="space-y-4">
-              <div className="flex items-center gap-2.5 border-b border-border/70 pb-2.5">
-                <span className="font-mono-num text-xs font-bold text-primary">01</span>
-                <h2 className="text-sm font-bold uppercase tracking-wider text-foreground">
-                  Sobre você
-                </h2>
+              <div className="space-y-1.5">
+                <Label htmlFor="fullName" className="text-sm font-medium">
+                  Como você quer ser chamado?
+                </Label>
+                <Input
+                  id="fullName"
+                  type="text"
+                  placeholder="Seu nome"
+                  required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="h-11 rounded-xl bg-secondary/40 focus:bg-white"
+                />
               </div>
 
-              <div className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="fullName" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Como você quer ser chamado?
+                  <Label htmlFor="age" className="text-sm font-medium">
+                    Idade
                   </Label>
                   <Input
-                    id="fullName"
-                    type="text"
-                    placeholder="Seu nome completo"
-                    required
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className="h-11 rounded-xl bg-background/60"
+                    id="age"
+                    type="number"
+                    placeholder="Ex: 17"
+                    value={age}
+                    onChange={(e) => setAge(e.target.value)}
+                    className="h-11 rounded-xl bg-secondary/40 focus:bg-white"
                   />
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="age" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Idade
-                    </Label>
-                    <Input
-                      id="age"
-                      type="number"
-                      placeholder="Ex: 17"
-                      value={age}
-                      onChange={(e) => setAge(e.target.value)}
-                      className="h-11 rounded-xl bg-background/60"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="gender" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Gênero
-                    </Label>
-                    <Select value={gender} onValueChange={setGender}>
-                      <SelectTrigger id="gender" className="h-11 rounded-xl bg-background/60">
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Feminino">Feminino</SelectItem>
-                        <SelectItem value="Masculino">Masculino</SelectItem>
-                        <SelectItem value="Não-binário">Não-binário</SelectItem>
-                        <SelectItem value="Outro">Outro</SelectItem>
-                        <SelectItem value="Prefiro não informar">Prefiro não informar</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="gender" className="text-sm font-medium">
+                    Gênero
+                  </Label>
+                  <Select value={gender} onValueChange={setGender}>
+                    <SelectTrigger id="gender" className="h-11 rounded-xl bg-secondary/40 focus:bg-white">
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Feminino">Feminino</SelectItem>
+                      <SelectItem value="Masculino">Masculino</SelectItem>
+                      <SelectItem value="Não-binário">Não-binário</SelectItem>
+                      <SelectItem value="Outro">Outro</SelectItem>
+                      <SelectItem value="Prefiro não informar">Prefiro não informar</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>
 
-            {/* Bloco 02: Objetivo no Vestibular */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2.5 border-b border-border/70 pb-2.5">
-                <span className="font-mono-num text-xs font-bold text-primary">02</span>
-                <h2 className="text-sm font-bold uppercase tracking-wider text-foreground">
-                  Seu objetivo no ENEM
-                </h2>
-              </div>
-
+            <div className="border-t border-border pt-6 space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="targetScore" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Meta de nota na redação
+                <Label htmlFor="targetScore" className="text-sm font-medium">
+                  Qual a sua meta de nota na redação?
                 </Label>
-                <div className="flex flex-wrap gap-2 pb-1">
+                <div className="flex flex-wrap gap-2">
                   {SCORE_PRESETS.map((preset) => (
                     <button
                       key={preset}
                       type="button"
                       onClick={() => setTargetScore(preset)}
-                      className={`font-mono-num rounded-lg border px-3.5 py-1.5 text-xs font-bold transition-all ${
+                      className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all tabular-nums ${
                         targetScore === preset
-                          ? 'border-primary bg-primary text-primary-foreground shadow-xs'
-                          : 'border-border bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground'
+                          ? 'bg-primary text-primary-foreground shadow-xs'
+                          : 'bg-secondary text-muted-foreground hover:text-foreground'
                       }`}
                     >
                       {preset} pts
@@ -198,13 +171,13 @@ function OnboardingPage() {
                   required
                   value={targetScore}
                   onChange={(e) => setTargetScore(e.target.value)}
-                  className="h-11 rounded-xl bg-background/60 font-mono-num"
+                  className="h-11 rounded-xl bg-secondary/40 focus:bg-white tabular-nums"
                 />
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="state" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <Label htmlFor="state" className="text-sm font-medium">
                     Estado da universidade
                   </Label>
                   <Select
@@ -215,7 +188,7 @@ function OnboardingPage() {
                       setCourse('');
                     }}
                   >
-                    <SelectTrigger className="h-11 rounded-xl bg-background/60">
+                    <SelectTrigger className="h-11 rounded-xl bg-secondary/40 focus:bg-white">
                       <SelectValue placeholder="Selecione o estado" />
                     </SelectTrigger>
                     <SelectContent>
@@ -237,7 +210,7 @@ function OnboardingPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="college" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <Label htmlFor="college" className="text-sm font-medium">
                     Universidade desejada
                   </Label>
                   <Select
@@ -248,7 +221,7 @@ function OnboardingPage() {
                     }}
                     disabled={!state}
                   >
-                    <SelectTrigger className="h-11 rounded-xl bg-background/60">
+                    <SelectTrigger className="h-11 rounded-xl bg-secondary/40 focus:bg-white">
                       <SelectValue placeholder="Selecione a instituição" />
                     </SelectTrigger>
                     <SelectContent>
@@ -271,11 +244,11 @@ function OnboardingPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="course" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <Label htmlFor="course" className="text-sm font-medium">
                   Curso pretendido
                 </Label>
                 <Select value={course} onValueChange={setCourse} disabled={!college}>
-                  <SelectTrigger className="h-11 rounded-xl bg-background/60">
+                  <SelectTrigger className="h-11 rounded-xl bg-secondary/40 focus:bg-white">
                     <SelectValue placeholder="Selecione o curso" />
                   </SelectTrigger>
                   <SelectContent>
@@ -297,12 +270,10 @@ function OnboardingPage() {
               </div>
             </div>
 
-            <div className="pt-2">
-              <Button type="submit" className="w-full h-12 rounded-xl text-base font-semibold gap-2">
-                Abrir meu caderno no Aprova Red
-                <ArrowRight className="size-4" />
-              </Button>
-            </div>
+            <Button type="submit" className="w-full h-12 rounded-xl text-sm font-semibold gap-2 shadow-sm shadow-primary/20">
+              Começar no Aprova Red
+              <ArrowRight className="size-4" />
+            </Button>
           </form>
         </div>
       </div>

@@ -502,10 +502,10 @@ export function EssayApp() {
           className="fixed inset-0 z-[65] bg-black/60 backdrop-blur-xs lg:hidden"
         />
       )}
-      <aside className={`fixed inset-y-0 left-0 z-[70] w-72 border-r border-sidebar-border bg-sidebar shadow-2xl lg:shadow-none p-4 lg:p-5 transition-transform duration-300 lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside className={`fixed inset-y-0 left-0 z-[70] w-68 border-r border-sidebar-border bg-sidebar shadow-2xl lg:shadow-none p-4 lg:px-4 lg:py-5 transition-transform duration-300 lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex h-full flex-col">
           {/* Logo & Marca Aprova Red */}
-          <div className="mb-5 flex items-center justify-between">
+          <div className="mb-5 flex items-center justify-between px-1">
             <button
               type="button"
               onClick={() => goTo("dashboard")}
@@ -525,15 +525,15 @@ export function EssayApp() {
               type="button"
               onClick={() => goTo("laboratorio")}
               className={`group flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all duration-150 ${section === "laboratorio"
-                  ? "bg-[#171412] text-[#faf6ef] shadow-xs ring-1 ring-black/10 dark:bg-primary dark:text-primary-foreground"
-                  : "bg-primary text-primary-foreground hover:bg-primary/92 shadow-xs"
+                  ? "bg-primary text-primary-foreground shadow-md shadow-primary/25"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm shadow-primary/20"
                 }`}
             >
               <span className="flex items-center gap-2.5">
                 <PenLine className="size-4 shrink-0" />
                 <span>Escrever redação</span>
               </span>
-              <ArrowRight className="size-3.5 opacity-75 transition-transform group-hover:translate-x-0.5" />
+              <ArrowRight className="size-3.5 opacity-80 transition-transform group-hover:translate-x-0.5" />
             </button>
           </div>
 
@@ -541,8 +541,8 @@ export function EssayApp() {
           <div className="flex-1 space-y-5 overflow-y-auto pr-1 -mr-1">
             {/* Seção Principal */}
             <div>
-              <p className="px-3 pb-1.5 font-mono-num text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/75">
-                Estúdio
+              <p className="px-3 pb-1.5 text-[11px] font-semibold text-muted-foreground/75">
+                Menu
               </p>
               <nav className="space-y-0.5" aria-label="Navegação principal">
                 {mainNavItems.map((item) => {
@@ -552,14 +552,11 @@ export function EssayApp() {
                       key={item.id}
                       type="button"
                       onClick={() => goTo(item.id)}
-                      className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-150 ${isActive
-                          ? "bg-card text-foreground font-semibold border border-border/80 shadow-2xs"
-                          : "text-muted-foreground font-medium border border-transparent hover:bg-card/60 hover:text-foreground"
+                      className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors duration-150 ${isActive
+                          ? "bg-accent text-accent-foreground font-semibold"
+                          : "text-muted-foreground font-medium hover:bg-secondary/80 hover:text-foreground"
                         }`}
                     >
-                      {isActive && (
-                        <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-primary" />
-                      )}
                       <item.icon className={`size-4 shrink-0 ${isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"}`} />
                       <span>{item.label}</span>
                     </button>
@@ -570,8 +567,8 @@ export function EssayApp() {
 
             {/* Seção de Estudo & Prática */}
             <div>
-              <p className="px-3 pb-1.5 font-mono-num text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/75">
-                Estudo & Acervo
+              <p className="px-3 pb-1.5 text-[11px] font-semibold text-muted-foreground/75">
+                Estudos
               </p>
               <nav className="space-y-0.5" aria-label="Navegação de estudos">
                 {studyNavItems.map((item) => {
@@ -581,14 +578,11 @@ export function EssayApp() {
                       key={item.id}
                       type="button"
                       onClick={() => goTo(item.id)}
-                      className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-150 ${isActive
-                          ? "bg-card text-foreground font-semibold border border-border/80 shadow-2xs"
-                          : "text-muted-foreground font-medium border border-transparent hover:bg-card/60 hover:text-foreground"
+                      className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors duration-150 ${isActive
+                          ? "bg-accent text-accent-foreground font-semibold"
+                          : "text-muted-foreground font-medium hover:bg-secondary/80 hover:text-foreground"
                         }`}
                     >
-                      {isActive && (
-                        <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-primary" />
-                      )}
                       <item.icon className={`size-4 shrink-0 ${isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"}`} />
                       <span>{item.label}</span>
                     </button>
@@ -598,9 +592,9 @@ export function EssayApp() {
             </div>
 
             {/* Atalhos Rápidos Compactos (Chat e Notificações) */}
-            <div className="rounded-xl border border-border/75 bg-card/70 p-2.5">
+            <div className="rounded-2xl border border-border/70 bg-secondary/40 p-2.5">
               <div className="mb-2 flex items-center justify-between px-1">
-                <span className="font-mono-num text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/75">
+                <span className="text-[11px] font-semibold text-muted-foreground">
                   Comunidade
                 </span>
               </div>
@@ -608,9 +602,9 @@ export function EssayApp() {
                 <button
                   type="button"
                   onClick={() => goTo("mensagens")}
-                  className={`flex items-center justify-between gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-all ${section === "mensagens"
-                      ? "bg-[#171412] text-[#faf6ef] font-semibold dark:bg-primary dark:text-primary-foreground"
-                      : "bg-background text-muted-foreground hover:text-foreground hover:bg-secondary border border-border/60"
+                  className={`flex items-center justify-between gap-1.5 rounded-xl px-2.5 py-2 text-xs font-medium transition-all ${section === "mensagens"
+                      ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+                      : "bg-card text-muted-foreground hover:text-foreground border border-border/60"
                     }`}
                   title="Abrir Mensagens"
                 >
@@ -619,8 +613,8 @@ export function EssayApp() {
                     <span>Chat</span>
                   </span>
                   {unreadMessagesCount > 0 && (
-                    <span className={`font-mono-num flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold ${section === "mensagens"
-                        ? "bg-primary text-primary-foreground"
+                    <span className={`tabular-nums flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold ${section === "mensagens"
+                        ? "bg-white text-primary"
                         : "bg-primary text-primary-foreground"
                       }`}>
                       {unreadMessagesCount > 9 ? "9+" : unreadMessagesCount}
@@ -631,9 +625,9 @@ export function EssayApp() {
                 <button
                   type="button"
                   onClick={() => goTo("notificacoes")}
-                  className={`flex items-center justify-between gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-all ${section === "notificacoes"
-                      ? "bg-[#171412] text-[#faf6ef] font-semibold dark:bg-primary dark:text-primary-foreground"
-                      : "bg-background text-muted-foreground hover:text-foreground hover:bg-secondary border border-border/60"
+                  className={`flex items-center justify-between gap-1.5 rounded-xl px-2.5 py-2 text-xs font-medium transition-all ${section === "notificacoes"
+                      ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+                      : "bg-card text-muted-foreground hover:text-foreground border border-border/60"
                     }`}
                   title="Abrir Notificações"
                 >
@@ -642,7 +636,10 @@ export function EssayApp() {
                     <span>Avisos</span>
                   </span>
                   {unreadNotifsCount > 0 && (
-                    <span className="font-mono-num flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                    <span className={`tabular-nums flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold ${section === "notificacoes"
+                        ? "bg-white text-primary"
+                        : "bg-primary text-primary-foreground"
+                      }`}>
                       {unreadNotifsCount > 9 ? "9+" : unreadNotifsCount}
                     </span>
                   )}
@@ -652,25 +649,25 @@ export function EssayApp() {
           </div>
 
           {/* Rodapé: Sequência & Logout */}
-          <div className="mt-4 pt-3 border-t border-sidebar-border space-y-2.5">
-            <div className="rounded-xl border border-border/75 bg-card p-3">
+          <div className="mt-4 pt-3 border-t border-border/70 space-y-2">
+            <div className="rounded-2xl border border-border/70 bg-secondary/40 p-3">
               <div className="mb-2 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
-                  <span className="grid size-6 place-items-center rounded-md bg-amber-600/12 text-amber-700 dark:text-amber-400">
+                  <span className="grid size-6 place-items-center rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400">
                     <Flame className="size-3.5" />
                   </span>
-                  <span className="font-mono-num">{streakDays} {streakDays === 1 ? 'dia' : 'dias'}</span>
+                  <span className="tabular-nums">{streakDays} {streakDays === 1 ? 'dia' : 'dias'}</span>
                   <span className="text-muted-foreground font-normal">seguidos</span>
                 </div>
                 {streakDays > 0 && (
-                  <span className="font-mono-num text-[10px] font-bold text-success uppercase">Ativo</span>
+                  <span className="text-[10px] font-semibold text-success">Ativo</span>
                 )}
               </div>
-              <Progress value={streakDays > 0 ? Math.min(100, streakDays * 20) : 0} className="h-1.5 bg-secondary" />
+              <Progress value={streakDays > 0 ? Math.min(100, streakDays * 20) : 0} className="h-1.5 bg-background" />
               <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
                 {streakDays > 0
-                  ? "Ritmo firme. Mantenha a constância semanal."
-                  : "Escreva no laboratório hoje para abrir sua sequência."}
+                  ? "Ótimo ritmo. Mantenha sua constância semanal."
+                  : "Escreva hoje no laboratório para iniciar sua sequência."}
               </p>
             </div>
 
@@ -685,8 +682,8 @@ export function EssayApp() {
         </div>
       </aside>
 
-      <main className="lg:ml-72">
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border/80 bg-background/92 px-4 backdrop-blur-md md:px-8">
+      <main className="lg:ml-68">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border/70 bg-white/85 dark:bg-background/85 px-4 backdrop-blur-xl md:px-8">
           <div className="flex items-center gap-3 min-w-0">
             <Button variant="ghost" size="icon" className="lg:hidden shrink-0" onClick={() => setMobileOpen(true)} aria-label="Abrir menu">
               <Menu className="size-5" />
@@ -694,11 +691,11 @@ export function EssayApp() {
             <div className="lg:hidden">
               <BrandMark size="sm" subtitle={null} />
             </div>
-            <div className="hidden lg:flex items-center gap-2.5 text-sm min-w-0">
-              <span className="font-semibold text-foreground">{sectionHeaderTitles[section]}</span>
+            <div className="hidden lg:flex items-center gap-2 text-sm min-w-0">
+              <span className="font-heading font-bold text-foreground">{sectionHeaderTitles[section]}</span>
               {preferences?.course && (
                 <>
-                  <span className="text-border">/</span>
+                  <span className="text-muted-foreground/40">•</span>
                   <span className="truncate text-xs text-muted-foreground">
                     {preferences.course}{preferences.college ? ` · ${preferences.college}` : ""}
                   </span>
@@ -708,61 +705,57 @@ export function EssayApp() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-2.5">
-            {/* Atalho Desktop: Escrever Redação */}
             {section !== "laboratorio" && (
               <Button
                 onClick={() => goTo("laboratorio")}
                 size="sm"
-                className="hidden md:inline-flex items-center gap-2 rounded-xl bg-primary text-primary-foreground hover:bg-primary/92 font-semibold h-9 px-3.5"
+                className="hidden md:inline-flex items-center gap-2 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold h-9 px-3.5 shadow-xs shadow-primary/20"
               >
                 <PenLine className="size-3.5" />
                 <span>Nova redação</span>
               </Button>
             )}
 
-            {/* Atalho Rápido: Mensagens */}
             <Button
               variant="ghost"
               size="icon"
               onClick={() => goTo("mensagens")}
-              className={`relative size-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors ${section === "mensagens" ? "bg-card text-primary border border-border" : ""
+              className={`relative size-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors ${section === "mensagens" ? "bg-accent text-primary" : ""
                 }`}
               title="Mensagens"
               aria-label="Abrir mensagens"
             >
               <MessageCircle className="size-4" />
               {unreadMessagesCount > 0 && (
-                <span className="font-mono-num absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                <span className="tabular-nums absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
                   {unreadMessagesCount > 9 ? "9+" : unreadMessagesCount}
                 </span>
               )}
             </Button>
 
-            {/* Atalho Rápido: Notificações */}
             <Button
               variant="ghost"
               size="icon"
               onClick={() => goTo("notificacoes")}
-              className={`relative size-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors ${section === "notificacoes" ? "bg-card text-primary border border-border" : ""
+              className={`relative size-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors ${section === "notificacoes" ? "bg-accent text-primary" : ""
                 }`}
               title="Notificações"
               aria-label="Abrir notificações"
             >
               <Bell className="size-4" />
               {unreadNotifsCount > 0 && (
-                <span className="font-mono-num absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                <span className="tabular-nums absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
                   {unreadNotifsCount > 9 ? "9+" : unreadNotifsCount}
                 </span>
               )}
             </Button>
 
-            <div className="h-5 w-px bg-border/80 mx-1 hidden sm:block" />
+            <div className="h-5 w-px bg-border mx-1 hidden sm:block" />
 
-            {/* Dados do usuário e Avatar */}
             <button
               type="button"
               onClick={() => { setProfileTarget(null); goTo("perfil"); }}
-              className="flex items-center gap-2.5 rounded-xl p-1 pr-2 hover:bg-secondary/70 transition-colors text-left"
+              className="flex items-center gap-2.5 rounded-xl p-1 pr-2 hover:bg-secondary transition-colors text-left"
               aria-label="Ir para meu perfil"
               title="Meu perfil"
             >
@@ -770,11 +763,11 @@ export function EssayApp() {
                 <strong className="block text-xs font-semibold leading-tight text-foreground">
                   {preferences?.full_name || user?.email?.split('@')[0] || 'Estudante'}
                 </strong>
-                <small className="font-mono-num text-[11px] text-muted-foreground">
+                <small className="tabular-nums text-[11px] text-muted-foreground">
                   Meta {preferences?.targetScore ? `${preferences.targetScore}` : '900+'}
                 </small>
               </div>
-              <div className="grid size-9 place-items-center rounded-full bg-[#171412] text-[#faf6ef] text-xs font-bold ring-1 ring-border overflow-hidden dark:bg-primary dark:text-primary-foreground">
+              <div className="grid size-9 place-items-center rounded-full bg-accent text-primary text-xs font-bold ring-1 ring-primary/15 overflow-hidden">
                 {preferences?.avatar_url ? (
                   <img src={preferences.avatar_url} alt="Foto de perfil" className="w-full h-full object-cover" />
                 ) : (
@@ -867,15 +860,14 @@ export function EssayApp() {
 
 function PageTitle({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
   return (
-    <div className="mb-8">
-      <p className="mb-2 inline-flex items-center gap-2 font-mono-num text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-        <span className="inline-block h-px w-5 bg-primary" />
+    <div className="mb-7">
+      <p className="mb-1 text-xs font-semibold text-primary">
         {eyebrow}
       </p>
-      <h1 className="font-display text-3xl font-semibold tracking-[-0.02em] text-foreground md:text-[2.45rem] md:leading-[1.1]">
+      <h1 className="font-heading text-2xl font-extrabold tracking-[-0.03em] text-foreground md:text-[2rem] md:leading-tight">
         {title}
       </h1>
-      <p className="mt-2.5 max-w-2xl text-sm leading-relaxed text-muted-foreground md:text-[15px]">
+      <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
         {description}
       </p>
     </div>
@@ -896,44 +888,44 @@ function CourseTarget({ goTo }: { goTo: (section: Section) => void }) {
 
   return (
     <>
-      <PageTitle eyebrow="Plano de aprovação" title={`Meta: ${course} na ${college}`} description="Entenda os números e o ritmo semanal necessários para chegar com folga na sua vaga." />
+      <PageTitle eyebrow="Seu objetivo" title={`Meta: ${course} na ${college}`} description="Entenda os números e o ritmo semanal necessários para chegar com segurança na sua vaga." />
 
-      <div className="grid gap-5 md:grid-cols-3 mb-7">
+      <div className="grid gap-4 md:grid-cols-3 mb-6">
         <div className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center justify-between">
-            <span className="font-mono-num text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Nota alvo</span>
-            <Target className="size-4 text-primary" />
+            <span className="text-xs font-medium text-muted-foreground">Nota alvo</span>
+            <span className="grid size-8 place-items-center rounded-lg bg-accent text-primary"><Target className="size-4" /></span>
           </div>
-          <p className="font-display text-4xl font-semibold tabular-nums text-foreground">{targetScoreNum}</p>
+          <p className="font-heading text-3xl font-extrabold tabular-nums text-foreground">{targetScoreNum}</p>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Pontuação de referência para manter margem segura na redação.</p>
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center justify-between">
-            <span className="font-mono-num text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Média dos aprovados</span>
-            <TrendingUp className="size-4 text-success" />
+            <span className="text-xs font-medium text-muted-foreground">Média dos aprovados</span>
+            <span className="grid size-8 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600"><TrendingUp className="size-4" /></span>
           </div>
-          <p className="font-display text-4xl font-semibold tabular-nums text-foreground">{avgRequired}</p>
+          <p className="font-heading text-3xl font-extrabold tabular-nums text-foreground">{avgRequired}</p>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Faixa habitual dos candidatos selecionados neste curso.</p>
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center justify-between">
-            <span className="font-mono-num text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Ritmo sugerido</span>
-            <Clock3 className="size-4 text-highlight" />
+            <span className="text-xs font-medium text-muted-foreground">Ritmo sugerido</span>
+            <span className="grid size-8 place-items-center rounded-lg bg-amber-500/10 text-amber-600"><Clock3 className="size-4" /></span>
           </div>
-          <p className="font-display text-4xl font-semibold tabular-nums text-foreground">{hoursPerWeek}h<span className="text-lg font-normal text-muted-foreground">/sem</span></p>
+          <p className="font-heading text-3xl font-extrabold tabular-nums text-foreground">{hoursPerWeek}h<span className="text-base font-medium text-muted-foreground">/sem</span></p>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Tempo dedicado à escrita, leitura de repertório e revisão.</p>
         </div>
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-6 sm:p-8">
-        <h3 className="font-display text-2xl font-semibold mb-2">Onde você está vs. onde precisa chegar</h3>
+        <h3 className="font-heading text-lg font-bold mb-2">Onde você está vs. onde precisa chegar</h3>
         <p className="mb-6 text-sm text-muted-foreground">
-          Sua média atual nas últimas redações é de <strong className="font-mono-num text-foreground">{currentAvg}</strong> pontos. Faltam <strong className="font-mono-num text-foreground">{distance}</strong> pontos para alcançar sua meta.
+          Sua média atual nas últimas redações é de <strong className="tabular-nums text-foreground">{currentAvg}</strong> pontos. Faltam <strong className="tabular-nums text-foreground">{distance}</strong> pontos para alcançar sua meta.
         </p>
         <Progress value={targetScoreNum > 0 ? Math.min(100, Math.round((currentAvg / targetScoreNum) * 100)) : 0} className="mb-3 h-2.5" />
-        <div className="flex justify-between font-mono-num text-xs font-semibold">
+        <div className="flex justify-between tabular-nums text-xs font-semibold">
           <span className="text-muted-foreground">Atual: {currentAvg}</span>
           <span className="text-primary">Meta: {targetScoreNum}</span>
         </div>
@@ -972,13 +964,13 @@ function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
     {
       value: essayStats.totalCompleted.toString(),
       label: "Redações corrigidas",
-      meta: "no histórico",
+      meta: "Histórico",
       Icon: FileText,
     },
     {
       value: essayStats.totalCompleted > 0 ? essayStats.averageScore.toString() : "—",
       label: "Média atual",
-      meta: `meta ${targetScoreNum}`,
+      meta: `Meta ${targetScoreNum}`,
       Icon: TrendingUp,
     },
     {
@@ -989,7 +981,7 @@ function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
           ? "1ª nota"
           : "—",
       label: "Evolução recente",
-      meta: "comparativo",
+      meta: "Comparativo",
       Icon: Award,
     },
   ];
@@ -997,32 +989,35 @@ function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
   return (
     <>
       <PageTitle
-        eyebrow="Caderno Aprova Red"
-        title={`${greeting}, ${firstName}.`}
+        eyebrow="Aprova Red"
+        title={`${greeting}, ${firstName}`}
         description={
           preferences?.course
-            ? `Foco ativo: ${preferences.course}${preferences.college ? ` na ${preferences.college}` : ""}.`
-            : "Cada rascunho revisado aproxima você da nota máxima."
+            ? `Seu objetivo: ${preferences.course}${preferences.college ? ` na ${preferences.college}` : ""}.`
+            : "Continue praticando para construir uma nota consistente."
         }
       />
 
-      {/* Proposta do Dia — Cartão Editorial em Tinta Grafite */}
-      <section className="relative overflow-hidden rounded-2xl bg-[#171412] text-[#faf6ef] border border-black/15 p-6 sm:p-8 md:p-10 editorial-grid-dark">
-        <div className="absolute inset-y-0 left-0 w-1.5 bg-[#C82838]" />
+      {/* Proposta do Dia — Banner Violeta Moderno e Limpo */}
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#6d28d9] via-[#7c3aed] to-[#5b21b6] text-white p-6 sm:p-8 md:p-9 shadow-sm">
+        <div
+          className="pointer-events-none absolute -top-20 -right-20 size-72 rounded-full opacity-30 blur-3xl"
+          style={{ background: "radial-gradient(circle, #ddd6fe 0%, transparent 70%)" }}
+        />
         <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-2xl space-y-3.5">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <span className="font-mono-num rounded-md bg-[#C82838] px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-white">
-                Proposta do dia · Tema {String(featuredTheme.day).padStart(2, "0")}
+          <div className="max-w-2xl space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-white/15 backdrop-blur-md px-3 py-1 text-xs font-semibold text-white">
+                Tema do dia · #{String(featuredTheme.day).padStart(2, "0")}
               </span>
-              <span className="font-mono-num text-xs text-white/55">
+              <span className="text-xs text-white/75">
                 30 linhas · Padrão ENEM
               </span>
             </div>
-            <h2 className="font-display text-2xl font-semibold leading-[1.15] tracking-[-0.015em] text-[#faf6ef] sm:text-3xl md:text-[2.15rem]">
-              “{featuredTheme.topic}”
+            <h2 className="font-heading text-2xl font-extrabold leading-[1.18] tracking-[-0.025em] text-white sm:text-3xl">
+              {featuredTheme.topic}
             </h2>
-            <p className="text-sm leading-relaxed text-white/70 max-w-xl">
+            <p className="text-sm leading-relaxed text-white/80 max-w-xl">
               {featuredTheme.hint}
             </p>
           </div>
@@ -1030,10 +1025,10 @@ function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
           <div className="shrink-0">
             <Button
               onClick={() => goTo("laboratorio")}
-              className="h-11 rounded-xl bg-[#faf6ef] text-[#171412] hover:bg-white font-semibold px-5 gap-2 shadow-sm"
+              className="h-11 rounded-xl bg-white text-primary hover:bg-white/95 font-semibold px-5 gap-2 shadow-sm"
             >
-              <PenLine className="size-4 text-[#C82838]" />
-              Abrir folha de redação
+              <PenLine className="size-4" />
+              Começar redação
               <ArrowRight className="size-4" />
             </Button>
           </div>
@@ -1043,16 +1038,16 @@ function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
       {/* Métricas Limpas */}
       <section className="mt-6 grid gap-4 sm:grid-cols-3">
         {dashboardStats.map(({ value, label, meta, Icon }) => (
-          <div key={label} className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-foreground/20">
+          <div key={label} className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30">
             <div className="mb-4 flex items-center justify-between">
-              <span className="font-mono-num text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <span className="text-xs font-medium text-muted-foreground">
                 {meta}
               </span>
-              <span className="grid size-8 place-items-center rounded-lg bg-secondary text-foreground">
+              <span className="grid size-8 place-items-center rounded-xl bg-accent text-primary">
                 <Icon className="size-4" />
               </span>
             </div>
-            <strong className="font-display block text-4xl font-semibold tracking-tight tabular-nums text-foreground">
+            <strong className="font-heading block text-3xl font-extrabold tracking-tight tabular-nums text-foreground">
               {value}
             </strong>
             <p className="mt-1 text-sm text-muted-foreground">{label}</p>
@@ -1060,27 +1055,24 @@ function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
         ))}
       </section>
 
-      {/* Acesso Rápido — Cards Horizontais Táteis */}
+      {/* Acesso Rápido */}
       <section className="mt-8">
-        <div className="mb-3.5 flex items-center justify-between">
-          <h3 className="font-display text-xl font-semibold text-foreground">Acesso rápido</h3>
-          <span className="font-mono-num text-[11px] uppercase tracking-wider text-muted-foreground">Ferramentas</span>
-        </div>
+        <h3 className="font-heading text-base font-bold text-foreground mb-3.5">Acesso rápido</h3>
         <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
           {[
-            { id: "laboratorio" as const, title: "Folha de Redação", sub: "Escrever e corrigir", Icon: PenLine },
+            { id: "laboratorio" as const, title: "Laboratório", sub: "Escrever e corrigir", Icon: PenLine },
             { id: "competencias" as const, title: "Competências", sub: "Treino C1 a C5", Icon: Target },
             { id: "repertorio" as const, title: "Repertórios", sub: "Leis, obras e dados", Icon: BookOpen },
             { id: "mural" as const, title: "Mural Nota 1000", sub: "Textos comentados", Icon: Award },
-            { id: "treinamento" as const, title: "Treinamento 900+", sub: "Modelos passo a passo", Icon: GraduationCap },
+            { id: "treinamento" as const, title: "Treinamento 900+", sub: "Modelos guiados", Icon: GraduationCap },
           ].map(({ id, title, sub, Icon }) => (
             <button
               key={id}
               type="button"
               onClick={() => goTo(id)}
-              className="group flex items-center gap-3 rounded-xl border border-border bg-card p-3.5 text-left transition-all hover:border-primary/50 hover:bg-card hover:shadow-xs"
+              className="group flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5 text-left transition-all hover:border-primary/40 hover:shadow-xs"
             >
-              <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-secondary text-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                 <Icon className="size-4" />
               </span>
               <span className="min-w-0">
@@ -1097,10 +1089,10 @@ function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
         <div className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-7 flex items-center justify-between gap-2">
             <div>
-              <h3 className="font-display text-xl font-semibold text-foreground">Sua evolução</h3>
+              <h3 className="font-heading text-base font-bold text-foreground">Sua evolução</h3>
               <p className="text-xs text-muted-foreground mt-0.5">Últimas cinco redações avaliadas</p>
             </div>
-            <span className="font-mono-num rounded-lg border border-border bg-secondary px-2.5 py-1 text-xs font-semibold text-foreground">
+            <span className="tabular-nums rounded-full bg-accent px-3 py-1 text-xs font-semibold text-primary">
               {essayStats.totalCompleted > 1
                 ? `${essayStats.evolutionPercent >= 0 ? "+" : ""}${essayStats.evolutionPercent}%`
                 : `${essayStats.totalCompleted} concluída(s)`}
@@ -1108,23 +1100,22 @@ function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
           </div>
 
           <div className="relative flex h-48 items-end justify-between gap-3 border-b border-border px-2 pt-4">
-            {/* Linha pontilhada de referência da meta */}
             <div
-              className="pointer-events-none absolute inset-x-0 border-t border-dashed border-primary/40 flex justify-end"
+              className="pointer-events-none absolute inset-x-0 border-t border-dashed border-primary/35 flex justify-end"
               style={{ bottom: `${Math.min(95, Math.max(15, targetScoreNum / 10))}%` }}
             >
-              <span className="font-mono-num -mt-4 bg-card px-1.5 text-[10px] font-semibold text-primary">
+              <span className="tabular-nums -mt-4 bg-card px-1.5 text-[10px] font-semibold text-primary">
                 meta {targetScoreNum}
               </span>
             </div>
 
             {essayStats.recentScores.map((score, i) => (
               <div key={i} className="relative z-10 flex h-full flex-1 flex-col justify-end gap-2 text-center">
-                <span className="font-mono-num text-xs font-bold text-foreground">
+                <span className="tabular-nums text-xs font-bold text-foreground">
                   {score > 0 ? score : "—"}
                 </span>
                 <div
-                  className={`mx-auto w-full max-w-[46px] rounded-t-lg transition-all ${
+                  className={`mx-auto w-full max-w-[44px] rounded-t-xl transition-all ${
                     score >= targetScoreNum
                       ? "bg-success"
                       : score > 0
@@ -1133,7 +1124,7 @@ function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
                   }`}
                   style={{ height: `${score > 0 ? Math.max(8, score / 10) : 6}%` }}
                 />
-                <span className="font-mono-num pb-2 text-[11px] font-medium text-muted-foreground">
+                <span className="tabular-nums pb-2 text-xs font-medium text-muted-foreground">
                   R{i + 1}
                 </span>
               </div>
@@ -1143,8 +1134,8 @@ function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
 
         <div className="rounded-2xl border border-border bg-card p-6 flex flex-col justify-between">
           <div>
-            <h3 className="font-display text-xl font-semibold text-foreground">Distância da meta</h3>
-            <p className="mt-0.5 text-xs text-muted-foreground">Objetivo definido: {targetScoreNum} pontos</p>
+            <h3 className="font-heading text-base font-bold text-foreground">Distância da meta</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">Objetivo: {targetScoreNum} pontos</p>
           </div>
 
           <div className="my-5 grid place-items-center">
@@ -1173,10 +1164,10 @@ function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                <strong className="font-display text-3xl font-semibold tabular-nums text-foreground">
+                <strong className="font-heading text-3xl font-extrabold tabular-nums text-foreground">
                   {essayStats.averageScore}
                 </strong>
-                <small className="font-mono-num text-[11px] text-muted-foreground">
+                <small className="tabular-nums text-[11px] text-muted-foreground">
                   de {targetScoreNum}
                 </small>
               </div>
@@ -1187,9 +1178,9 @@ function Dashboard({ goTo }: { goTo: (section: Section) => void }) {
             <Progress value={progressPct} className="h-2" />
             <p className="mt-3 text-center text-xs leading-relaxed text-muted-foreground">
               {essayStats.totalCompleted === 0
-                ? "Envie sua primeira redação para medir sua distância real da meta."
+                ? "Envie sua primeira redação para acompanhar sua distância da meta."
                 : essayStats.averageScore >= targetScoreNum
-                ? "Meta superada! Continue praticando para manter a consistência."
+                ? "Meta superada! Continue praticando para manter o ritmo."
                 : `Você está a ${Math.max(0, targetScoreNum - essayStats.averageScore)} pontos da meta.`}
             </p>
           </div>
@@ -1213,20 +1204,20 @@ function Mural({ onOpen, currentTheme }: { onOpen: (essay: any) => void; current
           <article
             key={essay.title}
             onClick={() => onOpen(essay)}
-            className="group cursor-pointer rounded-2xl border border-border bg-card p-6 transition-all hover:-translate-y-0.5 hover:border-primary/45 hover:shadow-sm"
+            className="group cursor-pointer rounded-2xl border border-border bg-card p-6 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm"
           >
             <div className="mb-5 flex items-center justify-between">
-              <span className="font-mono-num rounded-md bg-accent px-2.5 py-1 text-[11px] font-bold text-primary">
-                NOTA 1000
+              <span className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-primary">
+                Nota 1000
               </span>
-              <span className="font-display text-4xl font-semibold text-foreground/12">0{i + 1}</span>
+              <span className="font-heading text-3xl font-extrabold text-primary/15">0{i + 1}</span>
             </div>
-            <h2 className="font-display text-xl font-semibold leading-snug group-hover:text-primary transition-colors">
+            <h2 className="font-heading text-lg font-bold leading-snug group-hover:text-primary transition-colors">
               {essay.title}
             </h2>
-            <p className="mt-2 text-xs font-medium text-muted-foreground">{essay.author}</p>
+            <p className="mt-1.5 text-xs font-medium text-muted-foreground">{essay.author}</p>
             <p className="mt-4 line-clamp-4 text-sm leading-6 text-muted-foreground">{essay.intro}</p>
-            <div className="mt-6 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary">
+            <div className="mt-6 flex items-center gap-1.5 text-xs font-semibold text-primary">
               Ler e analisar <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
             </div>
           </article>
@@ -1836,7 +1827,7 @@ function Laboratory(props: { tab: "digital" | "photo"; setTab: (v: "digital" | "
     <div className="mb-6 rounded-2xl border border-border bg-card p-4">
       <div className="mb-3 flex items-center justify-between">
         <p className="text-sm font-bold text-foreground">Trilha de temas — 14 dias</p>
-        <span className="font-mono-num rounded-md border border-border bg-secondary px-2.5 py-0.5 text-xs font-semibold text-foreground">{dailyThemes.filter(d => !!getEssayForTheme(d.day)).length}/{dailyThemes.length} concluídos</span>
+        <span className="tabular-nums rounded-full bg-accent px-3 py-0.5 text-xs font-semibold text-primary">{dailyThemes.filter(d => !!getEssayForTheme(d.day)).length}/{dailyThemes.length} concluídos</span>
       </div>
       <div className="flex gap-2 overflow-x-auto pb-2">
         {dailyThemes.map((theme, idx) => {
@@ -1967,8 +1958,8 @@ function Laboratory(props: { tab: "digital" | "photo"; setTab: (v: "digital" | "
     </div>
     {props.tab === "digital" ? (
       <div className="overflow-hidden rounded-2xl border border-border bg-card">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-secondary/35 px-5 py-3.5">
-          <div className="flex items-center gap-4 font-mono-num text-xs font-semibold text-muted-foreground">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-secondary/40 px-5 py-3.5">
+          <div className="flex items-center gap-4 tabular-nums text-xs font-semibold text-muted-foreground">
             <span>{props.stats.words} palavras</span>
             <span>{props.stats.chars} caracteres</span>
             <span className={props.stats.lines >= 28 ? "text-primary font-bold" : ""}>{props.stats.lines}/30 linhas</span>
@@ -1982,23 +1973,21 @@ function Laboratory(props: { tab: "digital" | "photo"; setTab: (v: "digital" | "
                 {props.timer ? <><Pause className="size-3.5 mr-1" />Pausar</> : <><Play className="size-3.5 mr-1" />Retomar</>}
               </Button>
             )}
-            <Button variant="outline" size="sm" onClick={() => { if (!props.timer && props.timerSeconds === 0) props.setTimerSeconds(5400); props.setTimer(!props.timer); }} className={`rounded-lg font-mono-num ${props.timer ? "border-primary text-primary" : props.timerSeconds < 5400 ? (props.timerSeconds === 0 ? "border-destructive text-destructive" : "border-amber-600 text-amber-700") : ""}`}>
+            <Button variant="outline" size="sm" onClick={() => { if (!props.timer && props.timerSeconds === 0) props.setTimerSeconds(5400); props.setTimer(!props.timer); }} className={`rounded-lg tabular-nums ${props.timer ? "border-primary text-primary" : props.timerSeconds < 5400 ? (props.timerSeconds === 0 ? "border-destructive text-destructive" : "border-amber-600 text-amber-700") : ""}`}>
               <Clock3 /> {props.timer || props.timerSeconds < 5400 ? (() => { const h = Math.floor(props.timerSeconds / 3600); const m = Math.floor((props.timerSeconds % 3600) / 60); const s = props.timerSeconds % 60; return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`; })() : "Cronômetro 1h30"}
             </Button>
           </div>
         </div>
         <div className="relative">
-          {/* Margem vertical carmim sutil estilo folha oficial de redação */}
-          <div className="pointer-events-none absolute inset-y-0 left-5 md:left-9 w-px bg-primary/25" />
           <textarea
             value={props.text}
             onChange={(e) => props.setText(e.target.value)}
             placeholder={`Tema: "${currentTheme.topic}"\n\nComece pela sua tese. O que você defende sobre este tema?`}
-            className="min-h-[480px] w-full resize-none bg-card py-6 pl-9 pr-6 text-base leading-8 outline-none md:py-9 md:pl-14 md:pr-10 paper-ruled"
+            className="min-h-[480px] w-full resize-none bg-card p-6 text-base leading-8 outline-none md:p-10 paper-ruled"
           />
         </div>
-        <div className="flex flex-col items-end gap-2 border-t border-border bg-secondary/20 px-5 py-4">
-          <Button size="lg" onClick={props.handleCorrection} disabled={props.correcting} className="h-11 rounded-xl px-6 font-semibold gap-2">
+        <div className="flex flex-col items-end gap-2 border-t border-border bg-secondary/25 px-5 py-4">
+          <Button size="lg" onClick={props.handleCorrection} disabled={props.correcting} className="h-11 rounded-xl px-6 font-semibold gap-2 shadow-xs shadow-primary/20">
             <FileCheck2 className="size-4" />
             {props.correcting ? "Avaliando redação nas 5 competências..." : "Enviar para correção"}
           </Button>
@@ -2008,7 +1997,7 @@ function Laboratory(props: { tab: "digital" | "photo"; setTab: (v: "digital" | "
     ) : (
       <div className="rounded-2xl border-2 border-dashed border-border bg-card p-8 text-center md:p-16">
         <input ref={props.fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) props.setPreview(URL.createObjectURL(file)); }} />
-        {props.preview ? <img src={props.preview} alt="Prévia da redação" className="mx-auto max-h-[520px] rounded-xl object-contain shadow-sm" /> : <><span className="mx-auto grid size-16 place-items-center rounded-2xl bg-secondary text-primary"><UploadCloud className="size-7" /></span><h2 className="font-display mt-5 text-2xl font-semibold">Envie uma foto nítida da sua folha</h2><p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">Enquadre a folha inteira em local iluminado, evitando sombras sobre o texto.</p></>}
+        {props.preview ? <img src={props.preview} alt="Prévia da redação" className="mx-auto max-h-[520px] rounded-xl object-contain shadow-sm" /> : <><span className="mx-auto grid size-16 place-items-center rounded-2xl bg-accent text-primary"><UploadCloud className="size-7" /></span><h2 className="font-heading mt-5 text-xl font-bold">Envie uma foto nítida da sua folha</h2><p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">Enquadre a folha inteira em local iluminado, evitando sombras sobre o texto.</p></>}
         <div className="mt-6 flex flex-wrap justify-center gap-2.5">
           <Button className="rounded-xl font-semibold" onClick={() => props.fileRef.current?.click()}><ImagePlus /> Escolher imagem</Button>
           <Button variant="outline" className="rounded-xl font-semibold" onClick={() => props.fileRef.current?.click()}><Camera /> Usar câmera</Button>
@@ -2105,11 +2094,11 @@ function Feedback({ result, text, onBack }: { result: Correction; text: string; 
                   />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <strong className="font-display text-4xl sm:text-5xl font-semibold text-foreground tabular-nums">{score}</strong>
-                  <span className="font-mono-num text-xs text-muted-foreground">de 1000</span>
+                  <strong className="font-heading text-4xl sm:text-5xl font-extrabold text-primary tabular-nums">{score}</strong>
+                  <span className="tabular-nums text-xs text-muted-foreground">de 1000</span>
                 </div>
               </div>
-              <h2 className="font-display mt-5 text-xl font-semibold">
+              <h2 className="font-heading mt-5 text-lg font-bold">
                 {score >= 900 ? "Excelente desempenho" : score >= 700 ? "Ótimo avanço" : score >= 500 ? "Bom caminho" : "Continue praticando"}
               </h2>
             </div>
@@ -2306,9 +2295,9 @@ function TrainingSection({ goTo }: { goTo: (section: Section) => void }) {
         </div>
         <div className="rounded-2xl border border-border bg-card p-5 sm:col-span-2 lg:col-span-1">
           <div className="mb-3 flex items-center gap-2">
-            <span className="grid size-10 place-items-center rounded-lg bg-accent text-primary"><Award className="size-5" /></span>
+            <span className="grid size-10 place-items-center rounded-xl bg-accent text-primary"><Award className="size-5" /></span>
           </div>
-          <strong className="font-display text-3xl font-semibold">Nota 900+</strong>
+          <strong className="font-heading text-2xl font-extrabold">Nota 900+</strong>
           <p className="mt-1 text-sm text-muted-foreground">Padrão de excelência</p>
         </div>
       </div>
