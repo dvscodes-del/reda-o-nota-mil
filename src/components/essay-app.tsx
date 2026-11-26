@@ -63,6 +63,10 @@ import {
   Music,
   Brain,
   Bookmark,
+  ShieldCheck,
+  ShieldAlert,
+  ShieldBan,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -81,6 +85,7 @@ import {
   evaluateEssayHeuristically,
   evaluateCompetencyHeuristically,
   type CompetencyExerciseResult,
+  type WritingTelemetry,
 } from "@/lib/essay.functions";
 import constituicaoImage from "@/assets/repertorio-constituicao.jpg";
 import geografiaImage from "@/assets/repertorio-geografia.jpg";
@@ -303,6 +308,16 @@ const repertories = [
   { category: "Filmes", title: "Nunca Me Sonharam", author: "Cacau Rhoden", image: cinemaImage, body: "Documentário útil em temas sobre ensino médio, desigualdade educacional, juventude e projeto de vida." },
 ];
 
+const createInitialTelemetry = (): WritingTelemetry => ({
+  pasteAttempts: 0,
+  pastedChars: 0,
+  largeInsertChars: 0,
+  typedChars: 0,
+  backspaces: 0,
+  tabSwitches: 0,
+  startedAt: null,
+});
+
 export function EssayApp() {
   const [section, setSection] = useState<Section>("dashboard");
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -318,6 +333,54 @@ export function EssayApp() {
   const [timer, setTimer] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(5400); // 1h30min
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const telemetryRef = useRef<WritingTelemetry>(createInitialTelemetry());
+  const [pasteBlockedCount, setPasteBlockedCount] = useState(0);
+
+  const resetTelemetry = () => {
+    telemetryRef.current = createInitialTelemetry();
+    setPasteBlockedCount(0);
+  };
+
+  // Monitora trocas de aba durante a escrita no laboratório
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.hidden && section === "laboratorio" && telemetryRef.current.startedAt) {
+        telemetryRef.current.tabSwitches += 1;
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [section]);
+
+  const handleLabTextChange = (nextText: string) => {
+    const t = telemetryRef.current;
+    if (!t.startedAt && nextText.trim().length > 0) {
+      t.startedAt = Date.now();
+    }
+    const delta = nextText.length - text.length;
+    if (delta < 0) {
+      t.backspaces += 1;
+    } else if (delta > 28) {
+      // Salto grande sem digitação progressiva (possível bypass de cola ou ferramenta externa)
+      t.largeInsertChars += delta;
+    } else if (delta > 0) {
+      t.typedChars += delta;
+    }
+    setText(nextText);
+  };
+
+  const handleLabPasteBlocked = (pastedLength: number) => {
+    telemetryRef.current.pasteAttempts += 1;
+    telemetryRef.current.pastedChars += pastedLength;
+    setPasteBlockedCount(telemetryRef.current.pasteAttempts);
+    toast.warning("Colar texto pronto não é permitido", {
+      description: "Escreva a redação com suas próprias palavras para garantir uma nota real.",
+    });
+  };
+
+  const handleLabSmallPaste = (pastedLength: number) => {
+    telemetryRef.current.pastedChars += pastedLength;
+  };
 
   useEffect(() => {
     if (timer) {
@@ -432,13 +495,18 @@ export function EssayApp() {
     }
     setCorrecting(true);
     setError("");
+    const telemetrySnapshot: WritingTelemetry = {
+      ...telemetryRef.current,
+      submittedAt: Date.now(),
+    };
     try {
       let correction: Correction;
       try {
-        // Tenta enviar para o servidor de correção
+        // Tenta enviar para o servidor de correção + detector de IA
         correction = await runCorrection({
           data: {
             essay: trimmed,
+            telemetry: telemetrySnapshot,
             ...(preferences?.targetScore ? { targetScore: preferences.targetScore } : {}),
             ...(preferences?.college ? { college: preferences.college } : {}),
             ...(preferences?.course ? { course: preferences.course } : {}),
@@ -446,8 +514,9 @@ export function EssayApp() {
         });
       } catch (networkOrServerErr) {
         console.warn("[handleCorrection] Fallback local ativado para mobile/offline:", networkOrServerErr);
-        // Fallback imediato: roda a avaliação oficial diretamente no navegador sem depender de rede!
+        // Fallback imediato: roda a avaliação oficial + detector de IA diretamente no navegador!
         correction = evaluateEssayHeuristically(trimmed, {
+          telemetry: telemetrySnapshot,
           ...(preferences?.targetScore ? { targetScore: preferences.targetScore } : {}),
           ...(preferences?.college ? { college: preferences.college } : {}),
           ...(preferences?.course ? { course: preferences.course } : {}),
@@ -457,6 +526,20 @@ export function EssayApp() {
       setResult(correction);
       // Rola a tela para o topo para que o resultado apareça de imediato no celular
       window.scrollTo({ top: 0, behavior: "smooth" });
+
+      // Bloqueio anti-burla: redações com forte indício de IA/cópia não são salvas nem contam na média
+      if (correction.aiDetection?.blocked) {
+        toast.error("Redação não validada pelo detector de IA", {
+          description: "Foram detectados fortes indícios de texto gerado por IA ou cópia. A nota não foi contabilizada.",
+        });
+        return;
+      }
+
+      if (correction.aiDetection?.verdict === "suspeito") {
+        toast.warning("Atenção à autenticidade do texto", {
+          description: "Alguns trechos pareceram padronizados demais. Veja os detalhes no relatório.",
+        });
+      }
 
       const currentThemeItem = dailyThemes[selectedDay];
       if (currentThemeItem) {
@@ -824,7 +907,34 @@ export function EssayApp() {
             />
           )}
           {section === "treinamento" && <TrainingSection goTo={goTo} />}
-          {section === "laboratorio" && <Laboratory tab={labTab} setTab={setLabTab} text={text} setText={setText} stats={stats} timer={timer} setTimer={setTimer} timerSeconds={timerSeconds} setTimerSeconds={setTimerSeconds} preview={preview} fileRef={fileRef} setPreview={setPreview} correcting={correcting} error={error} handleCorrection={handleCorrection} result={result} setResult={setResult} selectedDay={selectedDay} setSelectedDay={setSelectedDay} />}
+          {section === "laboratorio" && (
+            <Laboratory
+              tab={labTab}
+              setTab={setLabTab}
+              text={text}
+              setText={setText}
+              onTextChange={handleLabTextChange}
+              onPasteBlocked={handleLabPasteBlocked}
+              onSmallPaste={handleLabSmallPaste}
+              onResetTelemetry={resetTelemetry}
+              pasteBlockedCount={pasteBlockedCount}
+              stats={stats}
+              timer={timer}
+              setTimer={setTimer}
+              timerSeconds={timerSeconds}
+              setTimerSeconds={setTimerSeconds}
+              preview={preview}
+              fileRef={fileRef}
+              setPreview={setPreview}
+              correcting={correcting}
+              error={error}
+              handleCorrection={handleCorrection}
+              result={result}
+              setResult={setResult}
+              selectedDay={selectedDay}
+              setSelectedDay={setSelectedDay}
+            />
+          )}
         </div>
       </main>
 
@@ -1800,13 +1910,39 @@ function Repertory({
   );
 }
 
-function Laboratory(props: { tab: "digital" | "photo"; setTab: (v: "digital" | "photo") => void; text: string; setText: (v: string) => void; stats: { words: number; chars: number; lines: number }; timer: boolean; setTimer: (v: boolean) => void; timerSeconds: number; setTimerSeconds: (v: number) => void; preview: string | null; fileRef: React.RefObject<HTMLInputElement | null>; setPreview: (v: string | null) => void; correcting: boolean; error: string; handleCorrection: () => void; result: Correction | null; setResult: (v: Correction | null) => void; selectedDay: number; setSelectedDay: (v: number) => void }) {
+function Laboratory(props: {
+  tab: "digital" | "photo";
+  setTab: (v: "digital" | "photo") => void;
+  text: string;
+  setText: (v: string) => void;
+  onTextChange: (v: string) => void;
+  onPasteBlocked: (len: number) => void;
+  onSmallPaste: (len: number) => void;
+  onResetTelemetry: () => void;
+  pasteBlockedCount: number;
+  stats: { words: number; chars: number; lines: number };
+  timer: boolean;
+  setTimer: (v: boolean) => void;
+  timerSeconds: number;
+  setTimerSeconds: (v: number) => void;
+  preview: string | null;
+  fileRef: React.RefObject<HTMLInputElement | null>;
+  setPreview: (v: string | null) => void;
+  correcting: boolean;
+  error: string;
+  handleCorrection: () => void;
+  result: Correction | null;
+  setResult: (v: Correction | null) => void;
+  selectedDay: number;
+  setSelectedDay: (v: number) => void;
+}) {
   const { preferences } = useUserPreferences();
   const { getEssayForTheme, essays } = useEssays();
   const currentTheme = dailyThemes[props.selectedDay] ?? dailyThemes[0]!;
 
   const handleSelectDay = (idx: number) => {
     props.setSelectedDay(idx);
+    props.onResetTelemetry();
     const targetTheme = dailyThemes[idx];
     if (targetTheme) {
       const existing = getEssayForTheme(targetTheme.day);
@@ -1818,7 +1954,20 @@ function Laboratory(props: { tab: "digital" | "photo"; setTab: (v: "digital" | "
     props.setText('');
   };
 
-  if (props.result) return <Feedback result={props.result} text={props.text} onBack={() => props.setResult(null)} />;
+  if (props.result) {
+    return (
+      <Feedback
+        result={props.result}
+        text={props.text}
+        onBack={() => props.setResult(null)}
+        onRewriteClean={() => {
+          props.setResult(null);
+          props.setText("");
+          props.onResetTelemetry();
+        }}
+      />
+    );
+  }
 
   return <>
     <PageTitle eyebrow="Folha oficial de treino" title="Laboratório de redação" description={`Banca calibrada para o rigor exigido em ${preferences?.course || 'seu curso'}. Escolha um tema abaixo e comece a escrever.`} />
@@ -1905,7 +2054,7 @@ function Laboratory(props: { tab: "digital" | "photo"; setTab: (v: "digital" | "
                 <p className="mt-0.5 font-semibold leading-snug">{currentTheme.topic}</p>
                 <p className="mt-1 text-sm text-muted-foreground">{currentTheme.hint}</p>
               </div>
-              <Button size="sm" variant="outline" className={`shrink-0 rounded-lg ${isHot ? 'border-orange-400/40 hover:bg-orange-500/10' : ''}`} onClick={() => props.setText('')}>
+              <Button size="sm" variant="outline" className={`shrink-0 rounded-lg ${isHot ? 'border-orange-400/40 hover:bg-orange-500/10' : ''}`} onClick={() => { props.setText(''); props.onResetTelemetry(); }}>
                 {currentCompleted ? "Reescrever" : "Começar"}
               </Button>
             </div>
@@ -1959,10 +2108,27 @@ function Laboratory(props: { tab: "digital" | "photo"; setTab: (v: "digital" | "
     {props.tab === "digital" ? (
       <div className="overflow-hidden rounded-2xl border border-border bg-card">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-secondary/40 px-5 py-3.5">
-          <div className="flex items-center gap-4 tabular-nums text-xs font-semibold text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4 tabular-nums text-xs font-semibold text-muted-foreground">
             <span>{props.stats.words} palavras</span>
             <span>{props.stats.chars} caracteres</span>
             <span className={props.stats.lines >= 28 ? "text-primary font-bold" : ""}>{props.stats.lines}/30 linhas</span>
+            {props.pasteBlockedCount > 0 ? (
+              <span
+                className="inline-flex items-center gap-1 rounded-full bg-amber-500/12 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700 dark:text-amber-400"
+                title="Tentativas de colar texto pronto foram bloqueadas e registradas na análise de autoria"
+              >
+                <ShieldAlert className="size-3.5" />
+                {props.pasteBlockedCount} {props.pasteBlockedCount === 1 ? "colagem bloqueada" : "colagens bloqueadas"}
+              </span>
+            ) : (
+              <span
+                className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400"
+                title="Detector de IA e proteção anti-cola ativos nesta redação"
+              >
+                <ShieldCheck className="size-3.5" />
+                Modo autoral ativo
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {(props.timer || props.timerSeconds < 5400) && (
@@ -1981,17 +2147,40 @@ function Laboratory(props: { tab: "digital" | "photo"; setTab: (v: "digital" | "
         <div className="relative">
           <textarea
             value={props.text}
-            onChange={(e) => props.setText(e.target.value)}
+            onChange={(e) => props.onTextChange(e.target.value)}
+            onPaste={(e) => {
+              const pasted = e.clipboardData.getData("text") || "";
+              const cleanLen = pasted.trim().length;
+              if (cleanLen > 30) {
+                e.preventDefault();
+                props.onPasteBlocked(cleanLen);
+              } else if (cleanLen > 0) {
+                props.onSmallPaste(cleanLen);
+              }
+            }}
+            onDrop={(e) => {
+              const dropped = e.dataTransfer.getData("text") || "";
+              if (dropped.trim().length > 30) {
+                e.preventDefault();
+                props.onPasteBlocked(dropped.trim().length);
+              }
+            }}
             placeholder={`Tema: "${currentTheme.topic}"\n\nComece pela sua tese. O que você defende sobre este tema?`}
             className="min-h-[480px] w-full resize-none bg-card p-6 text-base leading-8 outline-none md:p-10 paper-ruled"
           />
         </div>
-        <div className="flex flex-col items-end gap-2 border-t border-border bg-secondary/25 px-5 py-4">
-          <Button size="lg" onClick={props.handleCorrection} disabled={props.correcting} className="h-11 rounded-xl px-6 font-semibold gap-2 shadow-xs shadow-primary/20">
-            <FileCheck2 className="size-4" />
-            {props.correcting ? "Avaliando redação nas 5 competências..." : "Enviar para correção"}
-          </Button>
-          {props.error && <p className="text-sm text-destructive">{props.error}</p>}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-border bg-secondary/25 px-5 py-4">
+          <p className="flex items-center gap-2 text-xs text-muted-foreground">
+            <ShieldCheck className="size-4 shrink-0 text-primary" />
+            <span>Detector de IA e verificação anti-cola ativos ao enviar.</span>
+          </p>
+          <div className="flex flex-col items-end gap-1.5">
+            <Button size="lg" onClick={props.handleCorrection} disabled={props.correcting} className="h-11 rounded-xl px-6 font-semibold gap-2 shadow-xs shadow-primary/20">
+              <FileCheck2 className="size-4" />
+              {props.correcting ? "Verificando autoria e corrigindo..." : "Enviar para correção"}
+            </Button>
+            {props.error && <p className="text-sm text-destructive">{props.error}</p>}
+          </div>
         </div>
       </div>
     ) : (
@@ -2051,14 +2240,271 @@ function HighlightedText({ text, annotations }: { text: string; annotations: Cor
   return <div className="whitespace-pre-wrap leading-relaxed">{nodes}</div>;
 }
 
-function Feedback({ result, text, onBack }: { result: Correction; text: string; onBack: () => void }) {
+function Feedback({
+  result,
+  text,
+  onBack,
+  onRewriteClean,
+}: {
+  result: Correction;
+  text: string;
+  onBack: () => void;
+  onRewriteClean?: () => void;
+}) {
   const score = Math.max(0, Math.min(1000, Math.round(result.score)));
+  const ai = result.aiDetection;
+  const [showAiDetails, setShowAiDetails] = useState(ai?.verdict !== "humano");
+
+  // ── TELA DE BLOQUEIO ANTI-BURLA (QUANDO DETECTADA ALTA PROBABILIDADE DE IA / COLA) ──
+  if (ai?.blocked) {
+    return (
+      <>
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+          <PageTitle
+            eyebrow="Detector de IA · Integridade"
+            title="Redação não validada"
+            description="Para proteger seu aprendizado real para o ENEM, textos com forte indício de geração por IA ou cópia não recebem nota oficial."
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={onBack} className="rounded-xl">
+              Editar texto atual
+            </Button>
+            {onRewriteClean && (
+              <Button onClick={onRewriteClean} className="rounded-xl gap-2">
+                <RotateCcw className="size-4" /> Começar do zero
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+          {/* Painel Principal de Bloqueio */}
+          <div className="space-y-5">
+            <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6 sm:p-7">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-destructive/15">
+                <div className="flex items-start gap-3.5">
+                  <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-destructive text-destructive-foreground shadow-sm">
+                    <ShieldBan className="size-6" />
+                  </span>
+                  <div>
+                    <span className="inline-flex items-center rounded-full bg-destructive/15 px-2.5 py-0.5 text-[11px] font-bold text-destructive">
+                      Bloqueio anti-burla ativado
+                    </span>
+                    <h2 className="font-heading mt-1.5 text-xl font-extrabold text-foreground">
+                      Forte indício de texto gerado por IA ou copiado
+                    </h2>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl bg-card border border-destructive/20 px-4 py-3 text-center shrink-0 min-w-[110px]">
+                  <span className="block font-heading text-3xl font-extrabold text-destructive tabular-nums leading-none">
+                    {ai.aiProbability}%
+                  </span>
+                  <span className="mt-1 block text-[11px] font-semibold text-muted-foreground">
+                    índice de IA
+                  </span>
+                </div>
+              </div>
+
+              <p className="mt-4 text-sm leading-relaxed text-foreground/90">
+                {ai.summary}
+              </p>
+
+              {/* Barra visual de risco */}
+              <div className="mt-5 space-y-1.5">
+                <div className="flex justify-between text-xs font-semibold">
+                  <span className="text-muted-foreground">Autenticidade autoral estimada</span>
+                  <span className="text-destructive tabular-nums">{100 - ai.aiProbability}% humano · {ai.aiProbability}% IA</span>
+                </div>
+                <div className="h-2.5 w-full rounded-full bg-secondary overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-destructive transition-all duration-500"
+                    style={{ width: `${ai.aiProbability}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Aviso claro de não contabilização */}
+              <div className="mt-5 rounded-xl border border-border bg-card px-4 py-3 text-xs text-muted-foreground flex items-center gap-2.5">
+                <AlertCircle className="size-4 shrink-0 text-destructive" />
+                <span>
+                  Esta tentativa <strong className="text-foreground">não foi salva no seu histórico</strong> e não alterou sua média nem sua sequência de estudos.
+                </span>
+              </div>
+            </div>
+
+            {/* Sinais detectados */}
+            {ai.signals.length > 0 && (
+              <div className="rounded-2xl border border-border bg-card p-6">
+                <h3 className="font-heading text-base font-bold text-foreground mb-4">
+                  O que o detector identificou
+                </h3>
+                <div className="space-y-3">
+                  {ai.signals.map((sig, idx) => (
+                    <div key={idx} className="flex items-start gap-3 rounded-xl border border-border/80 bg-secondary/35 p-3.5">
+                      <span
+                        className={`mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                          sig.severity === "alto"
+                            ? "bg-destructive/15 text-destructive"
+                            : sig.severity === "medio"
+                            ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                            : "bg-secondary text-muted-foreground"
+                        }`}
+                      >
+                        {sig.severity}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-foreground">{sig.label}</p>
+                        <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{sig.detail}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Trechos suspeitos */}
+            {ai.flaggedExcerpts.length > 0 && (
+              <div className="rounded-2xl border border-border bg-card p-6">
+                <h3 className="font-heading text-base font-bold text-foreground mb-3">
+                  Trechos com padrão artificial
+                </h3>
+                <div className="space-y-2.5">
+                  {ai.flaggedExcerpts.map((snippet, idx) => (
+                    <p
+                      key={idx}
+                      className="rounded-xl border-l-4 border-destructive bg-destructive/5 px-4 py-2.5 text-xs sm:text-sm italic text-foreground/90"
+                    >
+                      “{snippet}”
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Coluna direita: Texto submetido + orientações */}
+          <div className="space-y-5">
+            <div className="rounded-2xl border border-border bg-card p-5">
+              <h3 className="font-heading text-base font-bold mb-3">Texto enviado</h3>
+              <div className="max-h-[420px] overflow-y-auto rounded-xl border border-border/70 bg-secondary/30 p-4 text-sm leading-7 whitespace-pre-wrap text-foreground/85">
+                {text}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-primary/20 bg-accent/40 p-5 space-y-2.5">
+              <h3 className="font-heading text-sm font-bold text-primary">Como passar na verificação autoral</h3>
+              <ul className="space-y-1.5 text-xs leading-relaxed text-foreground/85">
+                <li>• Digite o texto diretamente na folha do Laboratório sem colar blocos prontos.</li>
+                <li>• Desenvolva seus argumentos com sua própria linguagem e repertório pessoal.</li>
+                <li>• Evite copiar textos gerados por ChatGPT, Gemini ou outros assistentes.</li>
+              </ul>
+              <div className="pt-2">
+                <Button onClick={onRewriteClean || onBack} className="w-full rounded-xl font-semibold gap-2">
+                  <PenLine className="size-4" /> Reescrever com minhas palavras
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
-      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <PageTitle eyebrow="Correção concluída" title="Seu feedback personalizado" description="Use os comentários como um mapa para a próxima versão do seu texto." />
         <Button variant="outline" onClick={onBack} className="rounded-xl">Voltar ao texto</Button>
       </div>
+
+      {/* ── FAIXA DE VERIFICAÇÃO AUTORAL / DETECTOR DE IA ── */}
+      {ai && (
+        <div
+          className={`mb-6 rounded-2xl border p-4 sm:p-5 transition-all ${
+            ai.verdict === "suspeito"
+              ? "border-amber-500/35 bg-amber-500/8"
+              : "border-emerald-500/30 bg-emerald-500/8"
+          }`}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <span
+                className={`grid size-10 shrink-0 place-items-center rounded-xl ${
+                  ai.verdict === "suspeito"
+                    ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                    : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                }`}
+              >
+                {ai.verdict === "suspeito" ? <ShieldAlert className="size-5" /> : <ShieldCheck className="size-5" />}
+              </span>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <strong className="text-sm font-bold text-foreground">
+                    {ai.verdict === "suspeito"
+                      ? "Atenção: padrões moderados de escrita automatizada"
+                      : "Texto autoral verificado"}
+                  </strong>
+                  <span
+                    className={`tabular-nums rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
+                      ai.verdict === "suspeito"
+                        ? "bg-amber-500/20 text-amber-800 dark:text-amber-300"
+                        : "bg-emerald-500/20 text-emerald-800 dark:text-emerald-300"
+                    }`}
+                  >
+                    {ai.aiProbability}% indícios de IA
+                  </span>
+                </div>
+                <p className="mt-0.5 text-xs text-muted-foreground">{ai.summary}</p>
+              </div>
+            </div>
+
+            {(ai.signals.length > 0 || ai.telemetrySummary) && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAiDetails((v) => !v)}
+                className="rounded-lg text-xs font-semibold shrink-0"
+              >
+                {showAiDetails ? "Ocultar análise" : "Ver análise de autoria"}
+                <ChevronDown className={`ml-1 size-3.5 transition-transform ${showAiDetails ? "rotate-180" : ""}`} />
+              </Button>
+            )}
+          </div>
+
+          {showAiDetails && (ai.signals.length > 0 || ai.telemetrySummary) && (
+            <div className="mt-4 pt-4 border-t border-border/60 space-y-3">
+              {ai.telemetrySummary && (
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <span className="rounded-lg bg-card border border-border px-2.5 py-1 text-muted-foreground tabular-nums">
+                    Ritmo: <strong className="text-foreground">{ai.telemetrySummary.wordsPerMinute || "—"} pal/min</strong>
+                  </span>
+                  <span className="rounded-lg bg-card border border-border px-2.5 py-1 text-muted-foreground tabular-nums">
+                    Colagens bloqueadas: <strong className="text-foreground">{ai.telemetrySummary.pasteAttempts}</strong>
+                  </span>
+                  <span className="rounded-lg bg-card border border-border px-2.5 py-1 text-muted-foreground tabular-nums">
+                    Inserção em bloco: <strong className="text-foreground">{ai.telemetrySummary.largeInsertPercent}%</strong>
+                  </span>
+                </div>
+              )}
+
+              {ai.signals.length > 0 && (
+                <ul className="space-y-1.5 text-xs text-foreground/85">
+                  {ai.signals.map((s, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="mt-1 size-1.5 rounded-full bg-amber-600 shrink-0" />
+                      <span>
+                        <strong>{s.label}:</strong> {s.detail}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="grid gap-6 xl:grid-cols-2">
         {/* Lado Esquerdo: Texto Grifado (no mobile fica abaixo da nota para ver a nota primeiro) */}

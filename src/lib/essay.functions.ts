@@ -2,12 +2,30 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createServerFn } from "@tanstack/react-start";
 import { generateObject } from "ai";
 import { z } from "zod";
+import {
+  analyzeAiAuthorship,
+  mergeServerAiAssessment,
+  type AiDetectionReport,
+  type WritingTelemetry,
+} from "./ai-detector";
+
+const WritingTelemetrySchema = z.object({
+  pasteAttempts: z.number(),
+  pastedChars: z.number(),
+  largeInsertChars: z.number(),
+  typedChars: z.number(),
+  backspaces: z.number(),
+  tabSwitches: z.number(),
+  startedAt: z.number().nullable(),
+  submittedAt: z.number().optional(),
+});
 
 const EssayInput = z.object({
   essay: z.string().min(30, "Escreva pelo menos 30 caracteres para a avaliação."),
   targetScore: z.string().optional(),
   college: z.string().optional(),
   course: z.string().optional(),
+  telemetry: WritingTelemetrySchema.optional(),
 });
 
 const CompetencyDetailSchema = z.object({
@@ -24,6 +42,29 @@ const C5ElementSchema = z.object({
   detail: z.string(),
 });
 
+const AiDetectionSignalSchema = z.object({
+  label: z.string(),
+  severity: z.enum(["alto", "medio", "baixo"]),
+  detail: z.string(),
+});
+
+const AiDetectionSchema = z.object({
+  aiProbability: z.number(),
+  verdict: z.enum(["humano", "suspeito", "provavel_ia"]),
+  blocked: z.boolean(),
+  summary: z.string(),
+  signals: z.array(AiDetectionSignalSchema),
+  flaggedExcerpts: z.array(z.string()),
+  telemetrySummary: z
+    .object({
+      pasteAttempts: z.number(),
+      largeInsertPercent: z.number(),
+      writingSeconds: z.number(),
+      wordsPerMinute: z.number(),
+    })
+    .optional(),
+});
+
 const CorrectionSchema = z.object({
   score: z.number(),
   competencies: z.array(CompetencyDetailSchema),
@@ -37,9 +78,19 @@ const CorrectionSchema = z.object({
       type: z.enum(["acerto", "erro"]),
     }),
   ),
+  aiDetection: AiDetectionSchema.optional(),
+});
+
+const GeminiCorrectionSchema = CorrectionSchema.omit({ aiDetection: true }).extend({
+  aiAssessment: z.object({
+    aiProbability: z.number().describe("Probabilidade estimada (0 a 100) de o texto ter sido gerado por IA como ChatGPT, Gemini ou Claude"),
+    reasons: z.array(z.string()).describe("Até 3 justificativas objetivas em português sobre indícios de IA ou autenticidade humana"),
+    flaggedExcerpts: z.array(z.string()).describe("Até 3 trechos literais curtos que parecem fortemente gerados por IA, se houver"),
+  }),
 });
 
 export type CorrectionResult = z.infer<typeof CorrectionSchema>;
+export type { AiDetectionReport, WritingTelemetry };
 
 // ─── MATRIZ OFICIAL DE REFERÊNCIA DO ENEM (INEP) ──────────────────────────────
 export const INEP_MATRIX: Record<
@@ -716,11 +767,12 @@ export const evaluateCompetencyExercise = createServerFn({ method: "POST" })
 
 export function evaluateEssayHeuristically(
   essayText: string,
-  context?: { targetScore?: string; college?: string; course?: string },
+  context?: { targetScore?: string; college?: string; course?: string; telemetry?: WritingTelemetry | null },
 ): CorrectionResult {
   const text = essayText.trim();
   const paragraphs = extractParagraphs(text);
   const wordCount = text.split(/\s+/).filter(Boolean).length;
+  const aiDetection = analyzeAiAuthorship(text, context?.telemetry);
 
   const r1 = avaliarC1(text, paragraphs, wordCount);
   const r2 = avaliarC2(text, paragraphs, wordCount);
@@ -844,6 +896,7 @@ export function evaluateEssayHeuristically(
     strengths: strengths.slice(0, 4),
     improvements: improvements.slice(0, 4),
     annotations: annotations.filter(a => a.excerpt.length >= 4).slice(0, 5),
+    aiDetection,
   });
 }
 
@@ -852,9 +905,10 @@ export function evaluateEssayHeuristically(
 export const correctEssay = createServerFn({ method: "POST" })
   .validator((input: unknown) => EssayInput.parse(input))
   .handler(async ({ data }) => {
+    const localAiReport = analyzeAiAuthorship(data.essay, data.telemetry);
     const apiKey = process.env["GEMINI_API_KEY"] || process.env["GOOGLE_API_KEY"] || process.env["LOVABLE_API_KEY"];
 
-    // Se houver chave válida do Google Gemini (formato AIzaSy...), usa IA generativa
+    // Se houver chave válida do Google Gemini (formato AIzaSy...), usa IA generativa + verificação de autenticidade
     if (apiKey && !apiKey.startsWith("AQ.")) {
       try {
         const google = createGoogleGenerativeAI({ apiKey });
@@ -866,8 +920,8 @@ export const correctEssay = createServerFn({ method: "POST" })
 
         const result = await generateObject({
           model: google("gemini-2.5-flash"),
-          schema: CorrectionSchema,
-          prompt: `Você é um avaliador oficial da banca examinadora de redação do ENEM (INEP).
+          schema: GeminiCorrectionSchema,
+          prompt: `Você é um avaliador oficial da banca examinadora de redação do ENEM (INEP) e também auditor de autenticidade autoral.
 Aplique estritamente a Matriz Oficial de Referência para Correção da Redação do ENEM. ${goalContext}
 
 COMPETÊNCIAS OFICIAIS DO INEP (Pontuação por níveis: 0, 40, 80, 120, 160 ou 200 pontos):
@@ -907,22 +961,35 @@ COMPETÊNCIAS OFICIAIS DO INEP (Pontuação por níveis: 0, 40, 80, 120, 160 ou 
    - 1 elemento = 40 (Nível 1)
    - 0 elementos = 0 (Nível 0)
 
-Preencha rigorosamente os campos 'score', 'level' (0 a 5), 'descriptor' (o texto oficial da matriz do INEP) e 'feedback' (seu parecer técnico fundamentado de fiscal do ENEM) para cada uma das 5 competências. Indique no 'c5Elements' cada um dos 5 elementos da intervenção.
+AUDITORIA DE AUTENTICIDADE (campo 'aiAssessment'):
+Analise criteriosamente se o texto parece ter sido gerado por uma IA (ChatGPT, Gemini, Claude, etc.) em vez de escrito por um vestibulando brasileiro.
+- Observe sinais como: formulações genéricas e hiper-simétricas típicas de LLMs ("cenário multifacetado", "desempenha um papel crucial", "sociedade mais justa e equitativa", "mitigar os impactos", "fomentar a conscientização"), ausência de marcas pessoais/estilo próprio, frases com cadência artificialmente idêntica, ou artefatos de chat/markdown.
+- NÃO acuse um texto só por usar conectivos clássicos do ENEM ("Ademais", "Portanto", "Constituição de 1988") que vestibulandos reais aprendem em cursinho. Seja justo: dê aiProbability >= 70 apenas quando houver padrão forte de texto sintético de IA, entre 45 e 69 quando duvidoso, e < 45 quando parecer autoral.
+
+Preencha rigorosamente os campos 'score', 'level' (0 a 5), 'descriptor' (o texto oficial da matriz do INEP), 'feedback' (parecer técnico), 'c5Elements' e 'aiAssessment'.
 
 TEXTO DO PARTICIPANTE:
 ${data.essay}`,
         });
 
-        if (result?.object) return result.object;
+        if (result?.object) {
+          const { aiAssessment, ...correctionBase } = result.object;
+          const mergedAiDetection = mergeServerAiAssessment(localAiReport, aiAssessment);
+          return CorrectionSchema.parse({
+            ...correctionBase,
+            aiDetection: mergedAiDetection,
+          });
+        }
       } catch (err: unknown) {
         console.warn("[correctEssay] Gemini API indisponível. Usando motor oficial ENEM calibrado:", err instanceof Error ? err.message : err);
       }
     }
 
-    // Motor pedagógico ENEM calibrado
+    // Motor pedagógico ENEM calibrado + detector de IA estilométrico e comportamental
     return evaluateEssayHeuristically(data.essay, {
       ...(data.course ? { course: data.course } : {}),
       ...(data.college ? { college: data.college } : {}),
       ...(data.targetScore ? { targetScore: data.targetScore } : {}),
+      ...(data.telemetry ? { telemetry: data.telemetry } : {}),
     });
   });
