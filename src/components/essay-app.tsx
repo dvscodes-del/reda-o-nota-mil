@@ -499,14 +499,17 @@ export function EssayApp() {
       ...telemetryRef.current,
       submittedAt: Date.now(),
     };
+    const currentThemeItem = dailyThemes[selectedDay];
     try {
       let correction: Correction;
       try {
-        // Tenta enviar para o servidor de correção + detector de IA
+        // Tenta enviar para o servidor de correção + detector de IA com o tema ativo
         correction = await runCorrection({
           data: {
             essay: trimmed,
             telemetry: telemetrySnapshot,
+            ...(currentThemeItem?.topic ? { topic: currentThemeItem.topic } : {}),
+            ...(currentThemeItem?.hint ? { themeHint: currentThemeItem.hint } : {}),
             ...(preferences?.targetScore ? { targetScore: preferences.targetScore } : {}),
             ...(preferences?.college ? { college: preferences.college } : {}),
             ...(preferences?.course ? { course: preferences.course } : {}),
@@ -517,6 +520,8 @@ export function EssayApp() {
         // Fallback imediato: roda a avaliação oficial + detector de IA diretamente no navegador!
         correction = evaluateEssayHeuristically(trimmed, {
           telemetry: telemetrySnapshot,
+          ...(currentThemeItem?.topic ? { topic: currentThemeItem.topic } : {}),
+          ...(currentThemeItem?.hint ? { themeHint: currentThemeItem.hint } : {}),
           ...(preferences?.targetScore ? { targetScore: preferences.targetScore } : {}),
           ...(preferences?.college ? { college: preferences.college } : {}),
           ...(preferences?.course ? { course: preferences.course } : {}),
@@ -541,7 +546,6 @@ export function EssayApp() {
         });
       }
 
-      const currentThemeItem = dailyThemes[selectedDay];
       if (currentThemeItem) {
         await saveEssay({
           theme_day: currentThemeItem.day,
@@ -1959,6 +1963,8 @@ function Laboratory(props: {
       <Feedback
         result={props.result}
         text={props.text}
+        topic={currentTheme.topic}
+        targetScore={preferences?.targetScore ? parseInt(preferences.targetScore, 10) : 900}
         onBack={() => props.setResult(null)}
         onRewriteClean={() => {
           props.setResult(null);
@@ -2196,15 +2202,45 @@ function Laboratory(props: {
   </>;
 }
 
-function HighlightedText({ text, annotations }: { text: string; annotations: Correction['annotations'] }) {
-  if (!annotations || annotations.length === 0) return <div className="whitespace-pre-wrap leading-relaxed">{text}</div>;
+function HighlightedText({
+  text,
+  annotations,
+  activeExcerpt,
+  onSelectExcerpt,
+}: {
+  text: string;
+  annotations: Correction['annotations'];
+  activeExcerpt?: string | null;
+  onSelectExcerpt?: (excerpt: string) => void;
+}) {
+  if (!annotations || annotations.length === 0) {
+    return <div className="whitespace-pre-wrap leading-7">{text}</div>;
+  }
 
-  const matches: { start: number, end: number, type: 'acerto' | 'erro' }[] = [];
-  annotations.forEach(ann => {
-    let index = text.indexOf(ann.excerpt);
-    while (index !== -1) {
-      matches.push({ start: index, end: index + ann.excerpt.length, type: ann.type || 'erro' });
-      index = text.indexOf(ann.excerpt, index + 1);
+  const lowerText = text.toLowerCase();
+  const matches: Array<{
+    start: number;
+    end: number;
+    type: 'acerto' | 'erro';
+    excerpt: string;
+    suggestion: string;
+    competency?: string | undefined;
+  }> = [];
+
+  annotations.forEach((ann) => {
+    const cleanNeedle = (ann.excerpt || "").replace(/^[…."“]+|[…."”]+$/g, "").trim();
+    if (cleanNeedle.length < 3) return;
+    const lowerNeedle = cleanNeedle.toLowerCase();
+    const index = lowerText.indexOf(lowerNeedle);
+    if (index !== -1) {
+      matches.push({
+        start: index,
+        end: index + cleanNeedle.length,
+        type: ann.type || 'erro',
+        excerpt: ann.excerpt,
+        suggestion: ann.suggestion,
+        competency: ann.competency,
+      });
     }
   });
 
@@ -2224,11 +2260,26 @@ function HighlightedText({ text, annotations }: { text: string; annotations: Cor
     if (match.start > currentIndex) {
       nodes.push(<span key={`text-${i}`}>{text.substring(currentIndex, match.start)}</span>);
     }
-    const colorClass = match.type === 'acerto' ? 'bg-success/20 text-success-foreground border-b-2 border-success' : 'bg-highlight/20 text-highlight-foreground border-b-2 border-highlight';
+    const isActive = activeExcerpt === match.excerpt;
+    const colorClass =
+      match.type === 'acerto'
+        ? isActive
+          ? 'bg-emerald-500/30 text-foreground border-b-2 border-emerald-600 ring-2 ring-emerald-500/30'
+          : 'bg-emerald-500/15 text-foreground border-b-2 border-emerald-500/70 hover:bg-emerald-500/25'
+        : isActive
+        ? 'bg-amber-500/30 text-foreground border-b-2 border-amber-600 ring-2 ring-amber-500/30'
+        : 'bg-amber-500/18 text-foreground border-b-2 border-amber-500/80 hover:bg-amber-500/28';
+    const tooltip = `${match.competency ? `[${match.competency}] ` : ""}${match.suggestion}`;
     nodes.push(
-      <span key={`match-${i}`} className={`px-1 py-0.5 rounded-sm font-medium ${colorClass}`} title={match.type === 'acerto' ? 'Acerto' : 'Ponto de melhoria'}>
+      <button
+        key={`match-${i}`}
+        type="button"
+        onClick={() => onSelectExcerpt?.(match.excerpt)}
+        className={`inline cursor-pointer rounded-sm px-1 py-0.5 text-left font-medium transition-colors ${colorClass}`}
+        title={tooltip}
+      >
         {text.substring(match.start, match.end)}
-      </span>
+      </button>,
     );
     currentIndex = match.end;
   });
@@ -2237,23 +2288,40 @@ function HighlightedText({ text, annotations }: { text: string; annotations: Cor
     nodes.push(<span key="text-end">{text.substring(currentIndex)}</span>);
   }
 
-  return <div className="whitespace-pre-wrap leading-relaxed">{nodes}</div>;
+  return <div className="whitespace-pre-wrap leading-7">{nodes}</div>;
 }
 
 function Feedback({
   result,
   text,
+  topic,
+  targetScore = 900,
   onBack,
   onRewriteClean,
 }: {
   result: Correction;
   text: string;
+  topic?: string;
+  targetScore?: number;
   onBack: () => void;
   onRewriteClean?: () => void;
 }) {
   const score = Math.max(0, Math.min(1000, Math.round(result.score)));
   const ai = result.aiDetection;
   const [showAiDetails, setShowAiDetails] = useState(ai?.verdict !== "humano");
+  const [expandedComps, setExpandedComps] = useState<Record<number, boolean>>(() => {
+    const init: Record<number, boolean> = {};
+    (result.competencies || []).forEach((c, idx) => {
+      if (c.score < 200) init[idx] = true;
+    });
+    if (Object.keys(init).length === 0) init[0] = true;
+    return init;
+  });
+  const [annotationFilter, setAnnotationFilter] = useState<"todos" | "erro" | "acerto">("todos");
+  const [activeExcerpt, setActiveExcerpt] = useState<string | null>(null);
+
+  const toggleComp = (idx: number) =>
+    setExpandedComps((prev) => ({ ...prev, [idx]: !prev[idx] }));
 
   // ── TELA DE BLOQUEIO ANTI-BURLA (QUANDO DETECTADA ALTA PROBABILIDADE DE IA / COLA) ──
   if (ai?.blocked) {
@@ -2411,12 +2479,76 @@ function Feedback({
     );
   }
 
+  const adherenceConfig = (() => {
+    const st = result.topicAdherence?.status;
+    if (st === "fuga") {
+      return {
+        label: "Fuga ao tema",
+        cls: "bg-destructive/15 text-destructive border-destructive/30",
+      };
+    }
+    if (st === "tangenciamento") {
+      return {
+        label: "Tangenciamento",
+        cls: "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/35",
+      };
+    }
+    if (st === "parcial") {
+      return {
+        label: "Abordagem parcial",
+        cls: "bg-blue-500/12 text-blue-700 dark:text-blue-300 border-blue-500/30",
+      };
+    }
+    return {
+      label: "Aderência completa ao tema",
+      cls: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-400 border-emerald-500/30",
+    };
+  })();
+
+  const scoreTone =
+    score >= 880
+      ? "text-emerald-600 dark:text-emerald-400"
+      : score >= 680
+      ? "text-primary"
+      : score >= 440
+      ? "text-amber-600 dark:text-amber-400"
+      : "text-destructive";
+
+  const filteredAnnotations = (result.annotations || []).filter((a) =>
+    annotationFilter === "todos" ? true : a.type === annotationFilter,
+  );
+  const errorAnnCount = (result.annotations || []).filter((a) => a.type === "erro").length;
+  const hitAnnCount = (result.annotations || []).filter((a) => a.type === "acerto").length;
+  const c5FoundCount = (result.c5Elements || []).filter((e) => e.found).length;
+  const diffToTarget = score - targetScore;
+
   return (
     <>
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <PageTitle eyebrow="Correção concluída" title="Seu feedback personalizado" description="Use os comentários como um mapa para a próxima versão do seu texto." />
-        <Button variant="outline" onClick={onBack} className="rounded-xl">Voltar ao texto</Button>
+        <PageTitle
+          eyebrow="Parecer oficial · Matriz ENEM (INEP)"
+          title="Relatório detalhado da redação"
+          description={topic ? `Tema avaliado: ${topic}` : "Veja sua nota por competência, diagnóstico por parágrafo e intervenções diretas no texto."}
+        />
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={onBack} className="rounded-xl">
+            <PenLine className="mr-1.5 size-4" /> Editar e reenviar
+          </Button>
+        </div>
       </div>
+
+      {/* ── ALERTA DE NOTA ZERO OFICIAL (QUANDO APLICÁVEL) ── */}
+      {result.zeroReason && (
+        <div className="mb-6 rounded-2xl border border-destructive/35 bg-destructive/8 p-5 flex items-start gap-3.5">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-destructive text-destructive-foreground">
+            <AlertCircle className="size-5" />
+          </span>
+          <div>
+            <p className="text-sm font-bold text-destructive">Critério eliminatório da banca ENEM (Nota 0)</p>
+            <p className="mt-1 text-sm leading-relaxed text-foreground/90">{result.zeroReason}</p>
+          </div>
+        </div>
+      )}
 
       {/* ── FAIXA DE VERIFICAÇÃO AUTORAL / DETECTOR DE IA ── */}
       {ai && (
@@ -2424,7 +2556,7 @@ function Feedback({
           className={`mb-6 rounded-2xl border p-4 sm:p-5 transition-all ${
             ai.verdict === "suspeito"
               ? "border-amber-500/35 bg-amber-500/8"
-              : "border-emerald-500/30 bg-emerald-500/8"
+              : "border-emerald-500/25 bg-emerald-500/6"
           }`}
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -2506,92 +2638,446 @@ function Feedback({
         </div>
       )}
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        {/* Lado Esquerdo: Texto Grifado (no mobile fica abaixo da nota para ver a nota primeiro) */}
-        <div className="order-2 xl:order-1 rounded-xl border border-border bg-card p-4 sm:p-6 shadow-sm h-fit xl:sticky xl:top-24">
-          <h2 className="text-xl font-bold mb-4">Sua Redação</h2>
-          <div className="text-base text-foreground/90 bg-accent/30 p-4 sm:p-5 rounded-lg border border-border/50 max-h-[55vh] sm:max-h-[70vh] overflow-y-auto">
-            <HighlightedText text={text} annotations={result.annotations} />
+      {/* ── RESUMO EXECUTIVO: NOTA + PARECER GERAL + ADERÊNCIA AO TEMA ── */}
+      <div className="mb-6 grid gap-5 lg:grid-cols-[260px_1fr]">
+        <div className="rounded-2xl border border-border bg-card p-6 text-center flex flex-col items-center justify-center">
+          <div className="relative mx-auto grid size-36 place-items-center">
+            <svg className="size-full -rotate-90" viewBox="0 0 140 140">
+              <circle cx="70" cy="70" r="58" fill="none" stroke="currentColor" strokeWidth="11" className="text-secondary" />
+              <circle
+                cx="70"
+                cy="70"
+                r="58"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="11"
+                strokeLinecap="round"
+                strokeDasharray={2 * Math.PI * 58}
+                strokeDashoffset={2 * Math.PI * 58 * (1 - score / 1000)}
+                className={`${scoreTone} transition-all duration-700`}
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <strong className={`font-heading text-4xl font-extrabold tabular-nums ${scoreTone}`}>{score}</strong>
+              <span className="tabular-nums text-xs text-muted-foreground">de 1000</span>
+            </div>
           </div>
-          <div className="mt-6 flex flex-wrap gap-4 text-sm font-semibold">
-            <span className="flex items-center gap-2"><div className="size-3 rounded-full bg-success"></div> Acertos</span>
-            <span className="flex items-center gap-2"><div className="size-3 rounded-full bg-highlight"></div> Pontos de Melhoria</span>
-          </div>
+          <h2 className="font-heading mt-4 text-base font-bold text-foreground">
+            {score >= 920
+              ? "Nível Nota Mil"
+              : score >= 800
+              ? "Excelente desempenho"
+              : score >= 640
+              ? "Bom caminho"
+              : score > 0
+              ? "Em evolução"
+              : "Redação anulada"}
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground tabular-nums">
+            {diffToTarget >= 0
+              ? `Meta (${targetScore}) atingida (+${diffToTarget} pts)`
+              : `Faltam ${Math.abs(diffToTarget)} pts para sua meta (${targetScore})`}
+          </p>
         </div>
 
-        {/* Lado Direito: Feedback e Nota (no mobile aparece primeiro no topo) */}
+        <div className="rounded-2xl border border-border bg-card p-6 flex flex-col justify-between gap-4">
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-bold uppercase tracking-wide text-primary">
+                Parecer geral da banca
+              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                {result.topicAdherence && (
+                  <span className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${adherenceConfig.cls}`}>
+                    {adherenceConfig.label}
+                  </span>
+                )}
+                {result.evaluationMode && (
+                  <span className="rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+                    {result.evaluationMode === "gemini" ? "Banca IA + Matriz INEP" : "Matriz Oficial INEP"}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <p className="text-sm leading-relaxed text-foreground">
+              {result.overallSummary ||
+                "Confira abaixo o detalhamento por competência, os elementos da proposta de intervenção e os trechos destacados diretamente no seu texto."}
+            </p>
+
+            {result.topicAdherence && (
+              <p className="rounded-xl bg-secondary/45 px-3.5 py-2.5 text-xs leading-relaxed text-muted-foreground">
+                <strong className="text-foreground">Recorte temático:</strong> {result.topicAdherence.comment}
+              </p>
+            )}
+          </div>
+
+          {result.textMetrics && (
+            <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-border/70 text-xs">
+              <span className="rounded-lg bg-secondary/60 px-2.5 py-1 text-muted-foreground tabular-nums">
+                <strong className="text-foreground">{result.textMetrics.wordCount}</strong> palavras
+              </span>
+              <span className="rounded-lg bg-secondary/60 px-2.5 py-1 text-muted-foreground tabular-nums">
+                <strong className="text-foreground">~{result.textMetrics.estimatedLines}</strong> linhas
+              </span>
+              <span className="rounded-lg bg-secondary/60 px-2.5 py-1 text-muted-foreground tabular-nums">
+                <strong className="text-foreground">{result.textMetrics.paragraphCount}</strong> parágrafos
+              </span>
+              <span className="rounded-lg bg-secondary/60 px-2.5 py-1 text-muted-foreground tabular-nums">
+                Média <strong className="text-foreground">{result.textMetrics.avgWordsPerSentence}</strong> pal/frase
+              </span>
+              {result.textMetrics.repeatedWords.length > 0 && (
+                <span className="rounded-lg bg-amber-500/12 border border-amber-500/25 px-2.5 py-1 text-amber-800 dark:text-amber-300">
+                  Eco lexical:{" "}
+                  <strong>
+                    {result.textMetrics.repeatedWords
+                      .slice(0, 3)
+                      .map((w) => `"${w.word}" (${w.count}x)`)
+                      .join(", ")}
+                  </strong>
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── CORPO PRINCIPAL EM 2 COLUNAS: TEXTO GRIFADO + ANÁLISE TÉCNICA ── */}
+      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+        {/* Lado Esquerdo: Texto Grifado Interativo + Raio-X por Parágrafo */}
+        <div className="order-2 xl:order-1 space-y-6 xl:sticky xl:top-20 xl:self-start">
+          <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="font-heading text-base font-bold text-foreground">Sua redação grifada</h2>
+              <div className="flex items-center gap-3 text-xs font-semibold">
+                <span className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400">
+                  <span className="size-2.5 rounded-full bg-emerald-500" /> Acertos ({hitAnnCount})
+                </span>
+                <span className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400">
+                  <span className="size-2.5 rounded-full bg-amber-500" /> Ajustes ({errorAnnCount})
+                </span>
+              </div>
+            </div>
+            <p className="mb-3 text-xs text-muted-foreground">
+              Clique em qualquer trecho grifado para destacar o comentário correspondente.
+            </p>
+            <div className="rounded-xl border border-border/70 bg-secondary/25 p-4 sm:p-5 text-sm sm:text-[15px] text-foreground/95 max-h-[54vh] overflow-y-auto">
+              <HighlightedText
+                text={text}
+                annotations={result.annotations}
+                activeExcerpt={activeExcerpt}
+                onSelectExcerpt={(ex) => setActiveExcerpt((prev) => (prev === ex ? null : ex))}
+              />
+            </div>
+          </div>
+
+          {/* Raio-X por Parágrafo */}
+          {result.paragraphFeedback && result.paragraphFeedback.length > 0 && (
+            <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+              <h2 className="font-heading text-base font-bold text-foreground mb-4">
+                Raio-X por parágrafo
+              </h2>
+              <div className="space-y-3">
+                {result.paragraphFeedback.map((pf) => {
+                  const pill =
+                    pf.status === "forte"
+                      ? "bg-emerald-500/12 text-emerald-700 dark:text-emerald-400"
+                      : pf.status === "atencao"
+                      ? "bg-amber-500/15 text-amber-800 dark:text-amber-300"
+                      : "bg-destructive/12 text-destructive";
+                  const label =
+                    pf.status === "forte" ? "Bem estruturado" : pf.status === "atencao" ? "Pode melhorar" : "Incompleto";
+                  return (
+                    <div
+                      key={pf.index}
+                      className="rounded-xl border border-border/80 bg-secondary/25 p-3.5"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                        <span className="text-xs font-bold text-foreground">{pf.role}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] text-muted-foreground tabular-nums">
+                            {pf.wordCount} palavras
+                          </span>
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${pill}`}>
+                            {label}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-xs leading-relaxed text-muted-foreground">{pf.comment}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Lado Direito: Competências Detalhadas, Checklist C5, Forças/Melhorias e Intervenções */}
         <div className="order-1 xl:order-2 space-y-6">
-          <div className="grid gap-6 sm:grid-cols-[1fr_1.5fr]">
-            <div className="rounded-2xl border border-border bg-card p-7 text-center flex flex-col items-center justify-center">
-              <div className="relative mx-auto grid size-36 sm:size-40 place-items-center">
-                <svg className="size-full -rotate-90" viewBox="0 0 140 140">
-                  <circle cx="70" cy="70" r="58" fill="none" stroke="currentColor" strokeWidth="11" className="text-secondary" />
-                  <circle
-                    cx="70"
-                    cy="70"
-                    r="58"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="11"
-                    strokeLinecap="round"
-                    strokeDasharray={2 * Math.PI * 58}
-                    strokeDashoffset={2 * Math.PI * 58 * (1 - score / 1000)}
-                    className="text-primary transition-all duration-700"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <strong className="font-heading text-4xl sm:text-5xl font-extrabold text-primary tabular-nums">{score}</strong>
-                  <span className="tabular-nums text-xs text-muted-foreground">de 1000</span>
+          {/* ── 5 COMPETÊNCIAS COM PARECER TÉCNICO + NÍVEL INEP + PRÓXIMO PASSO ── */}
+          <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <div>
+                <h2 className="font-heading text-base font-bold text-foreground">
+                  Avaliação por Competência (C1 a C5)
+                </h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Toque em qualquer competência para ler o parecer técnico e o critério oficial do INEP.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {result.competencies.slice(0, 5).map((item, i) => {
+                const isOpen = !!expandedComps[i];
+                const compScore = Math.round(item.score);
+                const level = typeof item.level === "number" ? item.level : Math.round(compScore / 40);
+                const badgeCls =
+                  compScore >= 200
+                    ? "bg-emerald-500/12 text-emerald-700 dark:text-emerald-400"
+                    : compScore >= 160
+                    ? "bg-primary/12 text-primary"
+                    : compScore >= 120
+                    ? "bg-amber-500/15 text-amber-800 dark:text-amber-300"
+                    : "bg-destructive/12 text-destructive";
+
+                return (
+                  <div
+                    key={`${item.name}-${i}`}
+                    className="overflow-hidden rounded-xl border border-border/80 bg-secondary/20 transition-colors"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => toggleComp(i)}
+                      className="w-full p-4 text-left hover:bg-secondary/45 transition-colors"
+                    >
+                      <div className="flex items-center justify-between gap-3 mb-2">
+                        <div className="min-w-0 flex items-center gap-2">
+                          <span className="text-sm font-bold text-foreground truncate">{item.name}</span>
+                          <span className="hidden sm:inline-flex rounded-md bg-card border border-border px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                            Nível {level}/5
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className={`tabular-nums rounded-full px-2.5 py-0.5 text-xs font-extrabold ${badgeCls}`}>
+                            {compScore}/200
+                          </span>
+                          <ChevronDown
+                            className={`size-4 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`}
+                          />
+                        </div>
+                      </div>
+                      <Progress value={Math.max(0, Math.min(100, compScore / 2))} className="h-2" />
+                    </button>
+
+                    {isOpen && (
+                      <div className="border-t border-border/70 bg-card px-4 py-3.5 space-y-2.5 text-xs sm:text-[13px]">
+                        {item.feedback && (
+                          <p className="leading-relaxed text-foreground">
+                            <strong className="text-foreground">Parecer:</strong> {item.feedback}
+                          </p>
+                        )}
+                        {item.nextStep && (
+                          <div className="rounded-lg bg-accent/60 border border-primary/15 px-3 py-2 text-xs text-foreground flex items-start gap-2">
+                            <Target className="size-3.5 shrink-0 text-primary mt-0.5" />
+                            <span>
+                              <strong className="text-primary">Como evoluir:</strong> {item.nextStep}
+                            </span>
+                          </div>
+                        )}
+                        {item.descriptor && (
+                          <p className="text-[11px] leading-relaxed text-muted-foreground border-t border-border/50 pt-2">
+                            <strong>Matriz INEP (Nível {level}):</strong> {item.descriptor}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ── CHECKLIST VISUAL DA C5 (5 ELEMENTOS DA PROPOSTA DE INTERVENÇÃO) ── */}
+          {result.c5Elements && result.c5Elements.length > 0 && (
+            <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h2 className="font-heading text-base font-bold text-foreground">
+                    Checklist da Proposta de Intervenção (C5)
+                  </h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Cada elemento válido vale exatamente 40 pontos na banca do ENEM.
+                  </p>
+                </div>
+                <span
+                  className={`tabular-nums rounded-full px-3 py-1 text-xs font-extrabold ${
+                    c5FoundCount === 5
+                      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                      : c5FoundCount >= 3
+                      ? "bg-primary/12 text-primary"
+                      : "bg-amber-500/15 text-amber-800 dark:text-amber-300"
+                  }`}
+                >
+                  {c5FoundCount}/5 elementos · {c5FoundCount * 40} pts
+                </span>
+              </div>
+
+              <div className="grid gap-2.5 sm:grid-cols-2">
+                {result.c5Elements.map((el, idx) => (
+                  <div
+                    key={`${el.name}-${idx}`}
+                    className={`rounded-xl border p-3.5 ${
+                      el.found
+                        ? "border-emerald-500/25 bg-emerald-500/5"
+                        : "border-amber-500/30 bg-amber-500/5"
+                    } ${idx === 4 ? "sm:col-span-2" : ""}`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-2 text-xs font-bold text-foreground">
+                        {el.found ? (
+                          <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
+                        ) : (
+                          <AlertCircle className="size-4 shrink-0 text-amber-600" />
+                        )}
+                        {el.name}
+                      </span>
+                      <span
+                        className={`text-[10px] font-bold uppercase ${
+                          el.found ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400"
+                        }`}
+                      >
+                        {el.found ? "+40 pts" : "Faltando"}
+                      </span>
+                    </div>
+                    {el.found && el.evidence ? (
+                      <p className="mt-1.5 text-xs italic text-foreground/85">
+                        Encontrado: “{el.evidence}”
+                      </p>
+                    ) : (
+                      <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                        {el.detail}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── PONTOS FORTES E PRIORIDADES DE MELHORIA ── */}
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div className="rounded-2xl border border-border bg-card p-5">
+              <h2 className="flex items-center gap-2 font-heading text-sm font-bold text-emerald-700 dark:text-emerald-400">
+                <CheckCircle2 className="size-4" /> Pontos fortes
+              </h2>
+              <ul className="mt-3.5 space-y-2.5">
+                {result.strengths.map((item, idx) => (
+                  <li key={idx} className="flex gap-2 text-xs sm:text-sm leading-relaxed text-foreground/90">
+                    <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-emerald-600" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-2xl border border-border bg-card p-5">
+              <h2 className="flex items-center gap-2 font-heading text-sm font-bold text-amber-700 dark:text-amber-400">
+                <AlertCircle className="size-4" /> Prioridades para subir a nota
+              </h2>
+              <ul className="mt-3.5 space-y-2.5">
+                {result.improvements.map((item, idx) => (
+                  <li key={idx} className="flex gap-2 text-xs sm:text-sm leading-relaxed text-foreground/90">
+                    <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-amber-600" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* ── INTERVENÇÕES NO TEXTO COM FILTRO E SUGESTÃO DE REESCRITA ── */}
+          {result.annotations.length > 0 && (
+            <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <h2 className="font-heading text-base font-bold text-foreground">
+                  Comentários e sugestões no texto
+                </h2>
+                <div className="inline-flex rounded-lg bg-secondary/70 p-0.5 text-xs font-semibold">
+                  {(
+                    [
+                      { id: "todos", label: `Todos (${result.annotations.length})` },
+                      { id: "erro", label: `Ajustes (${errorAnnCount})` },
+                      { id: "acerto", label: `Acertos (${hitAnnCount})` },
+                    ] as const
+                  ).map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setAnnotationFilter(tab.id)}
+                      className={`rounded-md px-2.5 py-1 transition-colors ${
+                        annotationFilter === tab.id
+                          ? "bg-card text-foreground shadow-xs"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
                 </div>
               </div>
-              <h2 className="font-heading mt-5 text-lg font-bold">
-                {score >= 900 ? "Excelente desempenho" : score >= 700 ? "Ótimo avanço" : score >= 500 ? "Bom caminho" : "Continue praticando"}
-              </h2>
-            </div>
 
-            <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-              <h2 className="text-lg font-bold">Competências</h2>
-              <div className="mt-4 space-y-4">
-                {result.competencies.slice(0, 5).map((item, i) => (
-                  <div key={`${item.name}-${i}`}>
-                    <div className="mb-1.5 flex justify-between gap-3 text-xs sm:text-sm">
-                      <span className="font-semibold truncate">{item.name}</span>
-                      <strong className="text-primary">{Math.round(item.score)}/200</strong>
-                    </div>
-                    <Progress value={Math.max(0, Math.min(100, item.score / 2))} className="h-2" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="grid gap-6 sm:grid-cols-2">
-            <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-              <h2 className="flex items-center gap-2 text-base font-bold text-success"><CheckCircle2 className="size-5" /> O que está excelente</h2>
-              <ul className="mt-4 space-y-3">
-                {result.strengths.map((item) => <li key={item} className="flex gap-2 text-sm leading-6"><CheckCircle2 className="mt-1 size-4 shrink-0 text-success" />{item}</li>)}
-              </ul>
-            </div>
-            <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-              <h2 className="flex items-center gap-2 text-base font-bold text-highlight"><AlertCircle className="size-5" /> O que precisa melhorar</h2>
-              <ul className="mt-4 space-y-3">
-                {result.improvements.map((item) => <li key={item} className="flex gap-2 text-sm leading-6"><AlertCircle className="mt-1 size-4 shrink-0 text-highlight" />{item}</li>)}
-              </ul>
-            </div>
-          </div>
-
-          {result.annotations.length > 0 && (
-            <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-              <h2 className="text-lg font-bold">Intervenções no seu texto</h2>
-              <div className="mt-5 space-y-4">
-                {result.annotations.map((item) => (
-                  <div key={item.excerpt} className={`rounded-lg border-l-4 p-4 ${item.type === 'acerto' ? 'border-success bg-success/10' : 'border-highlight bg-highlight/10'}`}>
-                    <p className="font-medium text-sm italic">“{item.excerpt}”</p>
-                    <p className={`mt-2 text-sm font-medium ${item.type === 'acerto' ? 'text-success' : 'text-highlight'}`}>
-                      <PenLine className="mr-1.5 inline size-3.5" />{item.suggestion}
-                    </p>
-                  </div>
-                ))}
+              <div className="space-y-3">
+                {filteredAnnotations.map((item, idx) => {
+                  const isSelected = activeExcerpt === item.excerpt;
+                  return (
+                    <button
+                      key={`${item.excerpt}-${idx}`}
+                      type="button"
+                      onClick={() =>
+                        setActiveExcerpt((prev) => (prev === item.excerpt ? null : item.excerpt))
+                      }
+                      className={`w-full text-left rounded-xl border-l-4 p-4 transition-all ${
+                        item.type === "acerto"
+                          ? "border-emerald-500 bg-emerald-500/8 hover:bg-emerald-500/12"
+                          : "border-amber-500 bg-amber-500/8 hover:bg-amber-500/12"
+                      } ${isSelected ? "ring-2 ring-primary/40" : ""}`}
+                    >
+                      <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                        {item.competency && (
+                          <span className="rounded-md bg-card border border-border px-1.5 py-0.5 text-[10px] font-extrabold text-primary">
+                            {item.competency}
+                          </span>
+                        )}
+                        <span
+                          className={`text-[10px] font-bold uppercase ${
+                            item.type === "acerto"
+                              ? "text-emerald-700 dark:text-emerald-400"
+                              : "text-amber-800 dark:text-amber-300"
+                          }`}
+                        >
+                          {item.type === "acerto" ? "Ponto forte" : "Ajuste sugerido"}
+                        </span>
+                      </div>
+                      <p className="font-medium text-xs sm:text-sm italic text-foreground">
+                        “{item.excerpt}”
+                      </p>
+                      <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-foreground/85">
+                        {item.suggestion}
+                      </p>
+                      {item.rewrite && (
+                        <div className="mt-2.5 rounded-lg bg-card border border-border/80 px-3 py-2 text-xs text-foreground">
+                          <span className="font-bold text-primary">Sugestão de ajuste: </span>
+                          {item.rewrite}
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+                {filteredAnnotations.length === 0 && (
+                  <p className="py-4 text-center text-xs text-muted-foreground">
+                    Nenhum comentário nesta categoria.
+                  </p>
+                )}
               </div>
             </div>
           )}
